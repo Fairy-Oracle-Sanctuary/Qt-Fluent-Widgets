@@ -1,0 +1,12 @@
+#titleLabel {
+    font: 14px --FontFamilies;
+    font-weight: bold;
+    color: black;
+    background-color: transparent;
+}
+
+#contentLabel {
+    font: 14px --FontFamilies;
+    color: black;
+    background-color: transparent;
+}

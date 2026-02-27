@@ -1,0 +1,365 @@
+PushButton, DropDownPushButton, PrimaryDropDownPushButton, ToolButton, DropDownToolButton, SplitDropButton, ToggleButton, ToggleToolButton, PillPushButton, PillToolButton {
+    background: rgba(255, 255, 255, 0.0605);
+    border: 1px solid rgba(255, 255, 255, 0.053);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: white;
+    /* font: 14px --FontFamilies; */
+    padding: 5px 12px 6px 12px;
+    outline: none;
+}
+
+ToolButton,
+PillToolButton {
+    padding: 5px 9px 6px 8px;
+}
+
+PushButton[isPlaceholderText=true] {
+    color: rgba(255, 255, 255, 0.6063);
+}
+
+PushButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+PrimaryPushButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+TransparentPushButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+ToggleButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+PillPushButton[hasIcon=false] {
+    padding: 5px 9px 6px 9px;
+}
+
+TransparentTogglePushButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+PushButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+PrimaryPushButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+TransparentPushButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+ToggleButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+PillPushButton[hasIcon=true] {
+    padding: 5px 9px 6px 23px;
+}
+
+TransparentTogglePushButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+DropDownToolButton,
+PrimaryDropDownToolButton {
+    padding: 5px 31px 6px 8px;
+}
+
+DropDownPushButton[hasIcon=false],
+PrimaryDropDownPushButton[hasIcon=false] {
+    padding: 5px 31px 6px 12px;
+}
+
+DropDownPushButton[hasIcon=true],
+PrimaryDropDownPushButton[hasIcon=true] {
+    padding: 5px 31px 6px 36px;
+}
+
+TransparentDropDownPushButton[hasIcon=false] {
+    padding: 5px 31px 6px 12px;
+}
+
+TransparentDropDownPushButton[hasIcon=true] {
+    padding: 5px 31px 6px 36px;
+}
+
+PushButton:hover, DropDownPushButton:hover, PrimaryDropDownPushButton:hover, ToolButton:hover, DropDownToolButton:hover, SplitDropButton:hover, ToggleButton:hover,ToggleToolButton:hover, PillPushButton:hover, PillToolButton:hover {
+    background: rgba(255, 255, 255, 0.0837);
+}
+
+PushButton:pressed, DropDownPushButton:pressed, PrimaryDropDownPushButton:pressed, ToolButton:pressed, DropDownToolButton:pressed, SplitDropButton:pressed, ToggleButton:pressed, ToggleToolButton:pressed, PillPushButton:pressed, PillToolButton:pressed {
+    color: rgba(255, 255, 255, 0.786);
+    background: rgba(255, 255, 255, 0.0326);
+    border-top: 1px solid rgba(255, 255, 255, 0.053);
+}
+
+PushButton:disabled, DropDownPushButton:disabled, PrimaryDropDownPushButton:disabled, ToolButton:disabled, DropDownToolButton:disabled, SplitDropButton:disabled, ToggleButton:disabled, ToggleToolButton:disabled, PillPushButton:disabled, PillToolButton:disabled {
+    color: rgba(255, 255, 255, 0.3628);
+    background: rgba(255, 255, 255, 0.0419);
+    border: 1px solid rgba(255, 255, 255, 0.053);
+    border-top: 1px solid rgba(255, 255, 255, 0.053);
+}
+
+#splitPushButton:pressed,
+#splitToolButton:pressed,
+SplitDropButton:pressed {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+
+PrimaryPushButton,
+PrimaryDropDownPushButton,
+PrimaryToolButton,
+PrimarySplitDropButton,
+ToggleButton:checked,
+ToggleToolButton:checked,
+PillPushButton:checked,
+PillToolButton:checked,
+TransparentTogglePushButton:checked,
+TransparentToggleToolButton:checked {
+    color: black;
+    background-color: --ThemeColorLight1;
+    border: 1px solid --ThemeColorLight1;
+    border-bottom: 1px solid --ThemeColorLight2;
+    border-radius: 5px;
+}
+
+PrimaryPushButton:hover,
+PrimaryDropDownPushButton:hover,
+PrimaryToolButton:hover,
+PrimarySplitDropButton:hover,
+ToggleButton:checked:hover,
+ToggleToolButton:checked:hover,
+PillPushButton:checked:hover,
+PillToolButton:checked:hover,
+TransparentTogglePushButton:checked:hover,
+TransparentToggleToolButton:checked:hover {
+    background-color: --ThemeColorDark1;
+    border: 1px solid --ThemeColorLight1;
+    border-bottom: 1px solid --ThemeColorLight2;
+}
+
+PrimaryPushButton:pressed,
+PrimaryDropDownPushButton:pressed,
+PrimaryToolButton:pressed,
+PrimarySplitDropButton:pressed,
+ToggleButton:checked:pressed,
+ToggleToolButton:checked:pressed,
+PillPushButton:checked:pressed,
+PillToolButton:checked:pressed,
+TransparentTogglePushButton:checked:pressed,
+TransparentToggleToolButton:checked:pressed {
+    color: rgba(0, 0, 0, 0.63);
+    background-color: --ThemeColorDark2;
+    border: 1px solid --ThemeColorDark2;
+}
+
+PrimaryPushButton:disabled,
+PrimaryDropDownPushButton:disabled,
+PrimaryToolButton:disabled,
+PrimarySplitDropButton:disabled,
+ToggleButton:checked:disabled,
+ToggleToolButton:checked:disabled,
+PillPushButton:checked:disabled,
+PillToolButton:checked:disabled,
+TransparentTogglePushButton:checked:disabled,
+TransparentToggleToolButton:checked:disabled {
+    color: rgba(255, 255, 255, 0.43);
+    background-color: rgb(52, 52, 52);
+    border: 1px solid rgb(52, 52, 52);
+}
+
+SplitDropButton,
+PrimarySplitDropButton {
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#splitPushButton,
+#splitToolButton,
+#primarySplitPushButton,
+#primarySplitToolButton {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-color: rgba(255, 255, 255, 0.08);
+}
+
+#primarySplitPushButton,
+#primarySplitToolButton {
+    border-right-color: --ThemeColorDark3;
+}
+
+#primarySplitPushButton:pressed,
+#primarySplitToolButton:pressed {
+    border-right: 1px solid --ThemeColorLight2;
+}
+
+HyperlinkButton {
+    /* font: 14px --FontFamilies; */
+    padding: 5px 12px 6px 12px;
+    color: --ThemeColorLight1;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+}
+
+HyperlinkButton[hasIcon=false] {
+    padding: 5px 12px 6px 12px;
+}
+
+HyperlinkButton[hasIcon=true] {
+    padding: 5px 12px 6px 36px;
+}
+
+HyperlinkButton:hover {
+    color: --ThemeColorDark2;
+    background-color: rgba(255, 255, 255, 10);
+    border: none;
+}
+
+HyperlinkButton:pressed {
+    color: --ThemeColorDark1;
+    background-color: rgba(255, 255, 255, 7);
+    border: none;
+}
+
+HyperlinkButton:disabled {
+    color: rgba(255, 255, 255, 0.43);
+    background-color: transparent;
+    border: none;
+}
+
+RadioButton {
+    min-height: 24px;
+    max-height: 24px;
+    background-color: transparent;
+    font: 14px --FontFamilies;
+    color: white;
+}
+
+RadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 11px;
+    border: 2px solid #848484;
+    background-color: transparent;
+    margin-right: 4px;
+}
+
+RadioButton::indicator:hover {
+    background-color: rgba(255, 255, 255, 16);
+}
+
+RadioButton::indicator:pressed {
+    border: 2px solid #434343;
+    background-color: --ThemeColorDark1;
+}
+
+RadioButton::indicator:checked {
+    height: 22px;
+    width: 22px;
+    border: none;
+    border-radius: 11px;
+    background-color: --ThemeColorDark1;
+}
+
+RadioButton::indicator:checked:hover {
+    background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+            stop:0 rgb(0, 0, 0),
+            stop:0.6 rgb(0, 0, 0),
+            stop:0.7 --ThemeColorDark2,
+            stop:1 --ThemeColorDark2);
+}
+
+RadioButton::indicator:checked:pressed {
+    background-color: --ThemeColorDark1;
+}
+
+RadioButton:disabled {
+    color: rgba(255, 255, 255, 0.3628);
+}
+
+RadioButton::indicator:disabled {
+    border: 2px solid #646464;
+    background-color: transparent;
+}
+
+RadioButton::indicator:disabled:checked {
+    border: none;
+    background-color: qradialgradient(spread:pad, cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5,
+            stop:0 rgb(0, 0, 0),
+            stop:0.5 rgb(0, 0, 0),
+            stop:0.6 rgba(255, 255, 255, 0.158),
+            stop:1 rgba(255, 255, 255, 0.158));
+}
+
+TransparentToolButton,
+TransparentToggleToolButton,
+TransparentDropDownToolButton,
+TransparentPushButton,
+TransparentDropDownPushButton,
+TransparentTogglePushButton {
+    color: white;
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    margin: 0;
+}
+
+TransparentToolButton:hover,
+TransparentToggleToolButton:hover,
+TransparentDropDownToolButton:hover,
+TransparentPushButton:hover,
+TransparentDropDownPushButton:hover,
+TransparentTogglePushButton:hover {
+    background-color: rgba(255, 255, 255, 9);
+    border: none;
+}
+
+TransparentToolButton:pressed,
+TransparentToggleToolButton:pressed,
+TransparentDropDownToolButton:pressed,
+TransparentPushButton:pressed,
+TransparentDropDownPushButton:pressed,
+TransparentTogglePushButton:pressed {
+    background-color: rgba(255, 255, 255, 6);
+    border: none;
+}
+
+TransparentToolButton:disabled,
+TransparentToggleToolButton:disabled,
+TransparentDropDownToolButton:disabled,
+TransparentPushButton:disabled,
+TransparentDropDownPushButton:disabled,
+TransparentTogglePushButton:disabled {
+    color: rgba(255, 255, 255, 0.3628);
+    background-color: transparent;
+    border: none;
+}
+
+PillPushButton,
+PillPushButton:hover,
+PillPushButton:pressed,
+PillPushButton:disabled,
+PillPushButton:checked,
+PillPushButton:checked:hover,
+PillPushButton:checked:pressed,
+PillPushButton:disabled:checked,
+PillToolButton,
+PillToolButton:hover,
+PillToolButton:pressed,
+PillToolButton:disabled,
+PillToolButton:checked,
+PillToolButton:checked:hover,
+PillToolButton:checked:pressed,
+PillToolButton:disabled:checked {
+    background-color: transparent;
+    border: none;
+}

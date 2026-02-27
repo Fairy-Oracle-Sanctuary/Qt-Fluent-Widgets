@@ -1,0 +1,56 @@
+[qssClass="LineEdit"], [qssClass="TextEdit"], [qssClass="PlainTextEdit"], [qssClass="TextBrowser"] {
+    color: black;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 13);
+    border-bottom: 1px solid rgba(0, 0, 0, 100);
+    border-radius: 5px;
+    padding: 0px 10px;
+    selection-background-color: --ThemeColorLight1;
+}
+
+[qssClass="TextEdit"],
+[qssClass="PlainTextEdit"],
+[qssClass="TextBrowser"] {
+    padding: 2px 3px 2px 8px;
+}
+
+[qssClass="LineEdit"]:hover, [qssClass="TextEdit"]:hover, [qssClass="PlainTextEdit"]:hover, [qssClass="TextBrowser"]:hover {
+    background-color: rgba(249, 249, 249, 0.5);
+    border: 1px solid rgba(0, 0, 0, 13);
+    border-bottom: 1px solid rgba(0, 0, 0, 100);
+}
+
+[qssClass="LineEdit"]:focus {
+    border-bottom: 1px solid --ThemeColorPrimary;
+    background-color: white;
+}
+
+[qssClass="TextEdit"]:focus,
+[qssClass="PlainTextEdit"]:focus,
+[qssClass="TextBrowser"]:focus {
+    border-bottom: 1px solid --ThemeColorPrimary;
+    background-color: white;
+}
+
+[qssClass="LineEdit"]:disabled, [qssClass="TextEdit"]:disabled,
+[qssClass="PlainTextEdit"]:disabled,
+[qssClass="TextBrowser"]:disabled {
+    color: rgba(0, 0, 0, 92);
+    background-color: rgba(249, 249, 249, 0.3);
+    border: 1px solid rgba(0, 0, 0, 13);
+    border-bottom: 1px solid rgba(0, 0, 0, 13);
+}
+
+#lineEditButton {
+    background-color: transparent;
+    border-radius: 4px;
+    margin: 0;
+}
+
+#lineEditButton:hover {
+    background-color: rgba(0, 0, 0, 9);
+}
+
+#lineEditButton:pressed {
+    background-color: rgba(0, 0, 0, 6);
+}

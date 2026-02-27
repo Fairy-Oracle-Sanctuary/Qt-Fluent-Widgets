@@ -1,0 +1,112 @@
+PivotItem {
+    padding: 10px 12px;
+    color: white;
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+SegmentedItem, SegmentedToolItem, SegmentedToggleToolItem {
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    margin: 3px 0px;
+}
+
+PivotItem[isSelected=true]:hover {
+    color: rgba(255, 255, 255, 0.63);
+}
+
+PivotItem[isSelected=true]:pressed {
+    color: rgba(255, 255, 255, 0.53);
+}
+
+PivotItem[isSelected=false]:pressed {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+PivotItem[hasIcon=false] {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+PivotItem[hasIcon=true] {
+    padding-left: 36px;
+    padding-right: 12px;
+}
+
+Pivot {
+    border: none;
+    background-color: transparent;
+}
+
+#view {
+    background-color: transparent;
+}
+
+SegmentedItem {
+    color: white;
+}
+
+SegmentedToolItem {
+    padding: 5px 9px 6px 8px;
+}
+
+SegmentedWidget,
+SegmentedToolWidget,
+SegmentedToggleToolWidget {
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+}
+
+SegmentedItem[isSelected=false], SegmentedToolItem[isSelected=false] {
+    padding: 3px 12px;
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    margin: 3px 0px;
+}
+
+SegmentedItem[isSelected=false]:hover,
+SegmentedToolItem[isSelected=false]:hover {
+    background-color: rgba(255, 255, 255, 9);
+}
+
+SegmentedItem[isSelected=false]:pressed,
+SegmentedToolItem[isSelected=false]:pressed {
+    background-color: rgba(255, 255, 255, 6);
+}
+
+SegmentedItem[isSelected=true],
+SegmentedToolItem[isSelected=true] {
+    padding: 6px 12px;
+    margin: 0px;
+    color: white;
+    background-color: transparent;
+    border: none;
+}
+
+SegmentedItem[isSelected=true]:hover,
+SegmentedToolItem[isSelected=true]:hover {
+    color: rgba(255, 255, 255, 0.63);
+}
+
+SegmentedItem[isSelected=true]:pressed,
+SegmentedToolItem[isSelected=true]:pressed {
+    color: rgba(255, 255, 255, 0.53);
+}
+
+SegmentedToggleToolItem {
+    padding: 5px 9px 6px 8px;
+    background-color: transparent;
+    border: none;
+}
+
+SegmentedToggleToolItem[isSelected=false] {
+    background-color: transparent;
+}
+
+SegmentedToggleToolItem[isSelected=true] {
+    background-color: transparent;
+}
