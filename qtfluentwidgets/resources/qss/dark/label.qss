@@ -1,0 +1,28 @@
+FluentLabelBase {
+    color: white;
+}
+
+HyperlinkLabel {
+    color: --ThemeColorLight1;
+    border: none;
+    background-color: transparent;
+    text-align: left;
+    padding: 0;
+    margin: 0;
+}
+
+HyperlinkLabel[underline=true] {
+    text-decoration: underline;
+}
+
+HyperlinkLabel[underline=false] {
+    text-decoration: none;
+}
+
+HyperlinkLabel:hover {
+    color: --ThemeColorDark2;
+}
+
+HyperlinkLabel:pressed {
+    color: --ThemeColorLight1;
+}

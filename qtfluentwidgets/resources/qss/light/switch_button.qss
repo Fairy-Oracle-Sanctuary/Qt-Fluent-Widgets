@@ -1,0 +1,16 @@
+SwitchButton {
+    qproperty-spacing: 12;
+    background-color: transparent;
+}
+
+SwitchButton>QLabel {
+    color: black;
+    font: 14px --FontFamilies;
+    background-color: transparent;
+    border: none;
+}
+
+SwitchButton>QLabel:disabled {
+    color: rgba(0, 0, 0, 0.36);
+}
+

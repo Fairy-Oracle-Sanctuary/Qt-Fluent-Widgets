@@ -1,0 +1,35 @@
+QListView,
+QListWidget {
+    background: transparent;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    selection-background-color: transparent;
+    alternate-background-color: transparent;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+QListView[isBorderVisible=true],
+QListWidget[isBorderVisible=true] {
+    border: 1px solid rgba(255, 255, 255, 21);
+}
+
+QListView::item,
+QListWidget::item {
+    background: transparent;
+    border: 0px;
+    padding-left: 11px;
+    padding-right: 11px;
+    height: 35px;
+}
+
+QListView::indicator,
+QListWidget::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: none;
+    background-color: transparent;
+    margin-right: 4px;
+}
