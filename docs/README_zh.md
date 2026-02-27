@@ -123,9 +123,9 @@ qtfluentwidgets_app.exe     # Windows
 
 | 平台 | 状态 | 说明 |
 |------|------|------|
-| Windows | ✅ 完全支持 | 包含 Acrylic/Mica 效果 |
-| macOS | ⚠️ 基本支持 | 无边框窗口支持 |
-| Linux | ⚠️ 基本支持 | 无边框窗口支持 |
+| Windows | ✅ 完全支持 | 包含 Acrylic/Mica 效果、无边框窗口 |
+| macOS | 🚧 占位符 | 无边框窗口尚未实现 |
+| Linux | 🚧 占位符 | 无边框窗口尚未实现 |
 
 ## 📝 许可证
 
@@ -134,6 +134,7 @@ qtfluentwidgets_app.exe     # Windows
 ## 🙏 致谢
 
 - **zhiyiYo** - 原版 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 库的作者
+- **zhiyiYo** - [官方文档与演示](https://qfluentwidgets.com/zh/)（Python 版本）
 - Microsoft - Fluent Design System 灵感来源
 - Qt Framework - 跨平台 UI 开发的基础
 

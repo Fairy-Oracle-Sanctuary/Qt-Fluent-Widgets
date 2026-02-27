@@ -123,9 +123,9 @@ qtfluentwidgets_app.exe     # Windows
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Windows | ✅ Full support | Includes Acrylic/Mica effects |
-| macOS | ⚠️ Basic support | Frameless window support |
-| Linux | ⚠️ Basic support | Frameless window support |
+| Windows | ✅ Full support | Includes Acrylic/Mica effects, frameless window |
+| macOS | 🚧 Placeholder | Frameless window not yet implemented |
+| Linux | 🚧 Placeholder | Frameless window not yet implemented |
 
 ## 📝 License
 
@@ -134,6 +134,7 @@ This project is licensed under **GPLv3** - see the [LICENSE](LICENSE) file for d
 ## 🙏 Acknowledgments
 
 - **zhiyiYo** - Creator of the original [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) library
+- **zhiyiYo** - [Official documentation & demos](https://qfluentwidgets.com/) (Python version)
 - Microsoft - Fluent Design System inspiration
 - Qt Framework - The foundation for cross-platform UI development
 
