@@ -810,10 +810,8 @@ StyleSheetManager& StyleSheetManager::instance() {
 }
 
 StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
-    QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme theme) {
+    QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme) {
         const bool lazy = nextLazyUpdate_;
-        qInfo().noquote() << "[qfw][theme] themeChanged signal received, theme=" << static_cast<int>(theme)
-                          << "lazy=" << lazy << "items_.size()=" << items_.size();
         nextLazyUpdate_ = false;
         updateStyleSheet(lazy);
         QConfig::instance().notifyThemeChangedFinished();
@@ -822,8 +820,6 @@ StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
     QObject::connect(
         &QConfig::instance(), &QConfig::themeColorChanged, this, [this](const QColor&) {
             const bool lazy = nextLazyUpdate_;
-            qInfo().noquote() << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_="
-                              << lazy << "items_.size()=" << items_.size();
             nextLazyUpdate_ = false;
             updateStyleSheet(lazy);
         });
