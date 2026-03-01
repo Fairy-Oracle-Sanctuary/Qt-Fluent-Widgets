@@ -1,8 +1,10 @@
 #include <QApplication>
+#include <QDebug>
 #include <QIcon>
 #include <QResource>
 #include <QSettings>
 #include <QTranslator>
+#include <QWheelEvent>
 
 #ifdef MessageBox
 #undef MessageBox
@@ -11,6 +13,18 @@
 #include "common/app_config.h"
 #include "qtfluentwidgets.h"
 #include "view/main_window.h"
+
+class WheelEventFilter : public QObject {
+public:
+    bool eventFilter(QObject* obj, QEvent* e) override {
+        if (e->type() == QEvent::Wheel) {
+            auto* wheel = static_cast<QWheelEvent*>(e);
+            qInfo().noquote() << "[qfw][scroll] APP FILTER wheel delta" << wheel->angleDelta() 
+                              << "obj" << obj << (obj ? obj->metaObject()->className() : "null");
+        }
+        return QObject::eventFilter(obj, e);
+    }
+};
 
 int main(int argc, char* argv[]) {
     // Load config early to check dpi scale setting
@@ -24,6 +38,10 @@ int main(int argc, char* argv[]) {
     }
 
     QApplication app(argc, argv);
+    
+    // Install wheel event filter
+    WheelEventFilter* filter = new WheelEventFilter();
+    app.installEventFilter(filter);
 
     // Set application icon
     app.setWindowIcon(QIcon(QStringLiteral(":/gallery/images/logo.png")));

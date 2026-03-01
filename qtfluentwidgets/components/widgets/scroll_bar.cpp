@@ -630,32 +630,57 @@ bool SmoothScrollDelegate::eventFilter(QObject* obj, QEvent* event) {
     }
 
     auto* wheelEvent = static_cast<QWheelEvent*>(event);
+    
+    // On macOS trackpad, angleDelta may be (0,0) while pixelDelta has values
+    // Use pixelDelta as fallback when angleDelta is zero
+    QPoint angleDelta = wheelEvent->angleDelta();
+    QPoint pixelDelta = wheelEvent->pixelDelta();
+    
+    // If angleDelta is zero but pixelDelta has values, use pixelDelta
+    if (angleDelta.isNull() && !pixelDelta.isNull()) {
+        angleDelta = pixelDelta;
+    }
+    
+    qInfo().noquote() << "[qfw][scroll] SmoothScrollDelegate::eventFilter angleDelta" << angleDelta
+                      << "pixelDelta" << pixelDelta;
 
     bool verticalAtEnd =
-        (wheelEvent->angleDelta().y() < 0 && vScrollBar_->value() == vScrollBar_->maximum()) ||
-        (wheelEvent->angleDelta().y() > 0 && vScrollBar_->value() == vScrollBar_->minimum());
+        (angleDelta.y() < 0 && vScrollBar_->value() == vScrollBar_->maximum()) ||
+        (angleDelta.y() > 0 && vScrollBar_->value() == vScrollBar_->minimum());
 
     bool horizontalAtEnd =
-        (wheelEvent->angleDelta().x() < 0 && hScrollBar_->value() == hScrollBar_->maximum()) ||
-        (wheelEvent->angleDelta().x() > 0 && hScrollBar_->value() == hScrollBar_->minimum());
+        (angleDelta.x() < 0 && hScrollBar_->value() == hScrollBar_->maximum()) ||
+        (angleDelta.x() > 0 && hScrollBar_->value() == hScrollBar_->minimum());
+
+    qInfo().noquote() << "[qfw][scroll] verticalAtEnd" << verticalAtEnd << "horizontalAtEnd" << horizontalAtEnd
+                      << "vVal" << vScrollBar_->value() << "vMax" << vScrollBar_->maximum();
 
     if (verticalAtEnd && horizontalAtEnd) {
         return false;
     }
 
-    if (wheelEvent->angleDelta().y() != 0 && !verticalAtEnd) {
+    if (angleDelta.y() != 0 && !verticalAtEnd) {
         if (useAni_) {
-            vScrollBar_->scrollValue(-wheelEvent->angleDelta().y());
+            vScrollBar_->scrollValue(-angleDelta.y());
         } else if (verticalSmoothScroll_) {
-            verticalSmoothScroll_->wheelEvent(wheelEvent);
+            // Create a new wheel event with the corrected delta
+            QWheelEvent adjustedEvent(wheelEvent->position(), wheelEvent->globalPosition(),
+                                      wheelEvent->pixelDelta(), angleDelta,
+                                      wheelEvent->buttons(), wheelEvent->modifiers(),
+                                      wheelEvent->phase(), wheelEvent->inverted());
+            verticalSmoothScroll_->wheelEvent(&adjustedEvent);
         }
     }
 
-    if (wheelEvent->angleDelta().x() != 0 && !horizontalAtEnd) {
+    if (angleDelta.x() != 0 && !horizontalAtEnd) {
         if (useAni_) {
-            hScrollBar_->scrollValue(-wheelEvent->angleDelta().x());
+            hScrollBar_->scrollValue(-angleDelta.x());
         } else if (horizonSmoothScroll_) {
-            horizonSmoothScroll_->wheelEvent(wheelEvent);
+            QWheelEvent adjustedEvent(wheelEvent->position(), wheelEvent->globalPosition(),
+                                      wheelEvent->pixelDelta(), angleDelta,
+                                      wheelEvent->buttons(), wheelEvent->modifiers(),
+                                      wheelEvent->phase(), wheelEvent->inverted());
+            horizonSmoothScroll_->wheelEvent(&adjustedEvent);
         }
     }
 
