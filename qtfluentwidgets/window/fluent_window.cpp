@@ -1,6 +1,7 @@
 #include "window/fluent_window.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QLabel>
 #include <QLayout>
 #include <QPaintEvent>
@@ -16,6 +17,9 @@
 #include "components/navigation/navigation_interface.h"
 #include "components/window/frameless_window.h"
 #include "components/window/title_bar.h"
+#ifdef Q_OS_WIN
+#include "components/window/windows_window_effect.h"
+#endif
 #include "window/stacked_widget.h"
 
 #ifdef Q_OS_WIN
@@ -340,6 +344,17 @@ FluentWindow::FluentWindow(QWidget* parent) : FluentWindowBase(parent) {
     }
 }
 
+void FluentWindow::showEvent(QShowEvent* e) {
+    FluentWindowBase::showEvent(e);
+
+    if (titleBar()) {
+        titleBar()->move(46, 0);
+        titleBar()->resize(width() - 46, titleBar()->height());
+        titleBar()->updateGeometry();
+        titleBar()->update();
+    }
+}
+
 NavigationWidget* FluentWindow::addSubInterface(QWidget* subInterface, const QVariant& icon,
                                                 const QString& text) {
     return addSubInterface(subInterface, icon, text, qfw::NavigationItemPosition::Top, nullptr,
@@ -471,6 +486,17 @@ MSFluentWindow::MSFluentWindow(QWidget* parent) : FluentWindowBase(parent) {
     if (titleBar()) {
         titleBar()->raise();
         titleBar()->setAttribute(Qt::WA_StyledBackground);
+    }
+}
+
+void MSFluentWindow::showEvent(QShowEvent* e) {
+    FluentWindowBase::showEvent(e);
+
+    if (titleBar()) {
+        titleBar()->move(24, 0);
+        titleBar()->resize(width() - 24, titleBar()->height());
+        titleBar()->updateGeometry();
+        titleBar()->update();
     }
 }
 
