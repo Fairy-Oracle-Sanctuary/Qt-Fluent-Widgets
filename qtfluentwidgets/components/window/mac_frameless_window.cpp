@@ -15,6 +15,11 @@ void MacFramelessWindowBase::setResizeEnabled(bool) {}
 bool MacFramelessWindowBase::isResizeEnabled() const { return false; }
 void MacFramelessWindowBase::setSystemTitleBarButtonVisible(bool) {}
 bool MacFramelessWindowBase::isSystemButtonVisible() const { return false; }
+void MacFramelessWindowBase::setStayOnTop(bool) {}
+void MacFramelessWindowBase::toggleStayOnTop() {}
+void MacFramelessWindowBase::setTitleBar(TitleBar*) {}
+TitleBar* MacFramelessWindowBase::titleBar() const { return nullptr; }
+void MacFramelessWindowBase::clearTitleBar() {}
 void MacFramelessWindowBase::initFrameless(QWidget*) {}
 void MacFramelessWindowBase::updateFrameless() {}
 void MacFramelessWindowBase::hideSystemTitleBar() {}
@@ -23,6 +28,7 @@ void MacFramelessWindowBase::updateSystemButtonRect() {}
 void MacFramelessWindowBase::updateSystemTitleBar() {}
 
 MacFramelessWindow::MacFramelessWindow(QWidget* parent) : QWidget(parent) {}
+MacAcrylicWindow::MacAcrylicWindow(QWidget* parent) : MacFramelessWindow(parent) {}
 void MacFramelessWindow::resizeEvent(QResizeEvent* event) { QWidget::resizeEvent(event); }
 void MacFramelessWindow::changeEvent(QEvent* event) { QWidget::changeEvent(event); }
 void MacFramelessWindow::paintEvent(QPaintEvent* event) { QWidget::paintEvent(event); }
