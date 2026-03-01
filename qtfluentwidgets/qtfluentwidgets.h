@@ -89,11 +89,15 @@
 
 // Window
 #include "components/window/frameless_window.h"
-#include "components/window/linux_frameless_window.h"
-#include "components/window/mac_frameless_window.h"
 #include "components/window/title_bar.h"
+#ifdef Q_OS_WIN
 #include "components/window/windows_frameless_window.h"
 #include "components/window/windows_window_effect.h"
+#elif defined(Q_OS_MACOS)
+#include "components/window/mac_frameless_window.h"
+#else
+#include "components/window/linux_frameless_window.h"
+#endif
 
 // Fluent Window
 #include "window/fluent_window.h"
