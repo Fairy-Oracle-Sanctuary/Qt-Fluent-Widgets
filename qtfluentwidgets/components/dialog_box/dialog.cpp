@@ -136,7 +136,7 @@ void MessageBoxUI::hideCancelButton() {
 // ============================================================================
 
 Dialog::Dialog(const QString& title, const QString& content, QWidget* parent)
-    : WindowsFramelessDialog(parent) {
+    : FramelessDialog(parent) {
     ui_ = new MessageBoxUI(this);
     ui_->setUpUi(title, content, this);
 
@@ -146,7 +146,9 @@ Dialog::Dialog(const QString& title, const QString& content, QWidget* parent)
     windowTitleLabel = new QLabel(title, this);
     windowTitleLabel->setObjectName(QStringLiteral("windowTitleLabel"));
 
+#ifdef Q_OS_WIN
     setResizeEnabled(false);
+#endif
     resize(240, 192);
 
     ui_->vBoxLayout->insertWidget(0, windowTitleLabel, 0, Qt::AlignTop);
