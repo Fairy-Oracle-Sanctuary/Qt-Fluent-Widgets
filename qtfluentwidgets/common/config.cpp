@@ -64,8 +64,8 @@ QVariant RangeValidator::correct(const QVariant& value) const {
     return std::min(std::max(v, min_), max_);
 }
 
-double RangeValidator::min() const { return min_; }
-double RangeValidator::max() const { return max_; }
+double RangeValidator::minimum() const { return min_; }
+double RangeValidator::maximum() const { return max_; }
 
 OptionsValidator::OptionsValidator(QList<QVariant> options) : options_(std::move(options)) {}
 

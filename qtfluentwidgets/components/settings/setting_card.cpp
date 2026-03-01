@@ -191,7 +191,7 @@ RangeSettingCard::RangeSettingCard(RangeConfigItem* configItem, const QVariant& 
 
     if (configItem_ && configItem_->rangeValidator()) {
         const auto rv = configItem_->rangeValidator();
-        slider_->setRange(static_cast<int>(rv->min()), static_cast<int>(rv->max()));
+        slider_->setRange(static_cast<int>(rv->minimum()), static_cast<int>(rv->maximum()));
         slider_->setValue(QConfig::instance().get(*configItem_).toInt());
         valueLabel_->setNum(slider_->value());
 
