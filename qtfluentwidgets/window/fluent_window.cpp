@@ -14,6 +14,7 @@
 #include "common/style_sheet.h"
 #include "components/navigation/navigation_bar.h"
 #include "components/navigation/navigation_interface.h"
+#include "components/window/frameless_window.h"
 #include "components/window/title_bar.h"
 #include "window/stacked_widget.h"
 

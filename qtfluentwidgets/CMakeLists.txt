@@ -207,4 +207,3 @@ endif()
 target_include_directories(qtfluentwidgets PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-

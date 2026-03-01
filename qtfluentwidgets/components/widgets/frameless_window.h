@@ -3,13 +3,13 @@
 #include <QFrame>
 #include <QShowEvent>
 
-#include "components/window/windows_frameless_window.h"
+#include "components/window/frameless_window.h"
 
 namespace qfw {
 
 class StandardTitleBar;
 
-class FluentMainWindow : public WindowsFramelessMainWindow {
+class FluentMainWindow : public FramelessMainWindow {
     Q_OBJECT
 
 public:
