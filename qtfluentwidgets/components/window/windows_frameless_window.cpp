@@ -2,6 +2,8 @@
 
 #ifdef Q_OS_WIN
 
+// Disable Windows min/max macros to avoid conflicts with C++ standard library
+#define NOMINMAX
 #include <dwmapi.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -382,6 +384,35 @@ void WindowsFramelessDialog::showEvent(QShowEvent* e) {
         windowEffect_->disableMaximizeButton(hWnd);
     }
 }
+
+}  // namespace qfw
+
+#else  // !Q_OS_WIN
+
+// Empty implementations for non-Windows platforms
+// This ensures MOC-generated code links correctly
+
+namespace qfw {
+
+WindowsFramelessWindowBase::WindowsFramelessWindowBase() {}
+WindowsFramelessWindowBase::~WindowsFramelessWindowBase() {}
+void WindowsFramelessWindowBase::setResizeEnabled(bool) {}
+bool WindowsFramelessWindowBase::isResizeEnabled() const { return false; }
+void WindowsFramelessWindowBase::initFrameless(QWidget*) {}
+bool WindowsFramelessWindowBase::handleNativeEvent(QWidget*, void*, qintptr*) { return false; }
+
+WindowsFramelessWindow::WindowsFramelessWindow(QWidget* parent) : QWidget(parent) {}
+bool WindowsFramelessWindow::nativeEvent(const QByteArray&, void*, qintptr*) { return false; }
+void WindowsFramelessWindow::showEvent(QShowEvent* e) { QWidget::showEvent(e); }
+void WindowsFramelessWindow::paintEvent(QPaintEvent* e) { QWidget::paintEvent(e); }
+
+WindowsFramelessMainWindow::WindowsFramelessMainWindow(QWidget* parent) : QMainWindow(parent) {}
+bool WindowsFramelessMainWindow::nativeEvent(const QByteArray&, void*, qintptr*) { return false; }
+void WindowsFramelessMainWindow::showEvent(QShowEvent* e) { QMainWindow::showEvent(e); }
+
+WindowsFramelessDialog::WindowsFramelessDialog(QWidget* parent) : QDialog(parent) {}
+bool WindowsFramelessDialog::nativeEvent(const QByteArray&, void*, qintptr*) { return false; }
+void WindowsFramelessDialog::showEvent(QShowEvent* e) { QDialog::showEvent(e); }
 
 }  // namespace qfw
 

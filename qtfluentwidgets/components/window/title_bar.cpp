@@ -13,6 +13,8 @@
 #include "common/config.h"
 
 #ifdef Q_OS_WIN
+// Disable Windows min/max macros to avoid conflicts with C++ standard library
+#define NOMINMAX
 #include <windows.h>
 #endif
 

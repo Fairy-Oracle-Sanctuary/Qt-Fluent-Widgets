@@ -2,8 +2,11 @@
 
 #ifdef Q_OS_WIN
 
+// Disable Windows min/max macros to avoid conflicts with C++ standard library
+#define NOMINMAX
 #include <dwmapi.h>
 #include <windows.h>
+#include <windowsx.h>
 
 #include <QDebug>
 

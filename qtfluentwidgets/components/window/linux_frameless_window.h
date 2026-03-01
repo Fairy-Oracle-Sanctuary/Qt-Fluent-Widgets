@@ -35,4 +35,4 @@ public:
     static void setMicaEffect(QWidget* widget) { Q_UNUSED(widget) }
 };
 
-} // namespace qfw
+}  // namespace qfw
