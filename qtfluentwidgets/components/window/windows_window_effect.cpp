@@ -1,5 +1,7 @@
 #include "components/window/windows_window_effect.h"
 
+#ifdef Q_OS_WIN
+
 #include <dwmapi.h>
 #include <windows.h>
 
@@ -382,3 +384,5 @@ void WindowsWindowEffect::disableMaximizeButton(HWND hWnd) {
 }
 
 }  // namespace qfw
+
+#endif  // Q_OS_WIN

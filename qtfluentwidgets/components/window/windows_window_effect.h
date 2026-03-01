@@ -1,6 +1,12 @@
 #pragma once
 
+#include <QtGlobal>
+
+#ifdef Q_OS_WIN
 #include <windows.h>
+#else
+using HWND = void*;
+#endif
 
 #include <QColor>
 #include <QString>
@@ -11,6 +17,7 @@ class WindowsWindowEffect {
 public:
     WindowsWindowEffect() = default;
 
+#ifdef Q_OS_WIN
     void addWindowAnimation(HWND hWnd);
     void addShadowEffect(HWND hWnd);
 
@@ -25,6 +32,21 @@ public:
     void removeBorderAccentColor(HWND hWnd);
 
     void disableMaximizeButton(HWND hWnd);
+#else
+    void addWindowAnimation(HWND) {}
+    void addShadowEffect(HWND) {}
+
+    void enableBlurBehindWindow(HWND) {}
+
+    void setAcrylicEffect(HWND, const QString& = QStringLiteral("F2F2F299"), bool = true, int = 0) {}
+
+    void setMicaEffect(HWND, bool = false, bool = false) {}
+
+    void setBorderAccentColor(HWND, const QColor&) {}
+    void removeBorderAccentColor(HWND) {}
+
+    void disableMaximizeButton(HWND) {}
+#endif
 };
 
 }  // namespace qfw
