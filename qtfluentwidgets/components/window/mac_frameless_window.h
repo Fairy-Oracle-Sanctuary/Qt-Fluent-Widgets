@@ -5,8 +5,6 @@
  * Ported from qframelesswindow/mac/__init__.py
  */
 
-#ifdef Q_OS_MAC
-
 #include <QDialog>
 #include <QMainWindow>
 #include <QWidget>
@@ -77,5 +75,3 @@ protected:
 };
 
 }  // namespace qfw
-
-#endif  // Q_OS_MAC

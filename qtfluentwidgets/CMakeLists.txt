@@ -187,12 +187,22 @@ qt_add_library(qtfluentwidgets STATIC
 
 if(WIN32)
     target_sources(qtfluentwidgets PRIVATE
-        components/window/windows_frameless_window.cpp
-        components/window/windows_frameless_window.h
         components/window/windows_window_effect.cpp
         components/window/windows_window_effect.h
     )
 endif()
+
+# windows_frameless_window.cpp is compiled on all platforms (has empty implementations for non-Windows)
+target_sources(qtfluentwidgets PRIVATE
+    components/window/windows_frameless_window.cpp
+    components/window/windows_frameless_window.h
+)
+
+# mac_frameless_window.cpp is compiled on all platforms (has empty implementations for non-macOS)
+target_sources(qtfluentwidgets PRIVATE
+    components/window/mac_frameless_window.cpp
+    components/window/mac_frameless_window.h
+)
 
 if(APPLE)
     # Enable Objective-C++ for macOS
@@ -200,7 +210,6 @@ if(APPLE)
     
     target_sources(qtfluentwidgets PRIVATE
         components/window/mac_frameless_window.mm
-        components/window/mac_frameless_window.h
         components/window/mac_window_effect.mm
         components/window/mac_window_effect.h
     )

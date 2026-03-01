@@ -3,6 +3,8 @@
 #include <QtGlobal>
 
 #ifdef Q_OS_WIN
+// Disable Windows min/max macros to avoid conflicts with C++ standard library
+#define NOMINMAX
 #include <windows.h>
 #else
 using HWND = void*;
@@ -38,7 +40,8 @@ public:
 
     void enableBlurBehindWindow(HWND) {}
 
-    void setAcrylicEffect(HWND, const QString& = QStringLiteral("F2F2F299"), bool = true, int = 0) {}
+    void setAcrylicEffect(HWND, const QString& = QStringLiteral("F2F2F299"), bool = true, int = 0) {
+    }
 
     void setMicaEffect(HWND, bool = false, bool = false) {}
 
