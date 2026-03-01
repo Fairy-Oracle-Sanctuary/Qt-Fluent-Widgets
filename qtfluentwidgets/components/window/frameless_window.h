@@ -24,11 +24,11 @@ using AcrylicWindow = ::qfw::WindowsFramelessWindow;
 using WindowEffect = ::qfw::WindowsWindowEffect;
 #elif defined(Q_OS_MAC)
 #include "mac_frameless_window.h"
-#include "mac_window_effect.h"
+// MacWindowEffect is defined in mac_frameless_window.h
 using FramelessWindow = ::qfw::MacFramelessWindow;
 using FramelessMainWindow = ::qfw::MacFramelessMainWindow;
 using FramelessDialog = ::qfw::MacFramelessDialog;
-using AcrylicWindow = ::qfw::MacAcrylicWindow;
+using AcrylicWindow = ::qfw::MacFramelessWindow;
 using WindowEffect = ::qfw::MacWindowEffect;
 #else
 #include "linux_frameless_window.h"
