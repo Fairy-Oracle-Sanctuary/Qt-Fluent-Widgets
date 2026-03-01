@@ -12,7 +12,7 @@
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](../LICENSE)
-[![Platform Win32](https://img.shields.io/badge/Platform-Win32-blue?color=#4ec820)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue?color=#4ec820)]()
 [![Qt6](https://img.shields.io/badge/Qt-6.3+-green.svg)](https://www.qt.io)
 
 </div>
@@ -50,11 +50,13 @@ Qt-Fluent-Widgets 是对 **zhiyiYo** 开发的流行库 [PyQt-Fluent-Widgets](ht
 
 ## 📋 系统要求
 
-- **Qt 6.3+**（推荐 Qt 6.7）
+- **Qt 6.3+**
+  - Windows: 推荐 Qt 6.3+
+  - macOS: 推荐 Qt 6.9.0
 - **CMake 3.16+**
 - **C++17 编译器**
-  - MSVC 2019+（支持）
-  - MinGW GCC（支持）
+  - MSVC 2019+ (Windows)
+  - Clang (macOS，通过 Xcode 或命令行工具)
 
 ## 🚀 快速开始
 
@@ -123,8 +125,8 @@ qtfluentwidgets_app.exe     # Windows
 
 | 平台 | 状态 | 说明 |
 |------|------|------|
-| Windows | ✅ 完全支持 | 包含 Acrylic/Mica 效果、无边框窗口 |
-| macOS | 🚧 占位符 | 无边框窗口尚未实现 |
+| Windows | ✅ 完全支持 | Acrylic/Mica 效果、无边框窗口 |
+| macOS | ✅ 完全支持 | 无边框窗口，原生 Cocoa 集成 |
 | Linux | 🚧 占位符 | 无边框窗口尚未实现 |
 
 ## 📝 许可证
