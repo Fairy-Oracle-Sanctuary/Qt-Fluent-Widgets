@@ -134,6 +134,9 @@ void FluentWidget::setTitleBar(TitleBarBase* titleBar) {
 }
 
 void FluentWidget::onThemeChangedFinished() {
+    // Update background color for theme change
+    setBackgroundColor(normalBackgroundColor());
+    
     if (isMicaEffectEnabled()) {
         applyMica();
     }

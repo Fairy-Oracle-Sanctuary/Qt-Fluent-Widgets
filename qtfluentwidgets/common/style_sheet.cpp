@@ -810,11 +810,10 @@ StyleSheetManager& StyleSheetManager::instance() {
 }
 
 StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
-    QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme) {
+    QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme theme) {
         const bool lazy = nextLazyUpdate_;
-        if (qssDebugEnabled()) {
-            qDebug() << "[qfw][qss] themeChanged signal received, nextLazyUpdate_=" << lazy;
-        }
+        qInfo().noquote() << "[qfw][theme] themeChanged signal received, theme=" << static_cast<int>(theme)
+                          << "lazy=" << lazy << "items_.size()=" << items_.size();
         nextLazyUpdate_ = false;
         updateStyleSheet(lazy);
         QConfig::instance().notifyThemeChangedFinished();
@@ -823,10 +822,8 @@ StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
     QObject::connect(
         &QConfig::instance(), &QConfig::themeColorChanged, this, [this](const QColor&) {
             const bool lazy = nextLazyUpdate_;
-            if (qssDebugEnabled()) {
-                qDebug() << "[qfw][qss] themeColorChanged signal received, nextLazyUpdate_="
-                         << lazy;
-            }
+            qInfo().noquote() << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_="
+                              << lazy << "items_.size()=" << items_.size();
             nextLazyUpdate_ = false;
             updateStyleSheet(lazy);
         });
@@ -906,69 +903,33 @@ QSharedPointer<StyleSheetCompose> StyleSheetManager::source(QWidget* widget) con
 }
 
 void StyleSheetManager::setNextLazyUpdate(bool lazy) {
-    if (qssDebugEnabled()) {
-        qDebug() << "[qfw][qss] setNextLazyUpdate lazy=" << lazy;
-    }
     nextLazyUpdate_ = lazy;
 }
 
 void StyleSheetManager::updateStyleSheet(bool lazy) {
-    QElapsedTimer timer;
-    QElapsedTimer stepTimer;
-    qint64 tGetStyleSheet = 0;
-    qint64 tSetIfChanged = 0;
-    qint64 tLoopOverhead = 0;
-    qint64 tVisibleRegion = 0;
-    if (qssDebugEnabled()) {
-        timer.start();
-        qssPerfStats() = QssPerfStats{};
-    }
-
-    // 暂停重绘，避免中间状态的重绘开销
     QWidgetList topLevelWidgets = QApplication::topLevelWidgets();
     for (QWidget* w : topLevelWidgets) {
         w->setUpdatesEnabled(false);
     }
 
     for (int i = items_.size() - 1; i >= 0; --i) {
-        if (qssDebugEnabled()) stepTimer.start();
-
         auto& item = items_[i];
-        if (qssDebugEnabled()) {
-            qssPerfStats().widgetsTotal++;
-            tLoopOverhead += stepTimer.elapsed();
-        }
 
         if (!item.widget) {
             items_.removeAt(i);
-            if (qssDebugEnabled()) qssPerfStats().widgetsDeadRemoved++;
             continue;
         }
 
-        if (qssDebugEnabled()) stepTimer.start();
-        if (lazy && item.widget->visibleRegion().isNull()) {
-            if (qssDebugEnabled()) tVisibleRegion += stepTimer.elapsed();
+        // On macOS, visibleRegion() may return empty region for frameless windows
+        // Use isVisible() check instead for lazy mode
+        if (lazy && !item.widget->isVisible()) {
             item.widget->setProperty("dirty-qss", true);
-            if (qssDebugEnabled()) qssPerfStats().widgetsLazySkipped++;
             continue;
         }
-        if (qssDebugEnabled()) tVisibleRegion += stepTimer.elapsed();
 
         if (item.source) {
-            if (qssDebugEnabled()) stepTimer.start();
             QString qss = getStyleSheet(*item.source, Theme::Auto);
-            if (qssDebugEnabled()) tGetStyleSheet += stepTimer.elapsed();
-
-            if (qssDebugEnabled()) stepTimer.start();
-            // Debug 和 Release 都使用 setStyleSheetIfChanged 避免重复设置
-            bool changed = setStyleSheetIfChanged(item.widget, qss);
-            if (qssDebugEnabled()) tSetIfChanged += stepTimer.elapsed();
-
-            if (changed) {
-                if (qssDebugEnabled()) qssPerfStats().widgetsApplied++;
-            }
-        } else if (qssDebugEnabled()) {
-            qssPerfStats().widgetsNoSource++;
+            setStyleSheetIfChanged(item.widget, qss);
         }
     }
 
@@ -976,35 +937,11 @@ void StyleSheetManager::updateStyleSheet(bool lazy) {
     for (QWidget* w : topLevelWidgets) {
         w->setUpdatesEnabled(true);
     }
-
-    if (qssDebugEnabled()) {
-        qssPerfStats().updateMs = timer.elapsed();
-        qDebug() << "[qfw][qss] updateStyleSheet lazy=" << lazy
-                 << " total=" << qssPerfStats().widgetsTotal
-                 << " removed=" << qssPerfStats().widgetsDeadRemoved
-                 << " lazySkipped=" << qssPerfStats().widgetsLazySkipped
-                 << " applied=" << qssPerfStats().widgetsApplied
-                 << " noSource=" << qssPerfStats().widgetsNoSource
-                 << " getStyleSheetMs=" << tGetStyleSheet << " setStyleTotalMs=" << tSetIfChanged
-                 << " visibleRegionMs=" << tVisibleRegion << " loopOverheadMs=" << tLoopOverhead
-                 << " cacheHit=" << qssPerfStats().renderedCacheHit
-                 << " cacheMiss=" << qssPerfStats().renderedCacheMiss
-                 << " updateMs=" << qssPerfStats().updateMs;
-    }
 }
 
 void setTheme(Theme theme, bool save, bool lazy) {
-    QElapsedTimer timer;
-    if (qssDebugEnabled()) {
-        timer.start();
-        qDebug() << "[qfw][qss] setTheme start theme=" << static_cast<int>(theme);
-    }
-
     QConfig::instance().set(QConfig::instance().themeModeItem(), QVariant::fromValue(theme), save,
                             true, lazy);
-    if (qssDebugEnabled()) {
-        qDebug() << "[qfw][qss] QConfig::set done ms=" << timer.elapsed();
-    }
 }
 
 void toggleTheme(bool save, bool lazy) {
