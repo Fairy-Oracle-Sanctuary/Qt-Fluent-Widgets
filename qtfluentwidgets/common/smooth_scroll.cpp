@@ -24,13 +24,9 @@ void SmoothScroll::wheelEvent(QWheelEvent* e) {
     if (delta == 0) {
         delta = e->pixelDelta().y() != 0 ? e->pixelDelta().y() : e->pixelDelta().x();
     }
-    
-    qInfo().noquote() << "[qfw][scroll] SmoothScroll::wheelEvent delta" << delta 
-                      << "smoothMode_" << static_cast<int>(smoothMode_);
 
     // For non-smooth mode, forward to the scroll area
     if (smoothMode_ == SmoothMode::NoSmooth) {
-        qInfo().noquote() << "[qfw][scroll] forwarding to widget_ (NoSmooth)";
         QApplication::sendEvent(widget_, e);
         return;
     }
