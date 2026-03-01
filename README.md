@@ -12,7 +12,7 @@
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](LICENSE)
-[![Platform Win32](https://img.shields.io/badge/Platform-Win32-blue?color=#4ec820)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue?color=#4ec820)]()
 [![Qt6](https://img.shields.io/badge/Qt-6.3+-green.svg)](https://www.qt.io)
 
 </div>
@@ -50,11 +50,13 @@ This library aims to bring the beautiful Fluent Design System to native C++ Qt a
 
 ## 📋 Requirements
 
-- **Qt 6.3+** (Qt 6.7 recommended)
+- **Qt 6.3+**
+  - Windows: Qt 6.3+ recommended
+  - macOS: Qt 6.9.0 recommended
 - **CMake 3.16+**
 - **C++17 compiler**
-  - MSVC 2019+ (supported)
-  - MinGW GCC (supported)
+  - MSVC 2019+ (Windows)
+  - Clang (macOS, via Xcode or Command Line Tools)
 
 ## 🚀 Quick Start
 
@@ -123,8 +125,8 @@ qtfluentwidgets_app.exe     # Windows
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| Windows | ✅ Full support | Includes Acrylic/Mica effects, frameless window |
-| macOS | 🚧 Placeholder | Frameless window not yet implemented |
+| Windows | ✅ Full support | Acrylic/Mica effects, frameless window |
+| macOS | ✅ Full support | Frameless window with native Cocoa integration |
 | Linux | 🚧 Placeholder | Frameless window not yet implemented |
 
 ## 📝 License
