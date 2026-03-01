@@ -1,8 +1,8 @@
 #pragma once
 
 /**
- * macOS Frameless Window - Placeholder
- * Full implementation needed for macOS support
+ * macOS Frameless Window
+ * Ported from qframelesswindow/mac/__init__.py
  */
 
 #include <QDialog>
@@ -11,28 +11,67 @@
 
 namespace qfw {
 
-class MacFramelessWindow : public QWidget {
+class MacWindowEffect;
+
+class MacFramelessWindowBase {
+public:
+    MacFramelessWindowBase();
+    virtual ~MacFramelessWindowBase();
+
+    void setResizeEnabled(bool enabled);
+    bool isResizeEnabled() const;
+
+    void setSystemTitleBarButtonVisible(bool visible);
+    bool isSystemButtonVisible() const;
+
+protected:
+    void initFrameless(QWidget* window);
+    void updateFrameless();
+    void hideSystemTitleBar();
+    void extendTitleBarToClientArea();
+    void updateSystemButtonRect();
+    void updateSystemTitleBar();
+
+    MacWindowEffect* windowEffect_ = nullptr;
+    bool resizeEnabled_ = true;
+    bool isSystemButtonVisible_ = false;
+    void* nsWindow_ = nullptr;  // NSWindow* stored as void* to avoid Obj-C in header
+};
+
+class MacFramelessWindow : public QWidget, public MacFramelessWindowBase {
     Q_OBJECT
+
 public:
-    explicit MacFramelessWindow(QWidget* parent = nullptr) : QWidget(parent) {}
+    explicit MacFramelessWindow(QWidget* parent = nullptr);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
 };
 
-class MacFramelessMainWindow : public QMainWindow {
+class MacFramelessMainWindow : public QMainWindow, public MacFramelessWindowBase {
     Q_OBJECT
+
 public:
-    explicit MacFramelessMainWindow(QWidget* parent = nullptr) : QMainWindow(parent) {}
+    explicit MacFramelessMainWindow(QWidget* parent = nullptr);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
 };
 
-class MacFramelessDialog : public QDialog {
+class MacFramelessDialog : public QDialog, public MacFramelessWindowBase {
     Q_OBJECT
+
 public:
-    explicit MacFramelessDialog(QWidget* parent = nullptr) : QDialog(parent) {}
+    explicit MacFramelessDialog(QWidget* parent = nullptr);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
 };
 
-class MacWindowEffect {
-public:
-    static void setAcrylicEffect(QWidget* widget) { Q_UNUSED(widget) }
-    static void setMicaEffect(QWidget* widget) { Q_UNUSED(widget) }
-};
-
-} // namespace qfw
+}  // namespace qfw

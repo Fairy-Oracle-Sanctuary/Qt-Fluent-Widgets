@@ -194,6 +194,22 @@ if(WIN32)
     )
 endif()
 
+if(APPLE)
+    # Enable Objective-C++ for macOS
+    enable_language(OBJCXX)
+    
+    target_sources(qtfluentwidgets PRIVATE
+        components/window/mac_frameless_window.mm
+        components/window/mac_frameless_window.h
+        components/window/mac_window_effect.mm
+        components/window/mac_window_effect.h
+    )
+    
+    # Link macOS frameworks
+    find_library(COCOA_FRAMEWORK Cocoa REQUIRED)
+    target_link_libraries(qtfluentwidgets PUBLIC ${COCOA_FRAMEWORK})
+endif()
+
 target_link_libraries(qtfluentwidgets PUBLIC Qt6::Widgets Qt6::Svg)
 
 # Link Windows libraries that may be missing
