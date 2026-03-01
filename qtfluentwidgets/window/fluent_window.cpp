@@ -15,8 +15,14 @@
 #include "components/navigation/navigation_bar.h"
 #include "components/navigation/navigation_interface.h"
 #include "components/window/title_bar.h"
-#include "components/window/windows_window_effect.h"
 #include "window/stacked_widget.h"
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+
+#include "components/window/windows_window_effect.h"
+
+#endif
 
 namespace qfw {
 
@@ -63,6 +69,7 @@ QColor FluentWidget::normalBackgroundColor() const {
 }
 
 void FluentWidget::applyMica() {
+#ifdef Q_OS_WIN
     const HWND hWnd = reinterpret_cast<HWND>(winId());
     if (!hWnd) {
         return;
@@ -70,6 +77,7 @@ void FluentWidget::applyMica() {
 
     WindowsWindowEffect eff;
     eff.setMicaEffect(hWnd, isDarkTheme(), false);
+#endif
 }
 
 void FluentWidget::setMicaEffectEnabled(bool enabled) {
