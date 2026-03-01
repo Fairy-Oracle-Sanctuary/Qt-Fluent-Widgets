@@ -95,7 +95,7 @@ void ToolBar::initWidget() {
     supportButton_->setToolTip(tr("Support me"));
     feedbackButton_->setToolTip(tr("Send feedback"));
 
-    connect(themeButton_, &QToolButton::clicked, this, []() { toggleTheme(true, true); });
+    connect(themeButton_, &QToolButton::clicked, this, []() { toggleTheme(true, false); });
     connect(supportButton_, &QToolButton::clicked, this,
             []() { emit signalBus().supportSignal(); });
 
