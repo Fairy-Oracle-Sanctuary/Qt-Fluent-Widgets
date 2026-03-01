@@ -179,15 +179,20 @@ qt_add_library(qtfluentwidgets STATIC
     components/window/title_bar.cpp
     components/window/title_bar.h
     components/window/frameless_window.h
-    components/window/windows_frameless_window.cpp
-    components/window/windows_frameless_window.h
-    components/window/windows_window_effect.cpp
-    components/window/windows_window_effect.h
     components/window/mac_frameless_window.h
     components/window/linux_frameless_window.h
 
     resources/resource.qrc
 )
+
+if(WIN32)
+    target_sources(qtfluentwidgets PRIVATE
+        components/window/windows_frameless_window.cpp
+        components/window/windows_frameless_window.h
+        components/window/windows_window_effect.cpp
+        components/window/windows_window_effect.h
+    )
+endif()
 
 target_link_libraries(qtfluentwidgets PUBLIC Qt6::Widgets Qt6::Svg)
 

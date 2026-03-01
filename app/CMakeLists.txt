@@ -63,6 +63,12 @@ qt_add_executable(qtfluentwidgets_app
     resources/gallery.qrc
 )
 
+if(APPLE)
+    set_target_properties(qtfluentwidgets_app PROPERTIES
+        MACOSX_BUNDLE TRUE
+    )
+endif()
+
 # Windows exe icon and subsystem
 if(WIN32)
     target_sources(qtfluentwidgets_app PRIVATE resources/app.rc)
