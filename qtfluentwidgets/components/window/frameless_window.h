@@ -14,6 +14,7 @@ namespace qfw {
 using FramelessWindow = WindowsFramelessWindow;
 using FramelessMainWindow = WindowsFramelessMainWindow;
 using FramelessDialog = WindowsFramelessDialog;
+using AcrylicWindow = WindowsFramelessWindow;
 using WindowEffect = WindowsWindowEffect;
 }  // namespace qfw
 #elif defined(Q_OS_MAC)
@@ -24,6 +25,7 @@ namespace qfw {
 using FramelessWindow = MacFramelessWindow;
 using FramelessMainWindow = MacFramelessMainWindow;
 using FramelessDialog = MacFramelessDialog;
+using AcrylicWindow = MacAcrylicWindow;
 using WindowEffect = MacWindowEffect;
 }  // namespace qfw
 #else
@@ -33,6 +35,7 @@ namespace qfw {
 using FramelessWindow = LinuxFramelessWindow;
 using FramelessMainWindow = LinuxFramelessMainWindow;
 using FramelessDialog = LinuxFramelessDialog;
+using AcrylicWindow = LinuxFramelessWindow;
 using WindowEffect = LinuxWindowEffect;
 }  // namespace qfw
 #endif

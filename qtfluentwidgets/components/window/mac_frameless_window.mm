@@ -1,7 +1,14 @@
 #include "components/window/mac_frameless_window.h"
 
 #include <QDebug>
+#include <QPaintEvent>
+#include <QRect>
 #include <QResizeEvent>
+#include <QWidget>
+#include <QtGlobal>
+
+#include "components/window/mac_window_effect.h"
+#include "components/window/title_bar.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -25,25 +32,24 @@ void MacFramelessWindowBase::setResizeEnabled(bool enabled) {
     resizeEnabled_ = enabled;
 }
 
-bool MacFramelessWindowBase::isResizeEnabled() const {
-    return resizeEnabled_;
-}
+bool MacFramelessWindowBase::isResizeEnabled() const { return resizeEnabled_; }
 
 void MacFramelessWindowBase::setSystemTitleBarButtonVisible(bool visible) {
     isSystemButtonVisible_ = visible;
-    
-    if (!nsWindow_) return;
-    
+
+    if (!nsWindow_) {
+        return;
+    }
+
     NSWindow* window = static_cast<NSWindow*>(nsWindow_);
-    
-    // Show/hide toolbar button
+
     [window setShowsToolbarButton:visible];
-    
-    // Show/hide standard window buttons (close, minimize, zoom)
-    [[window standardWindowButton:NSWindowCloseButton] setHidden:!visible];
-    [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:!visible];
-    [[window standardWindowButton:NSWindowZoomButton] setHidden:!visible];
-    
+
+    const BOOL hidden = visible ? NO : YES;
+    [[window standardWindowButton:NSWindowCloseButton] setHidden:hidden];
+    [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:hidden];
+    [[window standardWindowButton:NSWindowZoomButton] setHidden:hidden];
+
     if (visible) {
         updateSystemButtonRect();
     }
@@ -53,114 +59,194 @@ bool MacFramelessWindowBase::isSystemButtonVisible() const {
     return isSystemButtonVisible_;
 }
 
+void MacFramelessWindowBase::setStayOnTop(bool isTop) {
+    if (!window_) {
+        return;
+    }
+
+    const QRect oldGeometry = window_->geometry();
+
+    if (isTop) {
+        window_->setWindowFlags(window_->windowFlags() | Qt::WindowStaysOnTopHint);
+    } else {
+        window_->setWindowFlags(window_->windowFlags() & ~Qt::WindowStaysOnTopHint);
+    }
+
+    updateFrameless();
+    window_->show();
+
+    window_->setGeometry(oldGeometry);
+}
+
+void MacFramelessWindowBase::toggleStayOnTop() {
+    if (!window_) {
+        return;
+    }
+
+    const bool isTop = (window_->windowFlags() & Qt::WindowStaysOnTopHint);
+    setStayOnTop(!isTop);
+}
+
+void MacFramelessWindowBase::setTitleBar(TitleBar* titleBar) {
+    if (!window_ || !titleBar) {
+        return;
+    }
+
+    if (titleBar_) {
+        titleBar_->hide();
+        titleBar_->deleteLater();
+    }
+
+    titleBar_ = titleBar;
+    titleBar_->setParent(window_);
+    titleBar_->raise();
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    titleBar_->setAttribute(Qt::WA_LayoutOnEntireRect, true);
+#endif
+}
+
+TitleBar* MacFramelessWindowBase::titleBar() const { return titleBar_; }
+
+void MacFramelessWindowBase::clearTitleBar() {
+    if (titleBar_) {
+        titleBar_->hide();
+        titleBar_->setParent(nullptr);
+        titleBar_->deleteLater();
+        titleBar_ = nullptr;
+    }
+}
+
 void MacFramelessWindowBase::initFrameless(QWidget* window) {
     if (!window) return;
-    
+
+    window_ = window;
+
+    // Window effect
+    if (!windowEffect_) {
+        windowEffect_ = new MacWindowEffect();
+    }
+
+    // must enable acrylic effect before creating title bar
+    if (qobject_cast<MacAcrylicWindow*>(window_)) {
+        window_->setAttribute(Qt::WA_TranslucentBackground);
+        window_->setStyleSheet(QStringLiteral("background: transparent"));
+        windowEffect_->setAcrylicEffect(window_);
+    }
+
+    // Create default title bar
+    if (!titleBar_) {
+        titleBar_ = new TitleBar(window_);
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    window_->setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false);
+    titleBar_->setAttribute(Qt::WA_LayoutOnEntireRect, true);
+#endif
+
     // Get NSWindow from QWidget
     NSWindow* nsWindow = getNSWindow(window->winId());
     if (!nsWindow) {
         qWarning() << "Failed to get NSWindow from QWidget";
         return;
     }
-    
     nsWindow_ = nsWindow;
-    
+
     // Hide system title bar
     hideSystemTitleBar();
+
+    // Keep python-like behavior
+    updateFrameless();
+    window_->resize(500, 500);
+    titleBar_->raise();
 }
 
 void MacFramelessWindowBase::updateFrameless() {
     if (!nsWindow_) return;
-    
+
     NSWindow* window = static_cast<NSWindow*>(nsWindow_);
-    
+
     // Re-extend title bar to client area
     extendTitleBarToClientArea();
-    
+
     // Restore button visibility
     setSystemTitleBarButtonVisible(isSystemButtonVisible_);
-}
-
-void MacFramelessWindowBase::hideSystemTitleBar() {
-    if (!nsWindow_) return;
-    
-    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
-    
-    // Extend view to title bar region
-    extendTitleBarToClientArea();
-    
-    // Disable the moving behavior of system
-    [window setMovableByWindowBackground:NO];
-    [window setMovable:NO];
-    
-    // Hide title bar buttons and title
-    [window setTitleVisibility:NSWindowTitleHidden];
-    setSystemTitleBarButtonVisible(false);
-}
-
-void MacFramelessWindowBase::extendTitleBarToClientArea() {
-    if (!nsWindow_) return;
-    
-    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
-    
-    // Set style mask to include full size content view
-    NSUInteger styleMask = [window styleMask];
-    styleMask |= NSWindowStyleMaskFullSizeContentView;
-    [window setStyleMask:styleMask];
-    
-    // Make title bar transparent
-    [window setTitlebarAppearsTransparent:YES];
-}
-
-void MacFramelessWindowBase::updateSystemButtonRect() {
-    if (!nsWindow_ || !isSystemButtonVisible_) return;
-    
-    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
-    
-    // Get system title bar buttons
-    NSButton* closeButton = [window standardWindowButton:NSWindowCloseButton];
-    NSButton* miniaturizeButton = [window standardWindowButton:NSWindowMiniaturizeButton];
-    NSButton* zoomButton = [window standardWindowButton:NSWindowZoomButton];
-    
-    if (!closeButton || !miniaturizeButton || !zoomButton) return;
-    
-    // Get title bar
-    NSView* titleBar = [zoomButton superview];
-    if (!titleBar) return;
-    
-    CGFloat titleBarHeight = [titleBar frame].size.height;
-    
-    // Calculate spacing between buttons
-    CGFloat spacing = [miniaturizeButton frame].origin.x - [closeButton frame].origin.x;
-    CGFloat width = [miniaturizeButton frame].size.width;
-    CGFloat height = [miniaturizeButton frame].size.height;
-    
-    // Get window content view size
-    NSView* contentView = [window contentView];
-    NSSize viewSize = contentView ? [contentView frame].size : [window frame].size;
-    
-    // Calculate center position for buttons
-    // Default: left side of title bar (similar to Python version)
-    CGFloat centerX = 37.5;  // Half of default 75 width
-    CGFloat centerY = titleBarHeight / 2.0;
-    
-    // NSWindow coordinate system origin is bottom-left, so we need to flip Y
-    centerY = titleBarHeight - centerY;
-    
-    // Adjust button positions
-    NSPoint midOrigin = NSMakePoint(centerX - width / 2.0, centerY - height / 2.0);
-    [miniaturizeButton setFrameOrigin:midOrigin];
-    
-    NSPoint leftOrigin = NSMakePoint(midOrigin.x - spacing, midOrigin.y);
-    [closeButton setFrameOrigin:leftOrigin];
-    
-    NSPoint rightOrigin = NSMakePoint(midOrigin.x + spacing, midOrigin.y);
-    [zoomButton setFrameOrigin:rightOrigin];
 }
 
 void MacFramelessWindowBase::updateSystemTitleBar() {
     extendTitleBarToClientArea();
     setSystemTitleBarButtonVisible(isSystemButtonVisible_);
+}
+
+void MacFramelessWindowBase::hideSystemTitleBar() {
+    if (!nsWindow_) {
+        return;
+    }
+
+    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
+
+    extendTitleBarToClientArea();
+
+    [window setMovableByWindowBackground:NO];
+    [window setMovable:NO];
+
+    [window setTitleVisibility:NSWindowTitleHidden];
+    setSystemTitleBarButtonVisible(false);
+}
+
+void MacFramelessWindowBase::extendTitleBarToClientArea() {
+    if (!nsWindow_) {
+        return;
+    }
+
+    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
+
+    NSUInteger styleMask = [window styleMask];
+    styleMask |= NSWindowStyleMaskFullSizeContentView;
+    [window setStyleMask:styleMask];
+
+    [window setTitlebarAppearsTransparent:YES];
+}
+
+void MacFramelessWindowBase::updateSystemButtonRect() {
+    if (!nsWindow_ || !isSystemButtonVisible_) {
+        return;
+    }
+
+    NSWindow* window = static_cast<NSWindow*>(nsWindow_);
+
+    NSButton* closeButton = [window standardWindowButton:NSWindowCloseButton];
+    NSButton* miniaturizeButton = [window standardWindowButton:NSWindowMiniaturizeButton];
+    NSButton* zoomButton = [window standardWindowButton:NSWindowZoomButton];
+
+    if (!closeButton || !miniaturizeButton || !zoomButton) {
+        return;
+    }
+
+    NSView* titleBar = [zoomButton superview];
+    if (!titleBar) {
+        return;
+    }
+
+    const CGFloat titleBarHeight = [titleBar frame].size.height;
+
+    const CGFloat spacing = [miniaturizeButton frame].origin.x - [closeButton frame].origin.x;
+    const CGFloat width = [miniaturizeButton frame].size.width;
+    const CGFloat height = [miniaturizeButton frame].size.height;
+
+    // Match python's default systemTitleBarRect(): QRect(0, 0, 75, h)
+    const CGFloat centerX = 37.5;
+    CGFloat centerY = titleBarHeight / 2.0;
+    centerY = titleBarHeight - centerY;
+
+    const NSPoint midOrigin = NSMakePoint(centerX - width / 2.0, centerY - height / 2.0);
+    [miniaturizeButton setFrameOrigin:midOrigin];
+
+    const NSPoint leftOrigin = NSMakePoint(midOrigin.x - spacing, midOrigin.y);
+    [closeButton setFrameOrigin:leftOrigin];
+
+    const NSPoint rightOrigin = NSMakePoint(midOrigin.x + spacing, midOrigin.y);
+    [zoomButton setFrameOrigin:rightOrigin];
 }
 
 // ============================================================================
@@ -171,14 +257,19 @@ MacFramelessWindow::MacFramelessWindow(QWidget* parent) : QWidget(parent) {
     initFrameless(this);
 }
 
+MacAcrylicWindow::MacAcrylicWindow(QWidget* parent) : MacFramelessWindow(parent) {}
+
 void MacFramelessWindow::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
+    if (titleBar()) {
+        titleBar()->resize(width(), titleBar()->height());
+    }
     updateSystemTitleBar();
 }
 
 void MacFramelessWindow::changeEvent(QEvent* event) {
     QWidget::changeEvent(event);
-    
+
     if (event->type() == QEvent::WindowStateChange) {
         updateSystemTitleBar();
     } else if (event->type() == QEvent::Resize) {
@@ -201,12 +292,15 @@ MacFramelessMainWindow::MacFramelessMainWindow(QWidget* parent) : QMainWindow(pa
 
 void MacFramelessMainWindow::resizeEvent(QResizeEvent* event) {
     QMainWindow::resizeEvent(event);
+    if (titleBar()) {
+        titleBar()->resize(width(), titleBar()->height());
+    }
     updateSystemTitleBar();
 }
 
 void MacFramelessMainWindow::changeEvent(QEvent* event) {
     QMainWindow::changeEvent(event);
-    
+
     if (event->type() == QEvent::WindowStateChange) {
         updateSystemTitleBar();
     } else if (event->type() == QEvent::Resize) {
@@ -225,16 +319,28 @@ void MacFramelessMainWindow::paintEvent(QPaintEvent* event) {
 
 MacFramelessDialog::MacFramelessDialog(QWidget* parent) : QDialog(parent) {
     initFrameless(this);
+    if (auto* tb = titleBar()) {
+        if (tb->minimizeButton()) {
+            tb->minimizeButton()->hide();
+        }
+        if (tb->maximizeButton()) {
+            tb->maximizeButton()->hide();
+        }
+        tb->setDoubleClickEnabled(false);
+    }
 }
 
 void MacFramelessDialog::resizeEvent(QResizeEvent* event) {
     QDialog::resizeEvent(event);
+    if (titleBar()) {
+        titleBar()->resize(width(), titleBar()->height());
+    }
     updateSystemTitleBar();
 }
 
 void MacFramelessDialog::changeEvent(QEvent* event) {
     QDialog::changeEvent(event);
-    
+
     if (event->type() == QEvent::WindowStateChange) {
         updateSystemTitleBar();
     } else if (event->type() == QEvent::Resize) {
