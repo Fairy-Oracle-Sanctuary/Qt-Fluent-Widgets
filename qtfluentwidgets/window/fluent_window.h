@@ -173,6 +173,7 @@ public:
     void removeInterface(QWidget* subInterface, bool isDelete = false) override;
 
 protected:
+    void showEvent(QShowEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;
     QPointer<QHBoxLayout> widgetLayout_;
 
@@ -215,6 +216,7 @@ public:
     void removeInterface(QWidget* subInterface, bool isDelete = false) override;
 
 protected:
+    void showEvent(QShowEvent* e) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private slots:

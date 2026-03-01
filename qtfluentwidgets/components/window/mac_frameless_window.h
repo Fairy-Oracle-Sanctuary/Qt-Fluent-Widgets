@@ -7,26 +7,61 @@
 
 #include <QDialog>
 #include <QMainWindow>
+#include <QShowEvent>
 #include <QWidget>
 
 namespace qfw {
 
-class MacFramelessWindow : public QWidget {
-    Q_OBJECT
+class MacFramelessWindowBase {
 public:
-    explicit MacFramelessWindow(QWidget* parent = nullptr) : QWidget(parent) {}
+    MacFramelessWindowBase();
+    virtual ~MacFramelessWindowBase();
+
+    void setResizeEnabled(bool enabled);
+    bool isResizeEnabled() const;
+
+protected:
+    void initFrameless(QWidget* window);
+    void applyCocoaWindowStyle(QWidget* window);
+
+    bool resizeEnabled_ = true;
 };
 
-class MacFramelessMainWindow : public QMainWindow {
+class MacFramelessWindow : public QWidget, public MacFramelessWindowBase {
     Q_OBJECT
 public:
-    explicit MacFramelessMainWindow(QWidget* parent = nullptr) : QMainWindow(parent) {}
+    explicit MacFramelessWindow(QWidget* parent = nullptr);
+
+protected:
+    void showEvent(QShowEvent* e) override;
+
+private:
+    bool cocoaApplied_ = false;
 };
 
-class MacFramelessDialog : public QDialog {
+class MacFramelessMainWindow : public QMainWindow, public MacFramelessWindowBase {
     Q_OBJECT
 public:
-    explicit MacFramelessDialog(QWidget* parent = nullptr) : QDialog(parent) {}
+    explicit MacFramelessMainWindow(QWidget* parent = nullptr);
+
+protected:
+    void showEvent(QShowEvent* e) override;
+    bool event(QEvent* e) override;
+
+private:
+    bool cocoaApplied_ = false;
+};
+
+class MacFramelessDialog : public QDialog, public MacFramelessWindowBase {
+    Q_OBJECT
+public:
+    explicit MacFramelessDialog(QWidget* parent = nullptr);
+
+protected:
+    void showEvent(QShowEvent* e) override;
+
+private:
+    bool cocoaApplied_ = false;
 };
 
 class MacWindowEffect {
