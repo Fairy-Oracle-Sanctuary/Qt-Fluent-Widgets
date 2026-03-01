@@ -640,9 +640,6 @@ bool SmoothScrollDelegate::eventFilter(QObject* obj, QEvent* event) {
     if (angleDelta.isNull() && !pixelDelta.isNull()) {
         angleDelta = pixelDelta;
     }
-    
-    qInfo().noquote() << "[qfw][scroll] SmoothScrollDelegate::eventFilter angleDelta" << angleDelta
-                      << "pixelDelta" << pixelDelta;
 
     bool verticalAtEnd =
         (angleDelta.y() < 0 && vScrollBar_->value() == vScrollBar_->maximum()) ||
@@ -651,9 +648,6 @@ bool SmoothScrollDelegate::eventFilter(QObject* obj, QEvent* event) {
     bool horizontalAtEnd =
         (angleDelta.x() < 0 && hScrollBar_->value() == hScrollBar_->maximum()) ||
         (angleDelta.x() > 0 && hScrollBar_->value() == hScrollBar_->minimum());
-
-    qInfo().noquote() << "[qfw][scroll] verticalAtEnd" << verticalAtEnd << "horizontalAtEnd" << horizontalAtEnd
-                      << "vVal" << vScrollBar_->value() << "vMax" << vScrollBar_->maximum();
 
     if (verticalAtEnd && horizontalAtEnd) {
         return false;
