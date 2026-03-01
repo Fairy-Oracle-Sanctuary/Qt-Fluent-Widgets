@@ -58,8 +58,7 @@ void OptionsSettingCard::onButtonClicked(QAbstractButton* button) {
     }
 
     QVariant value = button->property(configName_.toUtf8().constData());
-    QConfig::instance().set(*configItem_, value, true, true,
-                            true);  // save=true, emitSignal=true, lazyUpdate=true
+    QConfig::instance().set(*configItem_, value, true, true, true);
 
     choiceLabel_->setText(button->text());
     choiceLabel_->adjustSize();
@@ -67,8 +66,7 @@ void OptionsSettingCard::onButtonClicked(QAbstractButton* button) {
 }
 
 void OptionsSettingCard::setValue(const QVariant& value) {
-    QConfig::instance().set(*configItem_, value, false, true,
-                            true);  // save=false, emitSignal=true, lazyUpdate=true
+    QConfig::instance().set(*configItem_, value, false, true, true);
 
     const QList<QAbstractButton*>& buttons = buttonGroup_->buttons();
     for (QAbstractButton* button : buttons) {
