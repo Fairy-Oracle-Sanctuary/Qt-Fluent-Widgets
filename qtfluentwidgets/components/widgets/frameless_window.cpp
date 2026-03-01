@@ -6,11 +6,18 @@
 
 #include "common/config.h"
 #include "components/window/title_bar.h"
+
+#ifdef Q_OS_WIN
 #include "components/window/windows_window_effect.h"
+#endif
+
+#ifdef Q_OS_MAC
+#include "components/window/mac_window_effect.h"
+#endif
 
 namespace qfw {
 
-FluentMainWindow::FluentMainWindow(QWidget* parent) : WindowsFramelessMainWindow(parent) {
+FluentMainWindow::FluentMainWindow(QWidget* parent) : FramelessMainWindow(parent) {
     setWindowTitle(QStringLiteral("qfluentwidgets frameless window"));
 
     auto* root = new QWidget(this);
@@ -61,6 +68,7 @@ void FluentMainWindow::setContentWidget(QWidget* widget) {
 }
 
 void FluentMainWindow::applyMica() {
+#ifdef Q_OS_WIN
     const HWND hWnd = reinterpret_cast<HWND>(winId());
     if (!hWnd) {
         return;
@@ -68,10 +76,14 @@ void FluentMainWindow::applyMica() {
 
     WindowsWindowEffect eff;
     eff.setMicaEffect(hWnd, qfw::isDarkTheme(), false);
+#elif defined(Q_OS_MAC)
+    MacWindowEffect eff;
+    eff.setMicaEffect(this, qfw::isDarkTheme(), false);
+#endif
 }
 
 void FluentMainWindow::showEvent(QShowEvent* e) {
-    WindowsFramelessMainWindow::showEvent(e);
+    FramelessMainWindow::showEvent(e);
 
     if (!micaApplied_) {
         micaApplied_ = true;

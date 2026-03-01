@@ -1,5 +1,7 @@
 #include "components/window/windows_frameless_window.h"
 
+#ifdef Q_OS_WIN
+
 #include <dwmapi.h>
 #include <windows.h>
 #include <windowsx.h>
@@ -382,3 +384,5 @@ void WindowsFramelessDialog::showEvent(QShowEvent* e) {
 }
 
 }  // namespace qfw
+
+#endif  // Q_OS_WIN
