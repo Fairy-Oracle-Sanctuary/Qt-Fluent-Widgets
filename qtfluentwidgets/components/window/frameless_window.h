@@ -16,7 +16,7 @@ using FramelessMainWindow = WindowsFramelessMainWindow;
 using FramelessDialog = WindowsFramelessDialog;
 using WindowEffect = WindowsWindowEffect;
 }  // namespace qfw
-#elif defined(Q_OS_MAC)
+#elif defined(Q_OS_MACOS)
 // macOS implementations (to be implemented)
 #include "mac_frameless_window.h"
 namespace qfw {
