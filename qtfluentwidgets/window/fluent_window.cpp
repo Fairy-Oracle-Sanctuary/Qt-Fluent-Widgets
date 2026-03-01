@@ -27,7 +27,7 @@
 #include "components/window/windows_window_effect.h"
 
 #elif defined(Q_OS_MAC)
-#include "components/window/mac_window_effect.h"
+#include "components/window/mac_frameless_window.h"
 #endif
 
 namespace qfw {
