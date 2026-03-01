@@ -1,5 +1,13 @@
 #pragma once
 
+// Disable Windows min/max macros to prevent conflicts with C++ standard library
+// Define NOMINMAX before any Windows headers are included
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
+
 #include <QColor>
 #include <QMetaType>
 #include <QObject>
@@ -30,8 +38,8 @@ public:
     bool validate(const QVariant& value) const override;
     QVariant correct(const QVariant& value) const override;
 
-    double min() const;
-    double max() const;
+    double minimum() const;
+    double maximum() const;
 
 private:
     double min_;

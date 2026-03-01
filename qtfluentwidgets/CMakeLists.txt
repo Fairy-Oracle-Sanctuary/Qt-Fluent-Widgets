@@ -180,11 +180,22 @@ qt_add_library(qtfluentwidgets STATIC
     components/window/title_bar.h
     components/window/frameless_window.h
     components/window/mac_frameless_window.h
-    components/window/mac_frameless_window.mm
     components/window/linux_frameless_window.h
 
     resources/resource.qrc
 )
+
+# macOS-specific Objective-C++ source
+if(APPLE)
+    target_sources(qtfluentwidgets PRIVATE
+        components/window/mac_frameless_window.mm
+    )
+else()
+    # Stub implementation for non-macOS platforms
+    target_sources(qtfluentwidgets PRIVATE
+        components/window/mac_frameless_window.cpp
+    )
+endif()
 
 if(WIN32)
     target_sources(qtfluentwidgets PRIVATE
@@ -196,15 +207,6 @@ if(WIN32)
 endif()
 
 target_link_libraries(qtfluentwidgets PUBLIC Qt6::Widgets Qt6::Svg)
-
-if(WIN32)
-    target_sources(qtfluentwidgets PRIVATE
-        components/window/windows_frameless_window.cpp
-        components/window/windows_window_effect.cpp
-        components/window/windows_frameless_window.h
-        components/window/windows_window_effect.h
-    )
-endif()
 
 if(APPLE)
     target_link_libraries(qtfluentwidgets PUBLIC "-framework Cocoa")

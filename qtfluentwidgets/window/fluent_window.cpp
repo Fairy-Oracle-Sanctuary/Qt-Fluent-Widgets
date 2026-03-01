@@ -17,16 +17,17 @@
 #include "components/navigation/navigation_interface.h"
 #include "components/window/frameless_window.h"
 #include "components/window/title_bar.h"
-#ifdef Q_OS_WIN
-#include "components/window/windows_window_effect.h"
-#endif
 #include "window/stacked_widget.h"
 
 #ifdef Q_OS_WIN
+// Disable Windows min/max macros to avoid conflicts with C++ standard library
+#define NOMINMAX
 #include <windows.h>
 
 #include "components/window/windows_window_effect.h"
 
+#elif defined(Q_OS_MAC)
+#include "components/window/mac_window_effect.h"
 #endif
 
 namespace qfw {

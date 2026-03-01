@@ -1,5 +1,10 @@
 #include "components/window/windows_frameless_window.h"
 
+// Disable Windows min/max macros before including Windows headers
+#ifdef Q_OS_WIN
+#define NOMINMAX
+#endif
+
 #include <dwmapi.h>
 #include <windows.h>
 #include <windowsx.h>
