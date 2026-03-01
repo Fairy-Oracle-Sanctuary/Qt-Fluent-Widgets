@@ -12,6 +12,7 @@
 namespace qfw {
 
 class MacWindowEffect;
+class TitleBar;
 
 class MacFramelessWindowBase {
 public:
@@ -24,6 +25,13 @@ public:
     void setSystemTitleBarButtonVisible(bool visible);
     bool isSystemButtonVisible() const;
 
+    void setStayOnTop(bool isTop);
+    void toggleStayOnTop();
+
+    void setTitleBar(TitleBar* titleBar);
+    TitleBar* titleBar() const;
+    void clearTitleBar();  // Remove and delete the title bar
+
 protected:
     void initFrameless(QWidget* window);
     void updateFrameless();
@@ -33,6 +41,8 @@ protected:
     void updateSystemTitleBar();
 
     MacWindowEffect* windowEffect_ = nullptr;
+    TitleBar* titleBar_ = nullptr;
+    QWidget* window_ = nullptr;
     bool resizeEnabled_ = true;
     bool isSystemButtonVisible_ = false;
     void* nsWindow_ = nullptr;  // NSWindow* stored as void* to avoid Obj-C in header
@@ -48,6 +58,13 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
     void changeEvent(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
+};
+
+class MacAcrylicWindow : public MacFramelessWindow {
+    Q_OBJECT
+
+public:
+    explicit MacAcrylicWindow(QWidget* parent = nullptr);
 };
 
 class MacFramelessMainWindow : public QMainWindow, public MacFramelessWindowBase {

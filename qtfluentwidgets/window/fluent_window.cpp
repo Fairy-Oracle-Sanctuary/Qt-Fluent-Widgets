@@ -24,6 +24,8 @@
 
 #include "components/window/windows_window_effect.h"
 
+#elif defined(Q_OS_MAC)
+#include "components/window/mac_window_effect.h"
 #endif
 
 namespace qfw {
@@ -36,17 +38,19 @@ FluentWidget::FluentWidget(QWidget* parent) : FluentMainWindow(parent) {
     backgroundColor_ = normalBackgroundColor();
 
     // FramelessWindow has its own StandardTitleBar. FluentWindow uses its own title bar,
-    // so hide the default one to avoid double title bars.
-    if (auto* standardTb = findChild<qfw::StandardTitleBar*>()) {
-        standardTb->hide();
-        standardTb->setFixedHeight(0);
-    }
+    // so remove the default one to avoid double title bars.
+    clearDefaultTitleBar();
 
     bgAni_ = new QPropertyAnimation(this, QByteArrayLiteral("backgroundColor"), this);
     bgAni_->setDuration(150);
 
     // enable mica by default on win11 like python
     setMicaEffectEnabled(true);
+
+#ifdef Q_OS_MAC
+    // Show system title bar buttons (traffic lights) on macOS
+    setSystemTitleBarButtonVisible(true);
+#endif
 
     // set up title bar (python: FluentWidgetTitleBar)
     setTitleBar(new qfw::FluentWidgetTitleBar(this));
@@ -79,6 +83,9 @@ void FluentWidget::applyMica() {
 
     WindowsWindowEffect eff;
     eff.setMicaEffect(hWnd, isDarkTheme(), false);
+#elif defined(Q_OS_MAC)
+    MacWindowEffect eff;
+    eff.setMicaEffect(this, isDarkTheme(), false);
 #endif
 }
 
@@ -127,6 +134,21 @@ void FluentWidget::setTitleBar(TitleBarBase* titleBar) {
     titleBar_ = titleBar;
     titleBar_->setParent(this);
     titleBar_->raise();
+
+#ifdef Q_OS_MAC
+    // Hide custom title bar buttons on macOS when system buttons are visible
+    if (isSystemButtonVisible()) {
+        if (auto* btn = titleBar_->minimizeButton()) {
+            btn->hide();
+        }
+        if (auto* btn = titleBar_->maximizeButton()) {
+            btn->hide();
+        }
+        if (auto* btn = titleBar_->closeButton()) {
+            btn->hide();
+        }
+    }
+#endif
 }
 
 void FluentWidget::onThemeChangedFinished() {
@@ -229,6 +251,8 @@ FluentTitleBar::FluentTitleBar(QWidget* parent) : TitleBar(parent) {
 
     // Rebuild the default TitleBar layout to match python:
     // remove window buttons from the main hBox, then add them into a top-aligned vBox on the right.
+
+
     if (auto* layout = hBoxLayout()) {
         layout->removeWidget(minimizeButton());
         layout->removeWidget(maximizeButton());
@@ -274,11 +298,21 @@ FluentTitleBar::FluentTitleBar(QWidget* parent) : TitleBar(parent) {
 // ============================================================================
 
 FluentWidgetTitleBar::FluentWidgetTitleBar(QWidget* parent) : FluentTitleBar(parent) {
+#ifdef Q_OS_MAC
+    // On macOS, hide icon and title, use minimal height for buttons only
+    iconLabel_->hide();
+    titleLabel_->hide();
+    // Button height is 32, but Python uses buttonLayout.sizeHint().height()
+    // which typically matches button height
+    const int h = closeButton() ? closeButton()->height() : 0;
+    setFixedHeight(h > 0 ? h : 32);
+#else
     hBoxLayout()->setContentsMargins(16, 0, 0, 0);
 
     // Height follows button row like python
     const int h = closeButton() ? closeButton()->height() : 0;
     setFixedHeight(h > 0 ? h : 32);
+#endif
 
     for (auto* button : findChildren<qfw::TitleBarButton*>()) {
         qfw::setStyleSheet(button, qfw::FluentStyleSheet::FluentWindow);

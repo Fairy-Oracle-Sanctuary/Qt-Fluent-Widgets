@@ -2,6 +2,7 @@
 
 #include <QFrame>
 #include <QPalette>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "common/config.h"
@@ -67,6 +68,21 @@ void FluentMainWindow::setContentWidget(QWidget* widget) {
     }
 }
 
+void FluentMainWindow::clearDefaultTitleBar() {
+    // Clear FluentMainWindow's titleBar_
+    if (titleBar_) {
+        titleBar_->hide();
+        titleBar_->setParent(nullptr);
+        delete titleBar_;
+        titleBar_ = nullptr;
+    }
+
+    // Also clear MacFramelessWindowBase's titleBar_ on macOS
+#ifdef Q_OS_MAC
+    MacFramelessWindowBase::clearTitleBar();
+#endif
+}
+
 void FluentMainWindow::applyMica() {
 #ifdef Q_OS_WIN
     const HWND hWnd = reinterpret_cast<HWND>(winId());
@@ -88,8 +104,11 @@ void FluentMainWindow::showEvent(QShowEvent* e) {
     if (!micaApplied_) {
         micaApplied_ = true;
 
-        // Apply after show, consistent with main.cpp
-        applyMica();
+        // Delay applyMica to let Qt finish setting up the Cocoa view hierarchy.
+        // On macOS, the NSView may not be added to contentView yet when showEvent fires.
+        QTimer::singleShot(0, this, [this]() {
+            applyMica();
+        });
 
         QObject::connect(&qfw::QConfig::instance(), &qfw::QConfig::themeChanged, this,
                          [this]() { applyMica(); });

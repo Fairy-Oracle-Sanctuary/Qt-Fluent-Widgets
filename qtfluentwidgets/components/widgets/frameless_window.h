@@ -16,6 +16,7 @@ public:
     explicit FluentMainWindow(QWidget* parent = nullptr);
 
     void setContentWidget(QWidget* widget);
+    void clearDefaultTitleBar();  // Remove the default StandardTitleBar
 
 protected:
     void showEvent(QShowEvent* e) override;
