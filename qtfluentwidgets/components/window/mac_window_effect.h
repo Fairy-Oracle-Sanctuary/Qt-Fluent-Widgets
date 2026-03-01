@@ -5,6 +5,8 @@
  * Ported from qframelesswindow/mac/window_effect.py
  */
 
+#include <QtGlobal>
+
 #ifdef Q_OS_MAC
 
 #include <QColor>

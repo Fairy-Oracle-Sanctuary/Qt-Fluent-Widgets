@@ -136,7 +136,7 @@ void MessageBoxUI::hideCancelButton() {
 // ============================================================================
 
 Dialog::Dialog(const QString& title, const QString& content, QWidget* parent)
-    : WindowsFramelessDialog(parent) {
+    : FramelessDialog(parent) {
     ui_ = new MessageBoxUI(this);
     ui_->setUpUi(title, content, this);
 
