@@ -125,7 +125,7 @@ void WindowsFramelessWindowBase::initFrameless(QWidget* window) {
 }
 
 bool WindowsFramelessWindowBase::handleNativeEvent(QWidget* window, void* message,
-                                                   qintptr* result) {
+                                                   nativeEvent_qintptr* result) {
     if (!window || !message) {
         return false;
     }
@@ -279,7 +279,7 @@ WindowsFramelessWindow::WindowsFramelessWindow(QWidget* parent) : QWidget(parent
 }
 
 bool WindowsFramelessWindow::nativeEvent(const QByteArray& eventType, void* message,
-                                         qintptr* result) {
+                                         nativeEvent_qintptr* result) {
     Q_UNUSED(eventType);
     if (handleNativeEvent(this, message, result)) {
         return true;
@@ -326,7 +326,7 @@ WindowsFramelessMainWindow::WindowsFramelessMainWindow(QWidget* parent) : QMainW
 }
 
 bool WindowsFramelessMainWindow::nativeEvent(const QByteArray& eventType, void* message,
-                                             qintptr* result) {
+                                             nativeEvent_qintptr* result) {
     Q_UNUSED(eventType);
     if (handleNativeEvent(this, message, result)) {
         return true;
@@ -360,7 +360,7 @@ WindowsFramelessDialog::WindowsFramelessDialog(QWidget* parent) : QDialog(parent
 }
 
 bool WindowsFramelessDialog::nativeEvent(const QByteArray& eventType, void* message,
-                                         qintptr* result) {
+                                         nativeEvent_qintptr* result) {
     Q_UNUSED(eventType);
     if (handleNativeEvent(this, message, result)) {
         return true;

@@ -4,7 +4,7 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 #include <QDebug>
-#include <cmath>
+#include <QtMath>
 
 namespace qfw {
 

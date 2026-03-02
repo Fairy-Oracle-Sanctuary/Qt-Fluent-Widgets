@@ -20,6 +20,7 @@
 #include <QWidget>
 #include <functional>
 
+#include "common/qtcompat.h"
 #include "components/widgets/scroll_bar.h"
 #include "components/widgets/tool_tip.h"
 
@@ -61,7 +62,7 @@ signals:
     void showMenuSig(QListWidgetItem* item);
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
 
 private:
     QPointer<RoundMenu> menu_;

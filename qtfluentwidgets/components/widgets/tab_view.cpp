@@ -183,7 +183,7 @@ void TabItem::resizeEvent(QResizeEvent* event) {
                        height() / 2 - closeButton_->height() / 2);
 }
 
-void TabItem::enterEvent(QEnterEvent* event) {
+void TabItem::enterEvent(enterEvent_QEnterEvent* event) {
     FluentPushButton::enterEvent(event);
     if (closeButtonDisplayMode_ == TabCloseButtonDisplayMode::OnHover) {
         closeButton_->show();

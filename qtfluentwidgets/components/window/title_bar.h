@@ -8,6 +8,8 @@
 #include <QPaintEvent>
 #include <QWidget>
 
+#include "common/qtcompat.h"
+
 namespace qfw {
 
 enum class TitleBarButtonState {
@@ -49,7 +51,7 @@ public:
     void setPressedBackgroundColor(const QColor& color);
 
 protected:
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
 

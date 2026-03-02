@@ -5,6 +5,8 @@
 #include <QPaintEvent>
 #include <QWidget>
 
+#include "common/qtcompat.h"
+
 namespace qfw {
 
 class WindowsWindowEffect;
@@ -22,7 +24,7 @@ public:
 protected:
     void initFrameless(QWidget* window);
 
-    bool handleNativeEvent(QWidget* window, void* message, qintptr* result);
+    bool handleNativeEvent(QWidget* window, void* message, nativeEvent_qintptr* result);
 
     WindowsWindowEffect* windowEffect_ = nullptr;
     bool resizeEnabled_ = true;
@@ -35,7 +37,7 @@ public:
     explicit WindowsFramelessWindow(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
 
@@ -50,7 +52,7 @@ public:
     explicit WindowsFramelessMainWindow(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
 
 private:
@@ -64,7 +66,7 @@ public:
     explicit WindowsFramelessDialog(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
 
 private:

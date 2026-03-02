@@ -49,7 +49,7 @@ void CheckBox::mouseReleaseEvent(QMouseEvent* e) {
     QCheckBox::mouseReleaseEvent(e);
 }
 
-void CheckBox::enterEvent(QEnterEvent* e) {
+void CheckBox::enterEvent(enterEvent_QEnterEvent* e) {
     isHover_ = true;
     update();
     QCheckBox::enterEvent(e);
