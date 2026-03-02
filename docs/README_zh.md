@@ -13,7 +13,7 @@
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](../LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue?color=#4ec820)]()
-[![Qt6](https://img.shields.io/badge/Qt-6.3+-green.svg)](https://www.qt.io)
+[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.3+-green.svg)](https://www.qt.io)
 
 </div>
 
@@ -50,9 +50,10 @@ Qt-Fluent-Widgets 是对 **zhiyiYo** 开发的流行库 [PyQt-Fluent-Widgets](ht
 
 ## 📋 系统要求
 
-- **Qt 6.3+**
-  - Windows: 推荐 Qt 6.3+
+- **Qt 5.15+ 或 Qt 6.3+**
+  - Windows: 推荐 Qt 6.7+
   - macOS: 推荐 Qt 6.9.0
+  - 也支持 Qt 5.15 LTS
 - **CMake 3.16+**
 - **C++17 编译器**
   - MSVC 2019+ (Windows)
