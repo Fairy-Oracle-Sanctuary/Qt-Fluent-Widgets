@@ -14,6 +14,7 @@
 #include <QWheelEvent>
 
 #include "common/icon.h"
+#include "common/qtcompat.h"
 #include "components/widgets/button.h"
 #include "components/widgets/scroll_bar.h"
 
@@ -124,7 +125,7 @@ public slots:
 
 protected:
     void resizeEvent(QResizeEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void showEvent(QShowEvent* e) override;
     void wheelEvent(QWheelEvent* e) override;

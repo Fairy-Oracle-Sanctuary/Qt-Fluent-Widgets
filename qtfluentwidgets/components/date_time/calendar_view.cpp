@@ -508,7 +508,7 @@ MonthScrollView::MonthScrollView(QWidget* parent)
 }
 
 void MonthScrollView::initItems() {
-    months_ = {
+    months_ = QStringList{
         tr("Jan"), tr("Feb"), tr("Mar"), tr("Apr"), tr("May"), tr("Jun"),
         tr("Jul"), tr("Aug"), tr("Sep"), tr("Oct"), tr("Nov"), tr("Dec"),
     };
@@ -592,7 +592,7 @@ DayScrollView::DayScrollView(QWidget* parent)
     // Must reset grid size here since base class constructor called base gridSize()
     setGridSize(gridSize());
 
-    weekDays_ = {tr("Mo"), tr("Tu"), tr("We"), tr("Th"), tr("Fr"), tr("Sa"), tr("Su")};
+    weekDays_ = QStringList{tr("Mo"), tr("Tu"), tr("We"), tr("Th"), tr("Fr"), tr("Sa"), tr("Su")};
 
     weekDayGroup_ = new QWidget(this);
     weekDayGroup_->setObjectName(QStringLiteral("weekDayGroup"));

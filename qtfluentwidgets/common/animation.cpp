@@ -178,7 +178,7 @@ void BackgroundAnimationWidget::_updateBackgroundColor(const QColor& targetColor
     bgAni->start();
 }
 
-void BackgroundAnimationWidget::enterEvent(QEnterEvent* e) {
+void BackgroundAnimationWidget::enterEvent(enterEvent_QEnterEvent* e) {
     _updateBackgroundColor(_hoverBackgroundColor());
 }
 void BackgroundAnimationWidget::leaveEvent(QEvent* e) {

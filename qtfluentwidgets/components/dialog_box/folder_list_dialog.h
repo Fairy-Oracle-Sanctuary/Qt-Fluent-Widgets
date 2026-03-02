@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "../widgets/scroll_area.h"
+#include "common/qtcompat.h"
 #include "mask_dialog_base.h"
 
 namespace qfw {
@@ -27,7 +28,7 @@ signals:
     void clicked();
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;

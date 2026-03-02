@@ -373,7 +373,7 @@ void ScrollBar::collapse() {
     }
 }
 
-void ScrollBar::enterEvent(QEnterEvent* event) {
+void ScrollBar::enterEvent(enterEvent_QEnterEvent* event) {
     isEnter_ = true;
     QTimer::singleShot(200, this, &ScrollBar::expand);
 }

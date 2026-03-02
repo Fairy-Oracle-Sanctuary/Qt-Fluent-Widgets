@@ -16,6 +16,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "common/qtcompat.h"
+
 namespace qfw {
 
 static QString applyThemeColorTokens(const QString& qss);
@@ -449,7 +451,7 @@ void StyleSheetCompose::remove(const QSharedPointer<StyleSheetBase>& source) {
 }
 
 static QColor themedColor(const QColor& base, bool darkTheme, const QString& token) {
-    float h = 0, s = 0, v = 0, a = 0;
+    QColor_HsvF_type h = 0, s = 0, v = 0, a = 0;
     base.getHsvF(&h, &s, &v, &a);
 
     if (darkTheme) {
@@ -490,8 +492,8 @@ static QColor themedColor(const QColor& base, bool darkTheme, const QString& tok
         }
     }
 
-    return QColor::fromHsvF(static_cast<qreal>(h), static_cast<qreal>(std::min(s, 1.0f)),
-                            static_cast<qreal>(std::min(v, 1.0f)), static_cast<qreal>(a));
+    return QColor::fromHsvF(h, std::min(s, static_cast<QColor_HsvF_type>(1.0f)),
+                            std::min(v, static_cast<QColor_HsvF_type>(1.0f)), a);
 }
 
 static QString applyThemeColorTokens(const QString& qss) {

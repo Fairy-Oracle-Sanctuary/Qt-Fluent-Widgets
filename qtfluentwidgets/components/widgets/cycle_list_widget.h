@@ -5,6 +5,7 @@
 #include <QTime>
 #include <QToolButton>
 
+#include "common/qtcompat.h"
 #include "common/icon.h"
 
 namespace qfw {
@@ -58,7 +59,7 @@ signals:
 
 protected:
     void wheelEvent(QWheelEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;
     bool eventFilter(QObject* obj, QEvent* e) override;

@@ -32,7 +32,7 @@ void BreadcrumbWidget::mouseReleaseEvent(QMouseEvent* e) {
     emit clicked();
 }
 
-void BreadcrumbWidget::enterEvent(QEnterEvent* e) {
+void BreadcrumbWidget::enterEvent(enterEvent_QEnterEvent* e) {
     QWidget::enterEvent(e);
     isHover_ = true;
     update();

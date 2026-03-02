@@ -7,10 +7,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg LinguistTools)
-qt_standard_project_setup()
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg LinguistTools)
 
-qt_add_executable(qtfluentwidgets_app
+
+function(universal_add_executable target)
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_executable(${target} ${ARGN})
+    else()
+        add_executable(${target} ${ARGN})
+        
+        if(MSVC)
+            target_compile_options(${target} PRIVATE /utf-8)
+        endif()
+
+    endif()
+endfunction()
+
+universal_add_executable(qtfluentwidgets_app
     main.cpp
     common/app_config.cpp
     common/app_config.h
@@ -87,8 +101,8 @@ endif()
 
 target_link_libraries(qtfluentwidgets_app PRIVATE
     qtfluentwidgets
-    Qt6::Widgets
-    Qt6::Svg
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Svg
 )
 
 target_include_directories(qtfluentwidgets_app PRIVATE
@@ -153,6 +167,7 @@ set(LUPDATE_SOURCES
     view/setting_interface.h
 )
 
+if(QT_VERSION_MAJOR EQUAL 6)
 qt_add_lupdate(qtfluentwidgets_app
     TS_FILES ${TS_FILES}
     SOURCES ${LUPDATE_SOURCES}
@@ -161,3 +176,4 @@ qt_add_lupdate(qtfluentwidgets_app
 qt_add_lrelease(qtfluentwidgets_app
     TS_FILES ${TS_FILES}
 )
+endif()

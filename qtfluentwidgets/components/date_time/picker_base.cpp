@@ -401,7 +401,7 @@ void PickerBase::reset() {
     }
 }
 
-void PickerBase::enterEvent(QEnterEvent* e) {
+void PickerBase::enterEvent(enterEvent_QEnterEvent* e) {
     setButtonProperty("enter", true);
     QPushButton::enterEvent(e);
 }

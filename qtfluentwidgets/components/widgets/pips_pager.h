@@ -4,6 +4,7 @@
 #include <QStyledItemDelegate>
 #include <Qt>
 
+#include "common/qtcompat.h"
 #include "common/icon.h"
 
 namespace qfw {
@@ -28,7 +29,7 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
@@ -94,7 +95,7 @@ signals:
 
 protected:
     void mouseReleaseEvent(QMouseEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void wheelEvent(QWheelEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;

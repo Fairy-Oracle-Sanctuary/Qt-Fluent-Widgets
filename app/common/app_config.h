@@ -6,6 +6,7 @@
 #include <QStringList>
 
 #include "common/config.h"
+#include "common/qtcompat.h"
 
 namespace qfw {
 

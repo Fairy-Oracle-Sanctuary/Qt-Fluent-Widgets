@@ -44,9 +44,9 @@ void ModelComboBoxBase::setModel(QAbstractItemModel* model) {
     QObject::connect(
         model, &QAbstractItemModel::dataChanged, asWidget(),
         [this](const QModelIndex& topLeft, const QModelIndex& bottomRight,
-               const QList<int>& roles) { onModelDataChanged(topLeft, bottomRight, roles); });
+               const QVector<int>& roles) { onModelDataChanged(topLeft, bottomRight, roles); });
     QObject::connect(model, &QAbstractItemModel::rowsRemoved, asWidget(),
-                     [this](const QModelIndex& parent, int first, int last) {
+                     [this](const QModelIndex& parent, int first, int last, auto) {
                          onRowsRemoved(parent, first, last);
                      });
 }
@@ -74,7 +74,7 @@ void ModelComboBoxBase::onRowsRemoved(const QModelIndex& parentIndex, int first,
 
 void ModelComboBoxBase::onModelDataChanged(const QModelIndex& topLeft,
                                            const QModelIndex& bottomRight,
-                                           const QList<int>& roles) {
+                                           const QVector<int>& roles) {
     if (roles.contains(Qt::EditRole)) {
         for (int row = topLeft.row(); row <= bottomRight.row(); ++row) {
             setItemText(row, itemText(row));

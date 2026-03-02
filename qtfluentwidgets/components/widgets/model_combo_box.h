@@ -99,7 +99,7 @@ protected:
     void onModelRowInserted(const QModelIndex& parentIndex, int first, int last);
     void onRowsRemoved(const QModelIndex& parentIndex, int first, int last);
     void onModelDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight,
-                            const QList<int>& roles);
+                            const QVector<int>& roles);
 
     // Event filter
     bool eventFilter(QObject* obj, QEvent* e);
