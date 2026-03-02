@@ -8,6 +8,8 @@
 #include <QToolButton>
 #include <QWidget>
 
+#include "common/qtcompat.h"
+
 namespace qfw {
 
 class StateCloseButton : public QToolButton {
@@ -17,7 +19,7 @@ public:
     explicit StateCloseButton(QWidget* parent = nullptr);
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;

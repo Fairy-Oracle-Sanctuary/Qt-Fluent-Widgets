@@ -2,6 +2,7 @@
 
 #include <QPaintEvent>
 #include <QPainter>
+#include <QLocale>
 #include <QtMath>
 
 #include "common/color.h"

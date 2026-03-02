@@ -16,6 +16,8 @@
 #include <QVariant>
 #include <QWidget>
 
+#include "qtcompat.h"
+
 namespace qfw {
 
 /**
@@ -158,7 +160,7 @@ public:
     }
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;

@@ -11,6 +11,7 @@
 #include <QSettings>
 
 #include "common/style_sheet.h"
+#include "common/qtcompat.h"
 
 namespace qfw {
 
@@ -170,17 +171,17 @@ QVariant StringListSerializer::serialize(const QVariant& value) const {
     if (value.canConvert<QStringList>()) {
         return value.toStringList();
     }
-    if (value.typeId() == QMetaType::QString) {
+    if (value.QVariant_typeId() == QMetaType::QString) {
         return QStringList{value.toString()};
     }
     return value;
 }
 
 QVariant StringListSerializer::deserialize(const QVariant& value) const {
-    if (value.typeId() == QMetaType::QStringList) {
+    if (value.QVariant_typeId() == QMetaType::QStringList) {
         return value.toStringList();
     }
-    if (value.typeId() == QMetaType::QVariantList) {
+    if (value.QVariant_typeId() == QMetaType::QVariantList) {
         QStringList list;
         const QVariantList vl = value.toList();
         for (const QVariant& v : vl) {
@@ -188,7 +189,7 @@ QVariant StringListSerializer::deserialize(const QVariant& value) const {
         }
         return list;
     }
-    if (value.typeId() == QMetaType::QString) {
+    if (value.QVariant_typeId() == QMetaType::QString) {
         return QStringList{value.toString()};
     }
     return QStringList{};

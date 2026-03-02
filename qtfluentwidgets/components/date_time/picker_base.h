@@ -12,6 +12,7 @@
 #include <QWidget>
 
 #include "components/widgets/button.h"
+#include "common/qtcompat.h"
 
 class QPainter;
 class QHBoxLayout;
@@ -216,7 +217,7 @@ public slots:
     void reset();
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;

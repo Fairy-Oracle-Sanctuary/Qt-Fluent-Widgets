@@ -58,7 +58,7 @@ void PipsScrollButton::paintEvent(QPaintEvent* e) {
     FluentIcon(iconEnum_).render(&painter, rect.toRect(), Theme::Auto, {{"fill", color.name()}});
 }
 
-void PipsScrollButton::enterEvent(QEnterEvent* e) {
+void PipsScrollButton::enterEvent(enterEvent_QEnterEvent* e) {
     isHover_ = true;
     update();
     QWidget::enterEvent(e);
@@ -335,7 +335,7 @@ void PipsPager::mouseReleaseEvent(QMouseEvent* e) {
     delegate_->setPressedRow(-1);
 }
 
-void PipsPager::enterEvent(QEnterEvent* e) {
+void PipsPager::enterEvent(enterEvent_QEnterEvent* e) {
     QListWidget::enterEvent(e);
     isHover_ = true;
     updateScrollButtonVisibility();

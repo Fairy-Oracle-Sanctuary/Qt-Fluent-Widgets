@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
         // Auto-detect system locale
         QLocale locale;
         if (locale.language() == QLocale::Chinese) {
-            if (locale.territory() == QLocale::China || locale.territory() == QLocale::Singapore) {
+            if (locale.QLocale_territory() == QLocale::China || locale.QLocale_territory() == QLocale::Singapore) {
                 loadChinese = true;
             }
         }

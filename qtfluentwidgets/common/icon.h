@@ -382,3 +382,5 @@ private:
 };
 
 }  // namespace qfw
+Q_DECLARE_METATYPE(const qfw::FluentIconBase*)
+Q_DECLARE_METATYPE(qfw::FluentIconEnum)

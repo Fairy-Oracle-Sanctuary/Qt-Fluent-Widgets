@@ -340,7 +340,7 @@ void Flyout::showEvent(QShowEvent* e) {
 bool Flyout::eventFilter(QObject* watched, QEvent* event) {
     if (isVisible() && event->type() == QEvent::MouseButtonPress) {
         QMouseEvent* me = static_cast<QMouseEvent*>(event);
-        QPoint globalPos = me->globalPosition().toPoint();
+        QPoint globalPos = me->QMouseEvent_globalPosition_toPoint();
         if (!rect().contains(mapFromGlobal(globalPos))) {
             // Clicked outside the flyout, close it
             close();

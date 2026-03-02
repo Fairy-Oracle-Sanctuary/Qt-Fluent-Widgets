@@ -16,6 +16,7 @@
 #include <QVariant>
 
 #include "common/icon.h"
+#include "common/qtcompat.h"
 
 class QMenu;
 class QPainter;
@@ -51,7 +52,7 @@ protected:
 
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
 
     virtual void drawIcon(QPainter* painter, const QRectF& rect, QIcon::State state = QIcon::Off);
@@ -172,7 +173,7 @@ public:
     void setTextColor(const QColor& light, const QColor& dark);
 
 protected:
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void paintEvent(QPaintEvent* event) override;
 
@@ -214,7 +215,7 @@ protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
 
     QVariant icon_;
