@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="source/_static/Interface_en.png" alt="interface"/>
+  <img src="source/_static/Interface_zh.png" alt="interface"/>
 </p>
 
 ## 📖 简介
