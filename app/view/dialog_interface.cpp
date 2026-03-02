@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QUrl>
+#include <QDebug>
 
 #include "common/translator.h"
 #include "components/dialog_box/color_dialog.h"

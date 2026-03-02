@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QWidget>
 
+#include "common/qtcompat.h"
 #include "../../common/icon.h"
 #include "../../common/smooth_scroll.h"
 
@@ -146,7 +147,7 @@ signals:
     void sliderMoved();
 
 protected:
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;

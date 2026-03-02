@@ -251,7 +251,7 @@ void CycleListWidget::setButtonsVisible(bool visible) {
     downButton_->setVisible(visible);
 }
 
-void CycleListWidget::enterEvent(QEnterEvent* e) {
+void CycleListWidget::enterEvent(enterEvent_QEnterEvent* e) {
     Q_UNUSED(e);
     setButtonsVisible(true);
 }

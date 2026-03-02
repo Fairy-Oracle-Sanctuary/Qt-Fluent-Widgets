@@ -35,7 +35,7 @@ void SliderHandle::setHandleColor(const QColor& light, const QColor& dark) {
     update();
 }
 
-void SliderHandle::enterEvent(QEnterEvent* e) {
+void SliderHandle::enterEvent(enterEvent_QEnterEvent* e) {
     Q_UNUSED(e);
     startAni(6);
 }

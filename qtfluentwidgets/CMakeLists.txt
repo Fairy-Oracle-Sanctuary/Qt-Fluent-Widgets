@@ -7,11 +7,32 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg)
 
-qt_standard_project_setup()
 
-qt_add_library(qtfluentwidgets STATIC
+if(${QT_VERSION_MAJOR} EQUAL 6)
+    qt_standard_project_setup()
+elseif(${QT_VERSION_MAJOR} EQUAL 5)
+    set(CMAKE_AUTOMOC ON)
+    set(CMAKE_AUTOUIC ON)
+    set(CMAKE_AUTORCC ON)
+endif()
+
+function(universal_add_library target)
+    if(QT_VERSION_MAJOR EQUAL 6)
+        qt_add_library(${target} ${ARGN})
+    else()
+        add_library(${target} ${ARGN})
+        
+        if(MSVC)
+            target_compile_options(${target} PRIVATE /utf-8)
+        endif()
+
+    endif()
+endfunction()
+
+universal_add_library(qtfluentwidgets STATIC
     common/config.cpp
     common/config.h
     common/font.cpp
@@ -185,6 +206,10 @@ qt_add_library(qtfluentwidgets STATIC
     resources/resource.qrc
 )
 
+if(MSVC)
+    target_compile_options(qtfluentwidgets PRIVATE /utf-8)
+endif()
+
 # macOS-specific Objective-C++ source
 if(APPLE)
     target_sources(qtfluentwidgets PRIVATE
@@ -206,7 +231,7 @@ if(WIN32)
     )
 endif()
 
-target_link_libraries(qtfluentwidgets PUBLIC Qt6::Widgets Qt6::Svg)
+target_link_libraries(qtfluentwidgets PUBLIC Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg)
 
 if(APPLE)
     target_link_libraries(qtfluentwidgets PUBLIC "-framework Cocoa")

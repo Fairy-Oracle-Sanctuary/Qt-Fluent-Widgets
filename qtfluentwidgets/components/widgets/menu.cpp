@@ -44,7 +44,7 @@ SubMenuItemWidget::SubMenuItemWidget(RoundMenu* menu, QListWidgetItem* item, QWi
     setMouseTracking(true);
 }
 
-void SubMenuItemWidget::enterEvent(QEnterEvent* e) {
+void SubMenuItemWidget::enterEvent(enterEvent_QEnterEvent* e) {
     QWidget::enterEvent(e);
     emit showMenuSig(item_);
 }

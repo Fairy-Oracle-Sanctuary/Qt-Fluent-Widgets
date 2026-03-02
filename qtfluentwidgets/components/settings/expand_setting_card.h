@@ -8,6 +8,7 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 
+#include "common/qtcompat.h"
 #include "components/settings/setting_card.h"
 
 class QHBoxLayout;
@@ -31,7 +32,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent* event) override;
-    void enterEvent(QEnterEvent* event) override;
+    void enterEvent(enterEvent_QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;

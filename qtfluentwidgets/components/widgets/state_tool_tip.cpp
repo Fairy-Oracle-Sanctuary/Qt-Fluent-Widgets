@@ -16,7 +16,7 @@ namespace qfw {
 
 StateCloseButton::StateCloseButton(QWidget* parent) : QToolButton(parent) { setFixedSize(12, 12); }
 
-void StateCloseButton::enterEvent(QEnterEvent* e) {
+void StateCloseButton::enterEvent(enterEvent_QEnterEvent* e) {
     Q_UNUSED(e);
     isEnter_ = true;
     update();

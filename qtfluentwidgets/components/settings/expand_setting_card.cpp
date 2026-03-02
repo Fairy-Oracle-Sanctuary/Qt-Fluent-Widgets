@@ -40,7 +40,7 @@ void ExpandButton::setExpand(bool isExpand) {
 
 void ExpandButton::onClicked() { setExpand(angle_ < 180.0); }
 
-void ExpandButton::enterEvent(QEnterEvent* event) {
+void ExpandButton::enterEvent(enterEvent_QEnterEvent* event) {
     setHover(true);
     QAbstractButton::enterEvent(event);
 }

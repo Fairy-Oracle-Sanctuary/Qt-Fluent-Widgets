@@ -53,7 +53,7 @@ NavigationWidget::NavigationWidget(bool isSelectable, QWidget* parent)
     setCursor(Qt::PointingHandCursor);
 }
 
-void NavigationWidget::enterEvent(QEnterEvent* e) {
+void NavigationWidget::enterEvent(enterEvent_QEnterEvent* e) {
     QWidget::enterEvent(e);
     isEnter_ = true;
     update();
@@ -336,7 +336,7 @@ void NavigationItemHeader::mouseReleaseEvent(QMouseEvent* e) {
     }
 }
 
-void NavigationItemHeader::enterEvent(QEnterEvent* e) { Q_UNUSED(e); }
+void NavigationItemHeader::enterEvent(enterEvent_QEnterEvent* e) { Q_UNUSED(e); }
 
 void NavigationItemHeader::leaveEvent(QEvent* e) { Q_UNUSED(e); }
 

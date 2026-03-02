@@ -9,6 +9,7 @@
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
+#include <QSet>
 #include <QMenu>
 #include <QRegularExpression>
 #include <QXmlStreamReader>

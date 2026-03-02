@@ -13,6 +13,7 @@
 #include <QWidget>
 
 #include "common/animation.h"
+#include "common/qtcompat.h"
 #include "components/widgets/scroll_area.h"
 
 class QPaintEvent;
@@ -61,7 +62,7 @@ signals:
     void selectedChanged(bool selected);
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
@@ -144,7 +145,7 @@ public:
 protected:
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
 
     void paintEvent(QPaintEvent* e) override;

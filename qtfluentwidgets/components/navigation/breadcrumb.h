@@ -6,6 +6,8 @@
 #include <QVector>
 #include <QWidget>
 
+#include "common/qtcompat.h"
+
 class QFont;
 
 namespace qfw {
@@ -22,7 +24,7 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
 
 protected:

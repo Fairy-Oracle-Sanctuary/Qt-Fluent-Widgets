@@ -12,6 +12,7 @@
 
 #include "common/animation.h"
 #include "common/icon.h"
+#include "common/qtcompat.h"
 #include "components/widgets/icon_widget.h"
 
 namespace qfw {
@@ -40,7 +41,7 @@ signals:
     void clicked();
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
@@ -82,7 +83,7 @@ public:
     explicit ElevatedCardWidget(QWidget* parent = nullptr);
 
 protected:
-    void enterEvent(QEnterEvent* e) override;
+    void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
 

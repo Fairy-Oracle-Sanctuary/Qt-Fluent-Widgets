@@ -347,7 +347,7 @@ void FluentPushButton::mouseReleaseEvent(QMouseEvent* event) {
     QPushButton::mouseReleaseEvent(event);
 }
 
-void FluentPushButton::enterEvent(QEnterEvent* event) {
+void FluentPushButton::enterEvent(enterEvent_QEnterEvent* event) {
     isHover = true;
     update();
     QPushButton::enterEvent(event);
@@ -679,7 +679,7 @@ void RadioButton::setTextColor(const QColor& light, const QColor& dark) {
     setDarkTextColor(dark);
 }
 
-void RadioButton::enterEvent(QEnterEvent* event) {
+void RadioButton::enterEvent(enterEvent_QEnterEvent* event) {
     isHover_ = true;
     update();
     QRadioButton::enterEvent(event);
@@ -722,7 +722,7 @@ void RadioButton::drawIndicator(QPainter* painter) {
 
     auto themeColorDark1 = []() {
         const QColor base = themeColor();
-        float h = 0, s = 0, v = 0, a = 0;
+        QColor_HsvF_type h = 0, s = 0, v = 0, a = 0;
         base.getHsvF(&h, &s, &v, &a);
 
         // Keep consistent with common/style_sheet.cpp themedColor(..., darkTheme=true,
@@ -731,8 +731,8 @@ void RadioButton::drawIndicator(QPainter* painter) {
         v = 1.0f;
         v *= 0.9f;
 
-        return QColor::fromHsvF(static_cast<qreal>(h), static_cast<qreal>(std::min(s, 1.0f)),
-                                static_cast<qreal>(std::min(v, 1.0f)), static_cast<qreal>(a));
+        return QColor::fromHsvF(h, std::min(s, static_cast<QColor_HsvF_type>(1.0f)),
+                                std::min(v, static_cast<QColor_HsvF_type>(1.0f)), a);
     };
 
     if (isChecked()) {
@@ -955,7 +955,7 @@ void ToolButton::mouseReleaseEvent(QMouseEvent* event) {
     QToolButton::mouseReleaseEvent(event);
 }
 
-void ToolButton::enterEvent(QEnterEvent* event) {
+void ToolButton::enterEvent(enterEvent_QEnterEvent* event) {
     isHover = true;
     update();
     QToolButton::enterEvent(event);
@@ -1379,7 +1379,7 @@ void PillButtonBase::paintPill(QPainter* painter, const QRect& rect, bool checke
     QColor bgColor;
 
     auto themed = [](const QColor& base, bool darkTheme, const QString& token) {
-        float h = 0, s = 0, v = 0, a = 0;
+        QColor_HsvF_type h = 0, s = 0, v = 0, a = 0;
         base.getHsvF(&h, &s, &v, &a);
 
         if (darkTheme) {
@@ -1420,8 +1420,8 @@ void PillButtonBase::paintPill(QPainter* painter, const QRect& rect, bool checke
             }
         }
 
-        return QColor::fromHsvF(static_cast<qreal>(h), static_cast<qreal>(std::min(s, 1.0f)),
-                                static_cast<qreal>(std::min(v, 1.0f)), static_cast<qreal>(a));
+        return QColor::fromHsvF(h, std::min(s, static_cast<QColor_HsvF_type>(1.0f)),
+                                std::min(v, static_cast<QColor_HsvF_type>(1.0f)), a);
     };
 
     if (!checked) {

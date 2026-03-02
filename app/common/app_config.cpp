@@ -49,9 +49,9 @@ QVariant LanguageSerializer::deserialize(const QVariant& value) const {
 
     QLocale locale(str);
     if (locale.language() == QLocale::Chinese) {
-        if (locale.territory() == QLocale::China) {
+        if (locale.QLocale_territory() == QLocale::China) {
             return static_cast<int>(Language::ChineseSimplified);
-        } else if (locale.territory() == QLocale::HongKong) {
+        } else if (locale.QLocale_territory() == QLocale::HongKong) {
             return static_cast<int>(Language::ChineseTraditional);
         }
     } else if (locale.language() == QLocale::English) {

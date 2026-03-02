@@ -4,6 +4,7 @@
 #include <QPainterPath>
 #include <QScrollBar>
 
+#include "../../common/qtcompat.h"
 #include "../../common/config.h"
 #include "../../common/icon.h"
 #include "../../common/style_sheet.h"
@@ -16,7 +17,7 @@ ClickableWindow::ClickableWindow(QWidget* parent) : QWidget(parent) {
     setFixedSize(292, 72);
 }
 
-void ClickableWindow::enterEvent(QEnterEvent* e) {
+void ClickableWindow::enterEvent(enterEvent_QEnterEvent* e) {
     isEnter = true;
     update();
 }
@@ -282,7 +283,7 @@ void FolderListDialog::onButtonClicked() {
     sortedOriginal.sort();
     sortedCurrent.sort();
 
-    if (sortedOriginal != sortedCurrent) {
+    if (QStringListNE(sortedOriginal, sortedCurrent)) {
         setEnabled(false);
         QApplication::processEvents();
         emit folderChanged(folderPaths);

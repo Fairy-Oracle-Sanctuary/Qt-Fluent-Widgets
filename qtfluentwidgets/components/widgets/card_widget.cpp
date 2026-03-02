@@ -71,7 +71,7 @@ void CardWidget::updateBackgroundColor(const QColor& target) {
     bgAni_->start();
 }
 
-void CardWidget::enterEvent(QEnterEvent* e) {
+void CardWidget::enterEvent(enterEvent_QEnterEvent* e) {
     isHover_ = true;
     updateBackgroundColor(hoverBackgroundColor());
     QFrame::enterEvent(e);
@@ -220,7 +220,7 @@ void ElevatedCardWidget::startElevateAnimation(const QPoint& start, const QPoint
     elevatedAni_->start();
 }
 
-void ElevatedCardWidget::enterEvent(QEnterEvent* e) {
+void ElevatedCardWidget::enterEvent(enterEvent_QEnterEvent* e) {
     SimpleCardWidget::enterEvent(e);
 
     if (elevatedAni_ && elevatedAni_->state() != QAbstractAnimation::Running) {
