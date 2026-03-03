@@ -150,5 +150,5 @@ Contributions are welcome! Please feel free to submit issues and pull requests.
 ## 🏆 Contributors
 
 <a href="https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets" />
+  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets&v=2" />
 </a>
