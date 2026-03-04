@@ -32,6 +32,30 @@
 
 namespace qfw {
 
+#ifdef Q_OS_WIN
+// Helper to check if Mica is supported (Windows 11 build >= 22000)
+static bool isMicaSupported() {
+    using RtlGetVersionPtr = LONG(WINAPI*)(PRTL_OSVERSIONINFOW);
+    HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+        ntdll = ::LoadLibraryW(L"ntdll.dll");
+    }
+    if (ntdll) {
+        auto rtlGetVersion =
+            reinterpret_cast<RtlGetVersionPtr>(::GetProcAddress(ntdll, "RtlGetVersion"));
+        if (rtlGetVersion) {
+            RTL_OSVERSIONINFOEXW osvi{};
+            osvi.dwOSVersionInfoSize = sizeof(osvi);
+            if (rtlGetVersion(reinterpret_cast<PRTL_OSVERSIONINFOW>(&osvi)) == 0) {
+                // Windows 11 is build 22000+
+                return osvi.dwBuildNumber >= 22000;
+            }
+        }
+    }
+    return false;
+}
+#endif
+
 // ============================================================================
 // FluentWidget
 // ============================================================================
@@ -89,13 +113,14 @@ void FluentWidget::applyMica() {
 void FluentWidget::setMicaEffectEnabled(bool enabled) {
 #ifdef Q_OS_WIN
     // match python: win11 build >= 22000
-    if (enabled) {
+    // Only enable Mica on Windows 11, fallback to solid background on Windows 10
+    if (enabled && isMicaSupported()) {
         isMicaEnabled_ = true;
         applyMica();
         setBackgroundColor(normalBackgroundColor());
     } else {
         isMicaEnabled_ = false;
-        // No explicit remove API; fallback to transparent background.
+        // Use solid background when Mica is disabled or not supported
         setBackgroundColor(normalBackgroundColor());
     }
 #else
