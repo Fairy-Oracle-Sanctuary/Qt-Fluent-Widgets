@@ -150,5 +150,5 @@ qtfluentwidgets_app.exe     # Windows
 ## 🏆 贡献者
 
 <a href="https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets" />
+  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets&v=2" />
 </a>
