@@ -1,12 +1,10 @@
 #include "components/widgets/frameless_window.h"
 
 #include <QApplication>
-#include <QDebug>
 #include <QFrame>
 #include <QPainter>
 #include <QPalette>
 #include <QVBoxLayout>
-#include <QWheelEvent>
 
 #include "common/config.h"
 #include "components/window/frameless_window.h"
@@ -93,32 +91,6 @@ void FluentMainWindow::paintEvent(QPaintEvent* e) {
         return;
     }
     FramelessMainWindow::paintEvent(e);
-}
-
-bool FluentMainWindow::event(QEvent* e) {
-    if (e->type() == QEvent::Wheel) {
-        auto* wheel = static_cast<QWheelEvent*>(e);
-        qInfo().noquote() << "[qfw][scroll] FluentMainWindow::event wheel delta"
-                          << wheel->angleDelta() << "pos" << wheel->position();
-
-        // Find child widget under cursor and forward event
-        QWidget* child = childAt(wheel->position().toPoint());
-        qInfo().noquote() << "[qfw][scroll] child" << child
-                          << (child ? child->metaObject()->className() : "null");
-
-        if (child && child != this) {
-            // Map position to child's coordinate system
-            QPoint childPos = child->mapFromGlobal(mapToGlobal(wheel->position().toPoint()));
-            QWheelEvent childEvent(childPos, wheel->globalPosition(), wheel->pixelDelta(),
-                                   wheel->angleDelta(), wheel->buttons(), wheel->modifiers(),
-                                   wheel->phase(), wheel->inverted());
-            qInfo().noquote() << "[qfw][scroll] forwarding to child" << child << "childPos"
-                              << childPos;
-            QApplication::sendEvent(child, &childEvent);
-            return true;
-        }
-    }
-    return FramelessMainWindow::event(e);
 }
 
 }  // namespace qfw
