@@ -239,7 +239,8 @@ if(UNIX AND NOT APPLE)
     )
     # Link X11 for window resizing
     find_package(X11 REQUIRED)
-    target_link_libraries(qtfluentwidgets PUBLIC X11::X11)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS GuiPrivate)
+    target_link_libraries(qtfluentwidgets PUBLIC X11::X11 Qt${QT_VERSION_MAJOR}::GuiPrivate)
 else()
     # Stub implementation for non-Linux platforms
     target_sources(qtfluentwidgets PRIVATE

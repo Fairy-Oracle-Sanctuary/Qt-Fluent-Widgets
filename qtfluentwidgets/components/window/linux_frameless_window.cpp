@@ -12,8 +12,7 @@
 #include <QWindow>
 
 #ifdef Q_OS_LINUX
-#include <QX11Info>
-
+#include <QtGui/private/qx11info_p.h>
 #include <X11/Xlib.h>
 #endif
 
@@ -159,8 +158,7 @@ bool LinuxFramelessWindowBase::handleEventFilter(QObject* obj, QEvent* event) {
 
                 xev.xclient.type = ClientMessage;
                 xev.xclient.window = wid;
-                xev.xclient.message_type =
-                    XInternAtom(display, "_NET_WM_MOVERESIZE", False);
+                xev.xclient.message_type = XInternAtom(display, "_NET_WM_MOVERESIZE", False);
                 xev.xclient.format = 32;
                 xev.xclient.data.l[0] = mouseEvent->globalPos().x();
                 xev.xclient.data.l[1] = mouseEvent->globalPos().y();
@@ -187,8 +185,7 @@ bool LinuxFramelessWindowBase::handleEventFilter(QObject* obj, QEvent* event) {
 // ============================================================================
 
 LinuxFramelessWindow::LinuxFramelessWindow(QWidget* parent)
-    : QWidget(parent), LinuxFramelessWindowBase() {
-}
+    : QWidget(parent), LinuxFramelessWindowBase() {}
 
 bool LinuxFramelessWindow::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
@@ -213,8 +210,7 @@ void LinuxFramelessWindow::showEvent(QShowEvent* e) {
 // ============================================================================
 
 LinuxFramelessMainWindow::LinuxFramelessMainWindow(QWidget* parent)
-    : QMainWindow(parent), LinuxFramelessWindowBase() {
-}
+    : QMainWindow(parent), LinuxFramelessWindowBase() {}
 
 bool LinuxFramelessMainWindow::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
@@ -239,8 +235,7 @@ void LinuxFramelessMainWindow::showEvent(QShowEvent* e) {
 // ============================================================================
 
 LinuxFramelessDialog::LinuxFramelessDialog(QWidget* parent)
-    : QDialog(parent), LinuxFramelessWindowBase() {
-}
+    : QDialog(parent), LinuxFramelessWindowBase() {}
 
 bool LinuxFramelessDialog::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
