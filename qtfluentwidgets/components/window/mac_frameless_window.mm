@@ -78,6 +78,11 @@ void MacFramelessWindowBase::applyCocoaWindowStyle(QWidget* window) {
     nsWindow.opaque = NO;
     nsWindow.backgroundColor = [NSColor clearColor];
 
+    // Add rounded corners for macOS (10px radius like Windows)
+    nsWindow.contentView.wantsLayer = YES;
+    nsWindow.contentView.layer.masksToBounds = YES;
+    nsWindow.contentView.layer.cornerRadius = 8.0;
+
     if (!resizeEnabled_) {
         nsWindow.styleMask &= ~NSWindowStyleMaskResizable;
     } else {
@@ -159,11 +164,9 @@ bool MacFramelessMainWindow::event(QEvent* e) {
     // Forward wheel events to child widgets under cursor
     if (e->type() == QEvent::Wheel) {
         auto* wheel = static_cast<QWheelEvent*>(e);
-        qInfo().noquote() << "[qfw][scroll] event() wheel delta" << wheel->angleDelta() << "pos" << wheel->position();
         
         // Find child widget under cursor and forward event
         QWidget* child = childAt(wheel->position().toPoint());
-        qInfo().noquote() << "[qfw][scroll] child" << child << (child ? child->metaObject()->className() : "null");
         
         if (child && child != this) {
             // Map position to child's coordinate system
@@ -171,7 +174,6 @@ bool MacFramelessMainWindow::event(QEvent* e) {
             QWheelEvent childEvent(childPos, wheel->globalPosition(), wheel->pixelDelta(),
                                    wheel->angleDelta(), wheel->buttons(), wheel->modifiers(),
                                    wheel->phase(), wheel->inverted());
-            qInfo().noquote() << "[qfw][scroll] forwarding to child" << child << "childPos" << childPos;
             QApplication::sendEvent(child, &childEvent);
             return true;
         }
