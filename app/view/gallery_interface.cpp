@@ -194,6 +194,12 @@ GalleryInterface::GalleryInterface(const QString& title, const QString& subtitle
     setWidget(view_);
     setWidgetResizable(true);
 
+    if (auto* vp = viewport()) {
+        vp->setObjectName(QStringLiteral("view"));
+        vp->setAttribute(Qt::WA_StyledBackground);
+        applyGalleryStyleSheet(vp, GalleryStyleSheet::GalleryInterface);
+    }
+
     vBoxLayout_->setSpacing(30);
     vBoxLayout_->setAlignment(Qt::AlignTop);
     vBoxLayout_->setContentsMargins(36, 20, 36, 36);

@@ -11,11 +11,6 @@
 #include <QScreen>
 #include <QWindow>
 
-#ifdef Q_OS_LINUX
-#include <QtGui/private/qx11info_p.h>
-#include <X11/Xlib.h>
-#endif
-
 namespace qfw {
 
 // ============================================================================
@@ -127,54 +122,12 @@ bool LinuxFramelessWindowBase::handleEventFilter(QObject* obj, QEvent* event) {
 
     // Start system resize on button press
     if (et == QEvent::MouseButtonPress && edges) {
-#ifdef Q_OS_LINUX
-        // Use X11 for window resizing on Linux
+        // Use Qt6 public API for system resize (works on Linux/X11 and Wayland)
         QWindow* win = window_->windowHandle();
         if (win) {
-            // Convert edges to X11 gravity
-            uint gravity = 0;
-            if (edges & Qt::LeftEdge) {
-                gravity |= 1;  // West
-            }
-            if (edges & Qt::RightEdge) {
-                gravity |= 2;  // East
-            }
-            if (edges & Qt::TopEdge) {
-                gravity |= 4;  // North
-            }
-            if (edges & Qt::BottomEdge) {
-                gravity |= 8;  // South
-            }
-
-            // Map Qt gravity to X11 gravity
-            // X11: 1=SizeTopLeft, 2=SizeTop, 3=SizeTopRight, etc.
-            static const uint x11Gravity[] = {0, 6, 10, 2, 12, 8, 4, 5, 3, 11, 7, 9, 1};
-
-            Display* display = QX11Info::display();
-            if (display) {
-                WId wid = win->winId();
-                XEvent xev;
-                memset(&xev, 0, sizeof(xev));
-
-                xev.xclient.type = ClientMessage;
-                xev.xclient.window = wid;
-                xev.xclient.message_type = XInternAtom(display, "_NET_WM_MOVERESIZE", False);
-                xev.xclient.format = 32;
-                xev.xclient.data.l[0] = mouseEvent->globalPos().x();
-                xev.xclient.data.l[1] = mouseEvent->globalPos().y();
-                xev.xclient.data.l[2] = x11Gravity[gravity];
-                xev.xclient.data.l[3] = 0;  // Button 1
-                xev.xclient.data.l[4] = 0;
-
-                XUngrabPointer(display, CurrentTime);
-                XSendEvent(display, QX11Info::appRootWindow(QX11Info::appScreen()), False,
-                           SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-                XFlush(display);
-
-                return true;
-            }
+            win->startSystemResize(edges);
+            return true;
         }
-#endif
     }
 
     return false;
@@ -185,7 +138,10 @@ bool LinuxFramelessWindowBase::handleEventFilter(QObject* obj, QEvent* event) {
 // ============================================================================
 
 LinuxFramelessWindow::LinuxFramelessWindow(QWidget* parent)
-    : QWidget(parent), LinuxFramelessWindowBase() {}
+    : QWidget(parent), LinuxFramelessWindowBase() {
+    initFrameless(this);
+    framelessInitialized_ = true;
+}
 
 bool LinuxFramelessWindow::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
@@ -198,11 +154,6 @@ bool LinuxFramelessWindow::event(QEvent* e) {
 
 void LinuxFramelessWindow::showEvent(QShowEvent* e) {
     QWidget::showEvent(e);
-
-    if (!framelessInitialized_) {
-        framelessInitialized_ = true;
-        initFrameless(this);
-    }
 }
 
 // ============================================================================
@@ -210,7 +161,10 @@ void LinuxFramelessWindow::showEvent(QShowEvent* e) {
 // ============================================================================
 
 LinuxFramelessMainWindow::LinuxFramelessMainWindow(QWidget* parent)
-    : QMainWindow(parent), LinuxFramelessWindowBase() {}
+    : QMainWindow(parent), LinuxFramelessWindowBase() {
+    initFrameless(this);
+    framelessInitialized_ = true;
+}
 
 bool LinuxFramelessMainWindow::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
@@ -223,11 +177,6 @@ bool LinuxFramelessMainWindow::event(QEvent* e) {
 
 void LinuxFramelessMainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
-
-    if (!framelessInitialized_) {
-        framelessInitialized_ = true;
-        initFrameless(this);
-    }
 }
 
 // ============================================================================
@@ -235,7 +184,10 @@ void LinuxFramelessMainWindow::showEvent(QShowEvent* e) {
 // ============================================================================
 
 LinuxFramelessDialog::LinuxFramelessDialog(QWidget* parent)
-    : QDialog(parent), LinuxFramelessWindowBase() {}
+    : QDialog(parent), LinuxFramelessWindowBase() {
+    initFrameless(this);
+    framelessInitialized_ = true;
+}
 
 bool LinuxFramelessDialog::event(QEvent* e) {
     if (e->type() == QEvent::MouseMove || e->type() == QEvent::MouseButtonPress) {
@@ -248,11 +200,6 @@ bool LinuxFramelessDialog::event(QEvent* e) {
 
 void LinuxFramelessDialog::showEvent(QShowEvent* e) {
     QDialog::showEvent(e);
-
-    if (!framelessInitialized_) {
-        framelessInitialized_ = true;
-        initFrameless(this);
-    }
 }
 
 }  // namespace qfw

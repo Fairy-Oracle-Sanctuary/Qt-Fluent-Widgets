@@ -117,6 +117,7 @@ void IconInfoPanel::setIcon(qfw::FluentIconEnum icon) {
 
 IconCardView::IconCardView(QWidget* parent) : QWidget(parent) {
     setProperty("qssClass", "IconCardView");
+    setAttribute(Qt::WA_StyledBackground);
 
     trie_ = new Trie();
 
@@ -204,8 +205,21 @@ void IconCardView::applyQss() {
     view_->setObjectName(QStringLiteral("iconView"));
     scrollWidget_->setObjectName(QStringLiteral("scrollWidget"));
 
+    if (view_) {
+        view_->setAttribute(Qt::WA_StyledBackground);
+    }
+
+    QWidget* vp = scrollArea_ ? scrollArea_->viewport() : nullptr;
+    if (vp) {
+        vp->setObjectName(QStringLiteral("scrollWidget"));
+        vp->setAttribute(Qt::WA_StyledBackground);
+    }
+
     applyGalleryStyleSheet(this, GalleryStyleSheet::IconInterface);
     applyGalleryStyleSheet(scrollWidget_, GalleryStyleSheet::IconInterface);
+    if (vp) {
+        applyGalleryStyleSheet(vp, GalleryStyleSheet::IconInterface);
+    }
 
     if (currentIndex_ >= 0 && currentIndex_ < cards_.size()) {
         cards_[currentIndex_]->setSelected(true, true);
