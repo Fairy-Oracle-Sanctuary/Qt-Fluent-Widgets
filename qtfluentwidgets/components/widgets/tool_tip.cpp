@@ -2,11 +2,13 @@
 
 #include <QApplication>
 #include <QEvent>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QScreen>
 #include <QScrollBar>
 #include <QTableView>
+#include <QWindow>
 
 #include "common/style_sheet.h"
 
@@ -38,11 +40,26 @@ void ToolTip::setDuration(int duration) { duration_ = duration; }
 
 void ToolTip::adjustPos(QWidget* widget, ToolTipPosition position) {
     ToolTipPositionManager* manager = ToolTipPositionManager::make(position);
-    move(manager->position(this, widget));
+    QPoint pos = manager->position(this, widget);
+    
+    // Use QWindow::setPosition for better Wayland compatibility
+    if (QWindow* window = windowHandle()) {
+        window->setPosition(pos);
+    } else {
+        move(pos);
+    }
+    
+    delete manager;
 }
 
 void ToolTip::showEvent(QShowEvent* e) {
-    if (opacityAni_) {
+    // Only start opacity animation if platform supports it
+    // Wayland does not support setting window opacity
+    QString platformName = QGuiApplication::platformName();
+    bool supportsOpacity = (platformName != QStringLiteral("wayland") && 
+                            platformName != QStringLiteral("wayland-egl"));
+    
+    if (opacityAni_ && supportsOpacity) {
         opacityAni_->setStartValue(0.0);
         opacityAni_->setEndValue(1.0);
         opacityAni_->start();
@@ -83,9 +100,12 @@ void ToolTip::initUi() {
     containerLayout_->addWidget(label_);
     containerLayout_->setContentsMargins(8, 6, 8, 6);
 
-    // add opacity effect
+    // add opacity effect (may not work on Wayland)
     opacityAni_ = new QPropertyAnimation(this, QByteArrayLiteral("windowOpacity"), this);
     opacityAni_->setDuration(150);
+    
+    // Ensure window handle is created early for position setting
+    createWinId();
 
     // add shadow
     shadowEffect_ = new QGraphicsDropShadowEffect(this);
