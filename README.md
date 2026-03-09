@@ -13,7 +13,7 @@
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue?color=#4ec820)]()
-[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.3+-green.svg)](https://www.qt.io)
+[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.5+-green.svg)](https://www.qt.io)
 
 </div>
 
@@ -50,8 +50,8 @@ This library aims to bring the beautiful Fluent Design System to native C++ Qt a
 
 ## 📋 Requirements
 
-- **Qt 5.15+ or Qt 6.3+**
-  - Windows: Qt 6.7+ recommended
+- **Qt 5.15+ or Qt 6.5+**
+  - Windows: Qt 6.5+ recommended
   - macOS: Qt 6.9.0 recommended
   - Qt 5.15 LTS also supported
 - **CMake 3.16+**
@@ -138,10 +138,11 @@ This project is licensed under **GPLv3** - see the [LICENSE](LICENSE) file for d
 
 - **zhiyiYo** - Creator of the original [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) library
 - **zhiyiYo** - [Official documentation & demos](https://qfluentwidgets.com/) (Python version)
+- **COLORREF** - [QWidget-FancyUI](https://github.com/COLORREF/QWidget-FancyUI) for frameless window implementation reference on Windows
 - Microsoft - Fluent Design System inspiration
 - Qt Framework - The foundation for cross-platform UI development
 
-> **Note**: This project is a C++ implementation referenced from the Python version of PyQt-Fluent-Widgets. The original author offers a commercial C++ version, but this project was independently developed by studying the open-source Python codebase.
+> **Note**: This project is a C++ implementation referenced from the Python version of PyQt-Fluent-Widgets. The original author offers a commercial C++ version, but this project was independently developed by studying the open-source Python codebase. The Windows frameless window implementation references QWidget-FancyUI.
 
 ## 🤝 Contributing
 

@@ -37,7 +37,8 @@ public:
     explicit WindowsFramelessWindow(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message,
+                     nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
 
@@ -52,7 +53,8 @@ public:
     explicit WindowsFramelessMainWindow(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message,
+                     nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
 
 private:
@@ -66,7 +68,8 @@ public:
     explicit WindowsFramelessDialog(QWidget* parent = nullptr);
 
 protected:
-    bool nativeEvent(const QByteArray& eventType, void* message, nativeEvent_qintptr* result) override;
+    bool nativeEvent(const QByteArray& eventType, void* message,
+                     nativeEvent_qintptr* result) override;
     void showEvent(QShowEvent* e) override;
 
 private:
