@@ -19,7 +19,7 @@ public:
     bool eventFilter(QObject* obj, QEvent* e) override {
         if (e->type() == QEvent::Wheel) {
             auto* wheel = static_cast<QWheelEvent*>(e);
-            qInfo().noquote() << "[qfw][scroll] APP FILTER wheel delta" << wheel->angleDelta() 
+            qInfo().noquote() << "[qfw][scroll] APP FILTER wheel delta" << wheel->angleDelta()
                               << "obj" << obj << (obj ? obj->metaObject()->className() : "null");
         }
         return QObject::eventFilter(obj, e);
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     }
 
     QApplication app(argc, argv);
-    
+
     // Install wheel event filter
     WheelEventFilter* filter = new WheelEventFilter();
     app.installEventFilter(filter);
@@ -64,7 +64,8 @@ int main(int argc, char* argv[]) {
         // Auto-detect system locale
         QLocale locale;
         if (locale.language() == QLocale::Chinese) {
-            if (locale.QLocale_territory() == QLocale::China || locale.QLocale_territory() == QLocale::Singapore) {
+            if (locale.QLocale_territory() == QLocale::China ||
+                locale.QLocale_territory() == QLocale::Singapore) {
                 loadChinese = true;
             }
         }
