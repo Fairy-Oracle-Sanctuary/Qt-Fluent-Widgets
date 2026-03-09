@@ -12,8 +12,8 @@
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](../LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-blue?color=#4ec820)]()
-[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.3+-green.svg)](https://www.qt.io)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?color=#4ec820)]()
+[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.5+-green.svg)](https://www.qt.io)
 
 </div>
 
@@ -50,9 +50,10 @@ Qt-Fluent-Widgets 是对 **zhiyiYo** 开发的流行库 [PyQt-Fluent-Widgets](ht
 
 ## 📋 系统要求
 
-- **Qt 5.15+ 或 Qt 6.3+**
-  - Windows: 推荐 Qt 6.7+
+- **Qt 5.15+ 或 Qt 6.5+**
+  - Windows: 推荐 Qt 6.5+
   - macOS: 推荐 Qt 6.9.0
+  - Linux: 推荐 Qt 6.5+
   - 也支持 Qt 5.15 LTS
 - **CMake 3.16+**
 - **C++17 编译器**
@@ -128,7 +129,7 @@ qtfluentwidgets_app.exe     # Windows
 |------|------|------|
 | Windows | ✅ 完全支持 | Acrylic/Mica 效果、无边框窗口 |
 | macOS | ✅ 完全支持 | 无边框窗口，原生 Cocoa 集成 |
-| Linux | 🚧 占位符 | 无边框窗口尚未实现 |
+| Linux | ✅ 完全支持 | 无边框窗口，Qt6 系统调整大小 API |
 
 ## 📝 许可证
 
@@ -138,10 +139,11 @@ qtfluentwidgets_app.exe     # Windows
 
 - **zhiyiYo** - 原版 [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) 库的作者
 - **zhiyiYo** - [官方文档与演示](https://qfluentwidgets.com/zh/)（Python 版本）
+- **COLORREF** - [QWidget-FancyUI](https://github.com/COLORREF/QWidget-FancyUI) Windows 无边框窗口实现参考
 - Microsoft - Fluent Design System 灵感来源
 - Qt Framework - 跨平台 UI 开发的基础
 
-> **说明**：本项目是通过参考 PyQt-Fluent-Widgets 的 Python 版本代码逻辑独立编写的 C++ 实现。原作者提供了付费的 C++ 商业版本，本项目是通过学习开源的 Python 版本代码独立开发的。
+> **说明**：本项目是通过参考 PyQt-Fluent-Widgets 的 Python 版本代码逻辑独立编写的 C++ 实现。原作者提供了付费的 C++ 商业版本，本项目是通过学习开源的 Python 版本代码独立开发的。Windows 无边框窗口实现参考了 QWidget-FancyUI。
 
 ## 🤝 贡献
 
