@@ -25,6 +25,8 @@ public:
     void removeBorderAccentColor(HWND hWnd);
 
     void disableMaximizeButton(HWND hWnd);
+
+    void setWindowCornerPreference(HWND hWnd, int preference = 2);
 };
 
 }  // namespace qfw

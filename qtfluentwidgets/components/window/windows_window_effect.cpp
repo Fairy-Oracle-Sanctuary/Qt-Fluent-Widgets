@@ -386,4 +386,23 @@ void WindowsWindowEffect::disableMaximizeButton(HWND hWnd) {
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 }
 
+void WindowsWindowEffect::setWindowCornerPreference(HWND hWnd, int preference) {
+    if (!hWnd) {
+        return;
+    }
+
+#ifndef DWMWA_WINDOW_CORNER_PREFERENCE
+// Win11 (SDK 22000+) defines this as DWMWINDOWATTRIBUTE value 33.
+#define DWMWA_WINDOW_CORNER_PREFERENCE static_cast<DWMWINDOWATTRIBUTE>(33)
+#endif
+
+    // preference: 0=Default, 1=Do not round, 2=Round, 3=Round small
+    const INT pref = static_cast<INT>(preference);
+    const HRESULT hr =
+        DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, &pref, sizeof(pref));
+    if (FAILED(hr)) {
+        qWarning() << "DwmSetWindowAttribute(DWMWA_WINDOW_CORNER_PREFERENCE) failed:" << hr;
+    }
+}
+
 }  // namespace qfw

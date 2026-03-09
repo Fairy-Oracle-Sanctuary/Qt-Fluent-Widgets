@@ -19,6 +19,7 @@ public:
 
 protected:
     void showEvent(QShowEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
     bool event(QEvent* e) override;
 
 private:

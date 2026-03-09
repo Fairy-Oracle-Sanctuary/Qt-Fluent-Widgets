@@ -15,7 +15,6 @@
 #include "common/style_sheet.h"
 #include "components/navigation/navigation_bar.h"
 #include "components/navigation/navigation_interface.h"
-#include "components/window/frameless_window.h"
 #include "components/window/title_bar.h"
 #include "window/stacked_widget.h"
 
@@ -105,6 +104,8 @@ void FluentWidget::applyMica() {
         return;
     }
 
+    setAttribute(Qt::WA_TranslucentBackground, true);
+
     WindowsWindowEffect eff;
     eff.setMicaEffect(hWnd, isDarkTheme(), false);
 #endif
@@ -112,15 +113,12 @@ void FluentWidget::applyMica() {
 
 void FluentWidget::setMicaEffectEnabled(bool enabled) {
 #ifdef Q_OS_WIN
-    // match python: win11 build >= 22000
-    // Only enable Mica on Windows 11, fallback to solid background on Windows 10
     if (enabled && isMicaSupported()) {
         isMicaEnabled_ = true;
         applyMica();
         setBackgroundColor(normalBackgroundColor());
     } else {
         isMicaEnabled_ = false;
-        // Use solid background when Mica is disabled or not supported
         setBackgroundColor(normalBackgroundColor());
     }
 #else
@@ -161,7 +159,7 @@ void FluentWidget::setTitleBar(TitleBarBase* titleBar) {
 void FluentWidget::onThemeChangedFinished() {
     // Update background color for theme change
     setBackgroundColor(normalBackgroundColor());
-    
+
     if (isMicaEffectEnabled()) {
         applyMica();
     }
@@ -170,10 +168,14 @@ void FluentWidget::onThemeChangedFinished() {
 void FluentWidget::paintEvent(QPaintEvent* e) {
     FluentMainWindow::paintEvent(e);
 
-    QPainter painter(this);
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(backgroundColor_);
-    painter.drawRect(rect());
+    // Only draw background color when Mica is not enabled
+    // When Mica is enabled, parent's paintEvent already cleared the window
+    if (!isMicaEffectEnabled()) {
+        QPainter painter(this);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(backgroundColor_);
+        painter.drawRect(rect());
+    }
 }
 
 void FluentWidget::showEvent(QShowEvent* e) {
