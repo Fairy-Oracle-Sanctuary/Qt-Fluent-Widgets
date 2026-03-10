@@ -2,6 +2,7 @@
 
 #include <QCloseEvent>
 #include <QEvent>
+#include <QGuiApplication>
 #include <QShowEvent>
 #include <QTimer>
 
@@ -575,7 +576,22 @@ TeachingTip::TeachingTip(FlyoutViewBase* view, QWidget* target, int duration,
     setShadowEffect();
 
     setAttribute(Qt::WA_TranslucentBackground);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
+
+    // Check platform for window configuration
+    QString platformName = QGuiApplication::platformName();
+    isWayland_ = (platformName == QStringLiteral("wayland") || 
+                  platformName == QStringLiteral("wayland-egl"));
+
+    if (!isWayland_) {
+        // On X11/other platforms, use Tool window
+        setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
+    } else {
+        // On Wayland, must be a child widget to position correctly
+        setAttribute(Qt::WA_StyledBackground);
+    }
+
+    // Ensure proper size
+    adjustSize();
 
     if (parent && parent->window()) {
         parent->window()->installEventFilter(this);
@@ -593,6 +609,12 @@ void TeachingTip::setShadowEffect(int blurRadius, const QPoint& offset) {
 }
 
 void TeachingTip::fadeOut() {
+    // Wayland doesn't support window opacity
+    if (isWayland_) {
+        close();
+        return;
+    }
+
     opacityAni_->setDuration(167);
     opacityAni_->setStartValue(1.0);
     opacityAni_->setEndValue(0.0);
@@ -605,13 +627,36 @@ void TeachingTip::showEvent(QShowEvent* e) {
         QTimer::singleShot(duration_, this, &TeachingTip::fadeOut);
     }
 
-    move(manager_->position(this));
+    QPoint globalPos = manager_->position(this);
     adjustSize();
 
-    opacityAni_->setDuration(167);
-    opacityAni_->setStartValue(0.0);
-    opacityAni_->setEndValue(1.0);
-    opacityAni_->start();
+    // On Wayland, use child widget positioning with top-level window as parent
+    if (isWayland_ && !isReparented_) {
+        QWidget* topWindow = window();
+        if (topWindow && topWindow != parentWidget()) {
+            isReparented_ = true;
+            setParent(topWindow);
+            show();
+            return;
+        }
+        if (parentWidget()) {
+            QPoint parentPos = parentWidget()->mapFromGlobal(globalPos);
+            move(parentPos);
+        } else {
+            move(globalPos);
+        }
+        raise();
+    } else {
+        move(globalPos);
+    }
+
+    // Only start opacity animation on non-Wayland platforms
+    if (!isWayland_) {
+        opacityAni_->setDuration(167);
+        opacityAni_->setStartValue(0.0);
+        opacityAni_->setEndValue(1.0);
+        opacityAni_->start();
+    }
 
     QWidget::showEvent(e);
 }
@@ -627,7 +672,13 @@ bool TeachingTip::eventFilter(QObject* obj, QEvent* e) {
     if (parent() && obj == qobject_cast<QWidget*>(parent())->window()) {
         if (e->type() == QEvent::Resize || e->type() == QEvent::WindowStateChange ||
             e->type() == QEvent::Move) {
-            move(manager_->position(this));
+            QPoint globalPos = manager_->position(this);
+            if (isWayland_ && parentWidget()) {
+                QPoint parentPos = parentWidget()->mapFromGlobal(globalPos);
+                move(parentPos);
+            } else {
+                move(globalPos);
+            }
         }
     }
     return QWidget::eventFilter(obj, e);

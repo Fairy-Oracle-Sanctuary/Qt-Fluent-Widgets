@@ -306,6 +306,8 @@ private:
     QWidget* target_ = nullptr;
     int duration_ = 1000;
     bool isDeleteOnClose_ = true;
+    bool isWayland_ = false;
+    bool isReparented_ = false;
     TeachingTipManager* manager_ = nullptr;
     QHBoxLayout* hBoxLayout_ = nullptr;
     QPropertyAnimation* opacityAni_ = nullptr;
