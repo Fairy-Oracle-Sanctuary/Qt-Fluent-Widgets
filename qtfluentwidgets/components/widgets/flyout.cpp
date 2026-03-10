@@ -5,9 +5,11 @@
 #include <QCloseEvent>
 #include <QCursor>
 #include <QEasingCurve>
+#include <QGuiApplication>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
+#include <QWindow>
 #include <memory>
 
 #include "common/auto_wrap.h"
@@ -302,7 +304,23 @@ Flyout::Flyout(FlyoutViewBase* view, QWidget* parent, bool deleteOnClose)
     }
 
     setAttribute(Qt::WA_TranslucentBackground);
-    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+
+    // Check platform for window configuration
+    QString platformName = QGuiApplication::platformName();
+    isWayland_ = (platformName == QStringLiteral("wayland") || 
+                  platformName == QStringLiteral("wayland-egl"));
+
+    if (!isWayland_) {
+        // On X11/other platforms, use Popup window
+        setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+    } else {
+        // On Wayland, must be a child widget to position correctly
+        // No window flags - it will be a child of parent widget
+        setAttribute(Qt::WA_StyledBackground);
+    }
+
+    // Ensure proper size
+    adjustSize();
 
     // Install event filter to handle click outside
     qApp->installEventFilter(this);
@@ -333,6 +351,18 @@ void Flyout::closeEvent(QCloseEvent* e) {
 }
 
 void Flyout::showEvent(QShowEvent* e) {
+    // On Wayland, ensure proper size and z-order for child widget
+    if (isWayland_ && !isReparented_) {
+        QWidget* topWindow = window();
+        if (topWindow && topWindow != parentWidget()) {
+            isReparented_ = true;
+            setParent(topWindow);
+            show();
+            return;
+        }
+        adjustSize();
+        raise();
+    }
     activateWindow();
     QWidget::showEvent(e);
 }
@@ -355,6 +385,11 @@ void Flyout::exec(const QPoint& pos, FlyoutAnimationType aniType) {
     aniManager_ = FlyoutAnimationManager::make(aniType, this);
 
     show();
+
+    // Position the flyout - use QWindow for Wayland compatibility
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
 
     if (aniManager_) {
         aniManager_->exec(pos);
@@ -413,6 +448,16 @@ Flyout* Flyout::create(const QString& title, const QString& content, const QVari
 }
 
 void Flyout::fadeOut() {
+    // Wayland doesn't support window opacity
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+
+    if (isWayland) {
+        close();
+        return;
+    }
+
     fadeOutAni_ = new QPropertyAnimation(this, QByteArrayLiteral("windowOpacity"), this);
     connect(fadeOutAni_, &QPropertyAnimation::finished, this, &Flyout::close);
     fadeOutAni_->setStartValue(1.0);
@@ -424,19 +469,25 @@ void Flyout::fadeOut() {
 FlyoutAnimationManager::FlyoutAnimationManager(Flyout* flyout) : QObject(flyout), flyout_(flyout) {
     group_ = new QParallelAnimationGroup(this);
     slideAni_ = new QPropertyAnimation(flyout, QByteArrayLiteral("pos"), this);
-    opacityAni_ = new QPropertyAnimation(flyout, QByteArrayLiteral("windowOpacity"), this);
+
+    // Wayland doesn't support window opacity
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+
+    if (!isWayland) {
+        opacityAni_ = new QPropertyAnimation(flyout, QByteArrayLiteral("windowOpacity"), this);
+        opacityAni_->setDuration(187);
+        opacityAni_->setStartValue(0.0);
+        opacityAni_->setEndValue(1.0);
+        opacityAni_->setEasingCurve(QEasingCurve::OutQuad);
+        group_->addAnimation(opacityAni_);
+    }
 
     slideAni_->setDuration(187);
-    opacityAni_->setDuration(187);
-
-    opacityAni_->setStartValue(0.0);
-    opacityAni_->setEndValue(1.0);
-
     slideAni_->setEasingCurve(QEasingCurve::OutQuad);
-    opacityAni_->setEasingCurve(QEasingCurve::OutQuad);
 
     group_->addAnimation(slideAni_);
-    group_->addAnimation(opacityAni_);
 }
 
 QPoint FlyoutAnimationManager::adjustPosition(const QPoint& pos) const {
@@ -482,9 +533,23 @@ QPoint PullUpFlyoutAnimationManager::position(QWidget* target) const {
 }
 
 void PullUpFlyoutAnimationManager::exec(const QPoint& pos) {
-    const QPoint p = adjustPosition(pos);
-    slideAni_->setStartValue(p + QPoint(0, 8));
-    slideAni_->setEndValue(p);
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, skip animation and use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_ && flyout_->parentWidget()) {
+        // Map global position to parent-relative position
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+        return;
+    }
+    
+    slideAni_->setStartValue(globalPos + QPoint(0, 8));
+    slideAni_->setEndValue(globalPos);
     group_->start();
 }
 
@@ -500,9 +565,23 @@ QPoint DropDownFlyoutAnimationManager::position(QWidget* target) const {
 }
 
 void DropDownFlyoutAnimationManager::exec(const QPoint& pos) {
-    const QPoint p = adjustPosition(pos);
-    slideAni_->setStartValue(p - QPoint(0, 8));
-    slideAni_->setEndValue(p);
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, skip animation and use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_ && flyout_->parentWidget()) {
+        // Map global position to parent-relative position
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+        return;
+    }
+    
+    slideAni_->setStartValue(globalPos - QPoint(0, 8));
+    slideAni_->setEndValue(globalPos);
     group_->start();
 }
 
@@ -519,9 +598,23 @@ QPoint SlideLeftFlyoutAnimationManager::position(QWidget* target) const {
 }
 
 void SlideLeftFlyoutAnimationManager::exec(const QPoint& pos) {
-    const QPoint p = adjustPosition(pos);
-    slideAni_->setStartValue(p + QPoint(8, 0));
-    slideAni_->setEndValue(p);
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, skip animation and use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_ && flyout_->parentWidget()) {
+        // Map global position to parent-relative position
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+        return;
+    }
+    
+    slideAni_->setStartValue(globalPos + QPoint(8, 0));
+    slideAni_->setEndValue(globalPos);
     group_->start();
 }
 
@@ -538,9 +631,23 @@ QPoint SlideRightFlyoutAnimationManager::position(QWidget* target) const {
 }
 
 void SlideRightFlyoutAnimationManager::exec(const QPoint& pos) {
-    const QPoint p = adjustPosition(pos);
-    slideAni_->setStartValue(p - QPoint(8, 0));
-    slideAni_->setEndValue(p);
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, skip animation and use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_ && flyout_->parentWidget()) {
+        // Map global position to parent-relative position
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+        return;
+    }
+    
+    slideAni_->setStartValue(globalPos - QPoint(8, 0));
+    slideAni_->setEndValue(globalPos);
     group_->start();
 }
 
@@ -563,8 +670,19 @@ QPoint FadeInFlyoutAnimationManager::position(QWidget* target) const {
 }
 
 void FadeInFlyoutAnimationManager::exec(const QPoint& pos) {
-    if (flyout_) {
-        flyout_->move(adjustPosition(pos));
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_ && flyout_->parentWidget()) {
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+    } else if (flyout_) {
+        flyout_->move(globalPos);
     }
     group_->start();
 }
@@ -586,7 +704,20 @@ void DummyFlyoutAnimationManager::exec(const QPoint& pos) {
     if (!flyout_) {
         return;
     }
-    flyout_->move(adjustPosition(pos));
+    const QPoint globalPos = adjustPosition(pos);
+    
+    // On Wayland, use child widget positioning
+    QString platformName = QGuiApplication::platformName();
+    bool isWayland = (platformName == QStringLiteral("wayland") || 
+                      platformName == QStringLiteral("wayland-egl"));
+    
+    if (isWayland && flyout_->parentWidget()) {
+        QPoint parentPos = flyout_->parentWidget()->mapFromGlobal(globalPos);
+        flyout_->move(parentPos);
+        flyout_->raise();
+    } else {
+        flyout_->move(globalPos);
+    }
 }
 
 }  // namespace qfw
