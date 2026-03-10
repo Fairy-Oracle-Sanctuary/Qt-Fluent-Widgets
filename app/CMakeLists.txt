@@ -78,8 +78,19 @@ universal_add_executable(qtfluentwidgets_app
 )
 
 if(APPLE)
+    # Set app icon for macOS
+    set(MACOSX_BUNDLE_ICON_FILE logo.icns)
+    set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/images/logo.icns")
+    set_source_files_properties(${APP_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    
+    # Add icon file as source so it gets copied to bundle
+    target_sources(qtfluentwidgets_app PRIVATE ${APP_ICON})
+    
     set_target_properties(qtfluentwidgets_app PROPERTIES
         MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_ICON_FILE logo.icns
+        INSTALL_RPATH "@executable_path/../Frameworks"
+        BUILD_WITH_INSTALL_RPATH FALSE
     )
 endif()
 

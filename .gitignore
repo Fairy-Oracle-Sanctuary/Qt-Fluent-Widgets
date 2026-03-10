@@ -7,3 +7,4 @@ QWidget-FancyUI-main/
 Release/
 CMakeLists.txt.user
 build-mac/
+.DS_Store
