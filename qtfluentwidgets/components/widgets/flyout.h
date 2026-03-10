@@ -146,6 +146,8 @@ private:
 
     FlyoutAnimationManager* aniManager_ = nullptr;
     bool deleteOnClose_ = true;
+    bool isWayland_ = false;
+    bool isReparented_ = false;
 
     QPointer<QPropertyAnimation> fadeOutAni_;
 };
