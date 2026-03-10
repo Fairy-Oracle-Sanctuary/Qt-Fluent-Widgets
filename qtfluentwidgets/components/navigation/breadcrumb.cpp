@@ -66,7 +66,7 @@ void ElideButton::clearState() {
     setAttribute(Qt::WA_UnderMouse, false);
     isHover_ = false;
 
-    QHoverEvent e(QEvent::HoverLeave, QPointF(-1, -1), QPointF(-1, -1));
+    QHoverEvent e(QEvent::HoverLeave, QPointF(-1, -1), QPointF(-1, -1), Qt::NoModifier);
     QApplication::sendEvent(this, &e);
 }
 
