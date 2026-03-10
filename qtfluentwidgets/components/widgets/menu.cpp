@@ -1100,7 +1100,7 @@ void MenuAnimationManager::updateMenuViewport() {
     menu_->view_->viewport()->update();
     menu_->view_->setAttribute(Qt::WA_UnderMouse, true);
 
-    QHoverEvent e(QEvent::HoverEnter, QPoint(), QPoint(1, 1));
+    QHoverEvent e(QEvent::HoverEnter, QPointF(0, 0), QPointF(1, 1));
     QApplication::sendEvent(menu_->view_, &e);
 }
 
