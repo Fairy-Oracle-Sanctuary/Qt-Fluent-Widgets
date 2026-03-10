@@ -982,7 +982,7 @@ void RoundMenu::mouseMoveEvent(QMouseEvent* e) {
         return;
     }
 
-    const QPoint pos = e->globalPos();
+    const QPoint pos = e->globalPosition().toPoint();
 
     MenuActionListWidget* view = parentMenu_->view_;
 
@@ -1100,7 +1100,7 @@ void MenuAnimationManager::updateMenuViewport() {
     menu_->view_->viewport()->update();
     menu_->view_->setAttribute(Qt::WA_UnderMouse, true);
 
-    QHoverEvent e(QEvent::HoverEnter, QPointF(0, 0), QPointF(1, 1));
+    QHoverEvent e(QEvent::HoverEnter, QPointF(0, 0), QPointF(1, 1), Qt::NoModifier);
     QApplication::sendEvent(menu_->view_, &e);
 }
 
