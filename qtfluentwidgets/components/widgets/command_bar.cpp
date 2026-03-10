@@ -186,7 +186,7 @@ QSize MoreActionsButton::sizeHint() const { return QSize(40, 34); }
 
 void MoreActionsButton::clearState() {
     setAttribute(Qt::WA_UnderMouse, false);
-    QHoverEvent e(QEvent::HoverLeave, QPointF(-1, -1), QPointF());
+    QHoverEvent e(QEvent::HoverLeave, QPointF(-1, -1), QPointF(-1, -1));
     QApplication::sendEvent(this, &e);
 }
 
