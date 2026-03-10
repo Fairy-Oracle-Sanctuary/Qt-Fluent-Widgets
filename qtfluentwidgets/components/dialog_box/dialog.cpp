@@ -149,11 +149,12 @@ Dialog::Dialog(const QString& title, const QString& content, QWidget* parent)
 #ifdef Q_OS_WIN
     setResizeEnabled(false);
 #endif
-    resize(240, 192);
 
     ui_->vBoxLayout->insertWidget(0, windowTitleLabel, 0, Qt::AlignTop);
 
     qfw::setStyleSheet(this, FluentStyleSheet::Dialog);
+    
+    adjustSize();
     setFixedSize(size());
 }
 
