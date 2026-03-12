@@ -165,6 +165,15 @@ void FluentWidget::onThemeChangedFinished() {
     }
 }
 
+void FluentWidget::resizeEvent(QResizeEvent* e) {
+    FluentMainWindow::resizeEvent(e);
+
+    if (titleBar_) {
+        titleBar_->move(0, 0);
+        titleBar_->resize(width(), titleBar_->height());
+    }
+}
+
 void FluentWidget::paintEvent(QPaintEvent* e) {
     FluentMainWindow::paintEvent(e);
 
