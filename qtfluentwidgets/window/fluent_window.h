@@ -54,6 +54,7 @@ public:
 protected:
     void paintEvent(QPaintEvent* e) override;
     void showEvent(QShowEvent* e) override;
+    void resizeEvent(QResizeEvent* e) override;
 
 protected slots:
     void onThemeChangedFinished();
