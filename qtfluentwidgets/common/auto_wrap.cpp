@@ -17,6 +17,33 @@ QCache<QPair<QString, int>, QStringList> TextWrap::splitTokenCache_(128);
 const QHash<QString, int> TextWrap::EAST_ASIAN_WIDTH_TABLE = {{"F", 2}, {"H", 1}, {"W", 2},
                                                               {"A", 1}, {"N", 1}, {"Na", 1}};
 
+// Helper function to determine if a character is East Asian wide (CJK, etc.)
+static bool isEastAsianWide(ushort unicode) {
+    // CJK Unified Ideographs: U+4E00-U+9FFF
+    // CJK Unified Ideographs Extension A: U+3400-U+4DBF
+    // CJK Unified Ideographs Extension B-H: U+20000-U+323AF (surrogate pairs)
+    // CJK Compatibility Ideographs: U+F900-U+FAFF
+    // CJK Symbols and Punctuation: U+3000-U+303F
+    // Hiragana: U+3040-U+309F
+    // Katakana: U+30A0-U+30FF
+    // Bopomofo: U+3100-U+312F, U+31A0-U+31BF
+    // Hangul Syllables: U+AC00-U+D7AF
+    // Hangul Jamo: U+1100-U+11FF
+    // Fullwidth ASCII variants: U+FF00-U+FFEF
+
+    return (unicode >= 0x4E00 && unicode <= 0x9FFF) ||  // CJK Unified Ideographs
+           (unicode >= 0x3400 && unicode <= 0x4DBF) ||  // CJK Extension A
+           (unicode >= 0xF900 && unicode <= 0xFAFF) ||  // CJK Compatibility
+           (unicode >= 0x3000 && unicode <= 0x303F) ||  // CJK Symbols/Punctuation
+           (unicode >= 0x3040 && unicode <= 0x309F) ||  // Hiragana
+           (unicode >= 0x30A0 && unicode <= 0x30FF) ||  // Katakana
+           (unicode >= 0x3100 && unicode <= 0x312F) ||  // Bopomofo
+           (unicode >= 0x31A0 && unicode <= 0x31BF) ||  // Bopomofo Extended
+           (unicode >= 0xAC00 && unicode <= 0xD7AF) ||  // Hangul Syllables
+           (unicode >= 0x1100 && unicode <= 0x11FF) ||  // Hangul Jamo
+           (unicode >= 0xFF00 && unicode <= 0xFFEF);    // Fullwidth variants
+}
+
 int TextWrap::getCharWidth(const QChar& ch) {
     QString charStr = ch;
 
@@ -25,8 +52,9 @@ int TextWrap::getCharWidth(const QChar& ch) {
         return *charWidthCache_.object(charStr);
     }
 
-    // Get Unicode East Asian width
-    int width = EAST_ASIAN_WIDTH_TABLE.value(QString::number(ch.unicode()), 1);
+    // Determine character width based on Unicode category
+    // East Asian wide characters (CJK, etc.) have width 2, others have width 1
+    int width = isEastAsianWide(ch.unicode()) ? 2 : 1;
 
     // Cache result
     charWidthCache_.insert(charStr, new int(width));

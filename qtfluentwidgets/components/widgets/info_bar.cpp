@@ -9,6 +9,7 @@
 #include <QScreen>
 #include <QShowEvent>
 
+#include "common/auto_wrap.h"
 #include "common/style_sheet.h"
 #include "components/widgets/button.h"
 
@@ -222,20 +223,14 @@ void InfoBar::adjustText() {
     QWidget* parentWidget = qobject_cast<QWidget*>(parent());
     int w = parentWidget ? (parentWidget->width() - 50) : 900;
 
-    // Adjust title
+    // Adjust title - use TextWrap for proper wrapping (once=false, same as Python)
     int chars = qBound(30, qMin(w / 10, 120), 120);
-    QString wrappedTitle = title_;
-    if (wrappedTitle.length() > chars) {
-        wrappedTitle = wrappedTitle.left(chars) + "...";
-    }
+    auto [wrappedTitle, _] = TextWrap::wrap(title_, chars, false);
     titleLabel_->setText(wrappedTitle);
 
-    // Adjust content
+    // Adjust content - use TextWrap for proper wrapping (once=false, same as Python)
     chars = qBound(30, qMin(w / 9, 120), 120);
-    QString wrappedContent = content_;
-    if (wrappedContent.length() > chars) {
-        wrappedContent = wrappedContent.left(chars) + "...";
-    }
+    auto [wrappedContent, __] = TextWrap::wrap(content_, chars, false);
     contentLabel_->setText(wrappedContent);
     adjustSize();
 }
