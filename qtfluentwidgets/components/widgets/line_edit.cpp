@@ -1,7 +1,10 @@
 #include "components/widgets/line_edit.h"
 
+#include <QAbstractItemModel>
 #include <QAction>
+#include <QCompleter>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
@@ -140,6 +143,148 @@ void LineEditButton::paintEvent(QPaintEvent* e) {
 }
 
 // ============================================================================
+// CompleterMenu
+// ============================================================================
+
+CompleterMenu::CompleterMenu(LineEdit* lineEdit)
+    : RoundMenu(QString(), lineEdit), lineEdit_(lineEdit) {
+    view()->setViewportMargins(0, 2, 0, 6);
+    view()->setObjectName(QStringLiteral("completerListWidget"));
+    view()->setItemDelegate(new IndicatorMenuItemDelegate(this));
+    view()->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    installEventFilter(this);
+    setItemHeight(33);
+
+    connect(view(), &QListWidget::itemClicked, this, &CompleterMenu::onItemClicked);
+}
+
+bool CompleterMenu::setCompletion(QAbstractItemModel* model, int column) {
+    QStringList items;
+    indexes_.clear();
+
+    for (int i = 0; i < model->rowCount(); ++i) {
+        QModelIndex idx = model->index(i, column);
+        items.append(model->data(idx).toString());
+        indexes_.append(idx);
+    }
+
+    if (items_ == items && isVisible()) {
+        return false;
+    }
+
+    setItems(items);
+    return true;
+}
+
+void CompleterMenu::setItems(const QStringList& items) {
+    view()->clear();
+    items_ = items;
+
+    for (const QString& item : items) {
+        auto* listItem = new QListWidgetItem(item);
+        listItem->setSizeHint(QSize(1, 33));
+        view()->addItem(listItem);
+    }
+}
+
+void CompleterMenu::setMaxVisibleItems(int num) { RoundMenu::setMaxVisibleItems(num); }
+
+void CompleterMenu::popup() {
+    if (items_.isEmpty()) {
+        close();
+        return;
+    }
+
+    // Adjust menu size
+    if (view()->width() < lineEdit_->width()) {
+        view()->setMinimumWidth(lineEdit_->width());
+        adjustSize();
+    }
+
+    // Determine animation type
+    QMargins margins = layout()->contentsMargins();
+    int x = -width() / 2 + margins.left() + lineEdit_->width() / 2;
+    int y = lineEdit_->height() - margins.top() + 2;
+    QPoint pd = lineEdit_->mapToGlobal(QPoint(x, y));
+    int hd = view()->heightForAnimation(pd, MenuAnimationType::FadeInDropDown);
+
+    QPoint pu = lineEdit_->mapToGlobal(QPoint(x, 7));
+    int hu = view()->heightForAnimation(pu, MenuAnimationType::FadeInPullUp);
+
+    QPoint pos;
+    MenuAnimationType aniType;
+
+    if (hd >= hu) {
+        pos = pd;
+        aniType = MenuAnimationType::FadeInDropDown;
+    } else {
+        pos = pu;
+        aniType = MenuAnimationType::FadeInPullUp;
+    }
+
+    view()->adjustSizeForMenu(pos, aniType);
+
+    // Update border style
+    view()->setProperty("dropDown", aniType == MenuAnimationType::FadeInDropDown);
+    updateDynamicStyle(view());
+
+    adjustSize();
+    execAt(pos, true, aniType);
+
+    // Remove focus from menu
+    view()->setFocusPolicy(Qt::NoFocus);
+    setFocusPolicy(Qt::NoFocus);
+    lineEdit_->setFocus();
+}
+
+void CompleterMenu::onItemClicked(QListWidgetItem* item) {
+    close();
+    onCompletionItemSelected(item->text(), view()->row(item));
+}
+
+bool CompleterMenu::eventFilter(QObject* obj, QEvent* event) {
+    if (event->type() != QEvent::KeyPress) {
+        return RoundMenu::eventFilter(obj, event);
+    }
+
+    QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+
+    // Redirect input to line edit
+    QKeyEvent keyPress(QEvent::KeyPress, keyEvent->key(), keyEvent->modifiers(), keyEvent->text(),
+                       keyEvent->isAutoRepeat(), keyEvent->count());
+    QKeyEvent keyRelease(QEvent::KeyRelease, keyEvent->key(), keyEvent->modifiers(),
+                         keyEvent->text(), keyEvent->isAutoRepeat(), keyEvent->count());
+
+    qApp->sendEvent(lineEdit_, &keyPress);
+    qApp->sendEvent(view(), event);
+
+    if (keyEvent->key() == Qt::Key_Escape) {
+        close();
+    }
+
+    if ((keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) &&
+        view()->currentRow() >= 0) {
+        QListWidgetItem* currentItem = view()->currentItem();
+        if (currentItem) {
+            onCompletionItemSelected(currentItem->text(), view()->currentRow());
+        }
+        close();
+    }
+
+    return true;
+}
+
+void CompleterMenu::onCompletionItemSelected(const QString& text, int row) {
+    lineEdit_->setText(text);
+    emit activated(text);
+
+    if (row >= 0 && row < indexes_.size()) {
+        emit indexActivated(indexes_[row]);
+    }
+}
+
+// ============================================================================
 // LineEdit
 // ============================================================================
 
@@ -169,6 +314,7 @@ LineEdit::LineEdit(QWidget* parent) : QLineEdit(parent) {
 
     connect(clearButton_, &QToolButton::clicked, this, &QLineEdit::clear);
     connect(this, &QLineEdit::textChanged, this, &LineEdit::onTextChanged);
+    connect(this, &QLineEdit::textEdited, this, &LineEdit::onTextEdited);
 }
 
 QHBoxLayout* LineEdit::buttonLayout() const { return hBoxLayout_; }
@@ -216,6 +362,58 @@ void LineEdit::setClearButtonEnabled(bool enable) {
 }
 
 bool LineEdit::isClearButtonEnabled() const { return isClearButtonEnabled_; }
+
+void LineEdit::setCompleter(QCompleter* completer) { completer_ = completer; }
+
+QCompleter* LineEdit::completer() const { return completer_; }
+
+void LineEdit::setCompleterMenu(CompleterMenu* menu) {
+    completerMenu_ = menu;
+    connect(menu, &CompleterMenu::activated, this, [this](const QString& text) {
+        if (completer_) {
+            emit completer_->activated(text);
+        }
+    });
+    connect(menu, &CompleterMenu::indexActivated, this, [this](const QModelIndex& index) {
+        if (completer_) {
+            emit completer_->activated(index);
+        }
+    });
+}
+
+void LineEdit::showCompleterMenu() {
+    if (!completer_ || text().isEmpty()) {
+        return;
+    }
+
+    // Create menu if not exists
+    if (!completerMenu_) {
+        setCompleterMenu(new CompleterMenu(this));
+    }
+
+    // Add menu items
+    completer_->setCompletionPrefix(text());
+    bool changed = completerMenu_->setCompletion(completer_->completionModel(),
+                                                 completer_->completionColumn());
+    completerMenu_->setMaxVisibleItems(completer_->maxVisibleItems());
+
+    // Show menu
+    if (changed) {
+        completerMenu_->popup();
+    }
+}
+
+void LineEdit::onTextEdited(const QString& text) {
+    if (!completer_) {
+        return;
+    }
+
+    if (!text.isEmpty()) {
+        QTimer::singleShot(50, this, &LineEdit::showCompleterMenu);
+    } else if (completerMenu_) {
+        completerMenu_->close();
+    }
+}
 
 void LineEdit::addAction(QAction* action, QLineEdit::ActionPosition position) {
     if (!action) {
@@ -430,6 +628,11 @@ void SearchLineEdit::search() {
     } else {
         emit clearSignal();
     }
+}
+
+void SearchLineEdit::setClearButtonEnabled(bool enable) {
+    isClearButtonEnabled_ = enable;
+    setTextMargins(0, 0, 28 * enable + 30, 0);
 }
 
 }  // namespace qfw
