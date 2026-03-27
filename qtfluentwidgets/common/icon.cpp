@@ -9,13 +9,14 @@
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
-#include <QSet>
 #include <QMenu>
 #include <QRegularExpression>
+#include <QSet>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 #include <QtSvg/QSvgRenderer>
 #include <cmath>
+
 namespace qfw {
 
 // ============================================================================
@@ -866,6 +867,110 @@ QString FluentIcon::enumToString(FluentIconEnum icon) {
             return QStringLiteral("Hide");
         case FluentIconEnum::View:
             return QStringLiteral("View");
+
+            // Extend
+        case FluentIconEnum::ArrowUndo:
+            return QStringLiteral("ArrowUndo");
+        case FluentIconEnum::ArrowRedo:
+            return QStringLiteral("ArrowRedo");
+        case FluentIconEnum::ArrowClockwise:
+            return QStringLiteral("ArrowClockwise");
+
+        case FluentIconEnum::ArrowUpload:
+            return QStringLiteral("ArrowUpload");
+
+        case FluentIconEnum::LockClosed:
+            return QStringLiteral("LockClosed");
+
+        case FluentIconEnum::LockOpen:
+            return QStringLiteral("LockOpen");
+
+        case FluentIconEnum::BookmarkSingle:
+            return QStringLiteral("BookmarkSingle");
+
+        case FluentIconEnum::Star:
+            return QStringLiteral("Star");
+
+        case FluentIconEnum::StarFilled:
+            return QStringLiteral("StarFilled");
+
+        case FluentIconEnum::Person:
+            return QStringLiteral("Person");
+
+        case FluentIconEnum::Warning:
+            return QStringLiteral("Warning");
+
+        case FluentIconEnum::DismissCircle:
+            return QStringLiteral("DismissCircle");
+
+        case FluentIconEnum::CheckMark:
+            return QStringLiteral("CheckMark");
+
+        case FluentIconEnum::QuestionCircle:
+            return QStringLiteral("QuestionCircle");
+
+        case FluentIconEnum::TextBold:
+            return QStringLiteral("TextBold");
+
+        case FluentIconEnum::TextItalic:
+            return QStringLiteral("TextItalic");
+
+        case FluentIconEnum::TextUnderline:
+            return QStringLiteral("TextUnderline");
+
+        case FluentIconEnum::TextStrikethrough:
+            return QStringLiteral("TextStrikethrough");
+
+        case FluentIconEnum::TextAlignLeft:
+            return QStringLiteral("TextAlignLeft");
+
+        case FluentIconEnum::TextAlignCenter:
+            return QStringLiteral("TextAlignCenter");
+
+        case FluentIconEnum::TextAlignRight:
+            return QStringLiteral("TextAlignRight");
+
+        case FluentIconEnum::TextAlignJustify:
+            return QStringLiteral("TextAlignJustify");
+
+        case FluentIconEnum::TextBulletList:
+            return QStringLiteral("TextBulletList");
+
+        case FluentIconEnum::TextNumberListRTL:
+            return QStringLiteral("TextNumberListRTL");
+
+        case FluentIconEnum::TextIndentIncrease:
+            return QStringLiteral("TextIndentIncrease");
+
+        case FluentIconEnum::TextIndentDecrease:
+            return QStringLiteral("TextIndentDecrease");
+
+        case FluentIconEnum::TextQuote:
+            return QStringLiteral("TextQuote");
+
+        case FluentIconEnum::LinkDismiss:
+            return QStringLiteral("LinkDismiss");
+
+        case FluentIconEnum::Table:
+            return QStringLiteral("Table");
+
+        case FluentIconEnum::Image:
+            return QStringLiteral("Image");
+
+        case FluentIconEnum::FolderOpen:
+            return QStringLiteral("FolderOpen");
+
+        case FluentIconEnum::Cart:
+            return QStringLiteral("Cart");
+
+        case FluentIconEnum::Circle:
+            return QStringLiteral("Circle");
+
+        case FluentIconEnum::Crop:
+            return QStringLiteral("Crop");
+
+        case FluentIconEnum::Drop:
+            return QStringLiteral("Drop");
 
         default:
             return QStringLiteral("Unknown");

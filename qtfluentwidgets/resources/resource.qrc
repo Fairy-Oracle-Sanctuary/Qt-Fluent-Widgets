@@ -355,6 +355,78 @@
         <file>images/icons/SkipForward_white.svg</file>
         <file>images/icons/SkipForward_black.svg</file>
 
+        <!-- Extended icons -->
+        <file>images/icons/ArrowUndo_white.svg</file>
+        <file>images/icons/ArrowUndo_black.svg</file>
+        <file>images/icons/ArrowRedo_white.svg</file>
+        <file>images/icons/ArrowRedo_black.svg</file>
+        <file>images/icons/ArrowClockwise_white.svg</file>
+        <file>images/icons/ArrowClockwise_black.svg</file>
+        <file>images/icons/ArrowUpload_white.svg</file>
+        <file>images/icons/ArrowUpload_black.svg</file>
+        <file>images/icons/LockClosed_white.svg</file>
+        <file>images/icons/LockClosed_black.svg</file>
+        <file>images/icons/LockOpen_white.svg</file>
+        <file>images/icons/LockOpen_black.svg</file>
+        <file>images/icons/BookmarkSingle_white.svg</file>
+        <file>images/icons/BookmarkSingle_black.svg</file>
+        <file>images/icons/Star_white.svg</file>
+        <file>images/icons/Star_black.svg</file>
+        <file>images/icons/StarFilled_white.svg</file>
+        <file>images/icons/StarFilled_black.svg</file>
+        <file>images/icons/Person_white.svg</file>
+        <file>images/icons/Person_black.svg</file>
+        <file>images/icons/Warning_white.svg</file>
+        <file>images/icons/Warning_black.svg</file>
+        <file>images/icons/DismissCircle_white.svg</file>
+        <file>images/icons/DismissCircle_black.svg</file>
+        <file>images/icons/CheckMark_white.svg</file>
+        <file>images/icons/CheckMark_black.svg</file>
+        <file>images/icons/QuestionCircle_white.svg</file>
+        <file>images/icons/QuestionCircle_black.svg</file>
+        <file>images/icons/TextBold_white.svg</file>
+        <file>images/icons/TextBold_black.svg</file>
+        <file>images/icons/TextItalic_white.svg</file>
+        <file>images/icons/TextItalic_black.svg</file>
+        <file>images/icons/TextUnderline_white.svg</file>
+        <file>images/icons/TextUnderline_black.svg</file>
+        <file>images/icons/TextStrikethrough_white.svg</file>
+        <file>images/icons/TextStrikethrough_black.svg</file>
+        <file>images/icons/TextAlignLeft_white.svg</file>
+        <file>images/icons/TextAlignLeft_black.svg</file>
+        <file>images/icons/TextAlignCenter_white.svg</file>
+        <file>images/icons/TextAlignCenter_black.svg</file>
+        <file>images/icons/TextAlignRight_white.svg</file>
+        <file>images/icons/TextAlignRight_black.svg</file>
+        <file>images/icons/TextAlignJustify_white.svg</file>
+        <file>images/icons/TextAlignJustify_black.svg</file>
+        <file>images/icons/TextBulletList_white.svg</file>
+        <file>images/icons/TextBulletList_black.svg</file>
+        <file>images/icons/TextNumberListRTL_white.svg</file>
+        <file>images/icons/TextNumberListRTL_black.svg</file>
+        <file>images/icons/TextIndentIncrease_white.svg</file>
+        <file>images/icons/TextIndentIncrease_black.svg</file>
+        <file>images/icons/TextIndentDecrease_white.svg</file>
+        <file>images/icons/TextIndentDecrease_black.svg</file>
+        <file>images/icons/TextQuote_white.svg</file>
+        <file>images/icons/TextQuote_black.svg</file>
+        <file>images/icons/LinkDismiss_white.svg</file>
+        <file>images/icons/LinkDismiss_black.svg</file>
+        <file>images/icons/Table_white.svg</file>
+        <file>images/icons/Table_black.svg</file>
+        <file>images/icons/Image_white.svg</file>
+        <file>images/icons/Image_black.svg</file>
+        <file>images/icons/FolderOpen_white.svg</file>
+        <file>images/icons/FolderOpen_black.svg</file>
+        <file>images/icons/Cart_white.svg</file>
+        <file>images/icons/Cart_black.svg</file>
+        <file>images/icons/Circle_white.svg</file>
+        <file>images/icons/Circle_black.svg</file>
+        <file>images/icons/Crop_white.svg</file>
+        <file>images/icons/Crop_black.svg</file>
+        <file>images/icons/Drop_white.svg</file>
+        <file>images/icons/Drop_black.svg</file>
+
         <file>images/acrylic/noise.png</file>
         <file>images/folder_list_dialog/Close_white.png</file>
         <file>images/folder_list_dialog/Close_black.png</file>
