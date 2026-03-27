@@ -160,13 +160,13 @@ void IconCardView::initWidget() {
     flowLayout_->setHorizontalSpacing(8);
     flowLayout_->setContentsMargins(8, 3, 8, 8);
 
-    connect(searchLineEdit_, &SearchLineEdit::searchSignal, this,
+    connect(searchLineEdit_, &SearchLineEdit::textChanged, this,
             &IconCardView::onSearchTextChanged);
 
     applyQss();
     connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme) { applyQss(); });
 
-    const int last = static_cast<int>(FluentIconEnum::Pin);
+    const int last = static_cast<int>(FluentIconEnum::Drop);
     for (int i = 0; i <= last; ++i) {
         addIcon(static_cast<FluentIconEnum>(i));
     }
