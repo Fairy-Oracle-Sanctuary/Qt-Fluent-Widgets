@@ -862,6 +862,8 @@ QString FluentIcon::enumToString(FluentIconEnum icon) {
             return QStringLiteral("Tag");
         case FluentIconEnum::VPN:
             return QStringLiteral("VPN");
+        case FluentIconEnum::Hide:
+            return QStringLiteral("Hide");
         case FluentIconEnum::View:
             return QStringLiteral("View");
 

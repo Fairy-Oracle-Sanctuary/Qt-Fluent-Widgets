@@ -131,7 +131,7 @@ IconCardView::IconCardView(QWidget* parent) : QWidget(parent) {
 
     vBoxLayout_ = new QVBoxLayout(this);
     hBoxLayout_ = new QHBoxLayout(view_);
-    flowLayout_ = new FlowLayout(scrollWidget_, true, true);
+    flowLayout_ = new FlowLayout(scrollWidget_, false, true);
 
     initWidget();
 }
@@ -259,7 +259,8 @@ void IconCardView::showAllIcons() {
 }
 
 IconInterface::IconInterface(QWidget* parent)
-    : GalleryInterface(Translator().icons(), QStringLiteral("qtfluentwidgets.common.icon"), parent) {
+    : GalleryInterface(Translator().icons(), QStringLiteral("qtfluentwidgets.common.icon"),
+                       parent) {
     setObjectName(QStringLiteral("iconInterface"));
     setProperty("qssClass", "IconInterface");
 
