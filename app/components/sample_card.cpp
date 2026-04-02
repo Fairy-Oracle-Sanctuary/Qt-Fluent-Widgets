@@ -17,7 +17,9 @@ SampleCard::SampleCard(const FluentIconBase& icon, const QString& title, const Q
 
     iconWidget_ = new IconWidget(icon, this);
     titleLabel_ = new QLabel(title, this);
-    contentLabel_ = new QLabel(TextWrap::wrap(content, 45, false).first, this);
+    // Card width 360 - icon 48 - left margin 20 - spacing 28 = 264px available
+    // Approx 6-7 pixels per Latin char, so ~40 chars max
+    contentLabel_ = new QLabel(TextWrap::wrap(content, 40, false).first, this);
 
     iconWidget_->setFixedSize(48, 48);
 
@@ -58,7 +60,7 @@ SampleCard::SampleCard(const QString& icon, const QString& title, const QString&
 
     iconWidget_ = new IconWidget(icon, this);
     titleLabel_ = new QLabel(title, this);
-    contentLabel_ = new QLabel(TextWrap::wrap(content, 45, false).first, this);
+    contentLabel_ = new QLabel(TextWrap::wrap(content, 40, false).first, this);
 
     iconWidget_->setFixedSize(48, 48);
 

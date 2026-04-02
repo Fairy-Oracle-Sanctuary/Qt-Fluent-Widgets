@@ -328,6 +328,17 @@ FluentWidgetTitleBar::FluentWidgetTitleBar(QWidget* parent) : FluentTitleBar(par
     }
 }
 
+// TopFluentTitleBar
+// ============================================================================
+
+TopFluentTitleBar::TopFluentTitleBar(QWidget* parent) : FluentTitleBar(parent) {
+    hBoxLayout()->setContentsMargins(16, 0, 0, 0);
+    if (hBoxLayout()->itemAt(1) && hBoxLayout()->itemAt(1)->spacerItem()) {
+        hBoxLayout()->itemAt(1)->spacerItem()->changeSize(0, 0, QSizePolicy::Fixed,
+                                                          QSizePolicy::Minimum);
+    }
+}
+
 void FluentTitleBar::updateWindowTitle() {
     if (auto* w = window()) {
         setTitle(w->windowTitle());
@@ -735,6 +746,153 @@ SplitFluentWindow::SplitFluentWindow(QWidget* parent) : FluentWindow(parent) {
         connect(navigationInterface_, &NavigationInterface::displayModeChanged, this, [this]() {
             if (titleBar()) titleBar()->raise();
         });
+    }
+}
+
+// ============================================================================
+// TopFluentWindow
+// ============================================================================
+
+TopFluentWindow::TopFluentWindow(QWidget* parent)
+    : FluentWindowBase(parent),
+      topNavigationInterface_(new TopNavigationInterface(this, true)),
+      vBoxLayout_(new QVBoxLayout()) {
+    setTitleBar(new TopFluentTitleBar(this));
+
+    // Initialize layout - navigation at top, content below
+    if (hBoxLayout_) {
+        // Remove the first item (stackedWidget placeholder)
+        QLayoutItem* item = hBoxLayout_->itemAt(0);
+        if (item) {
+            hBoxLayout_->removeItem(item);
+            delete item;
+        }
+        hBoxLayout_->setContentsMargins(0, 0, 0, 0);
+    }
+
+    vBoxLayout_->setSpacing(0);
+    int topMargin = titleBar() ? titleBar()->height() - 12 : 36;
+    vBoxLayout_->setContentsMargins(0, topMargin, 0, 0);
+
+    // Add navigation interface at top
+    vBoxLayout_->addWidget(topNavigationInterface_);
+    if (stackedWidget_) {
+        stackedWidget_->setProperty("isTopWindow", true);
+        vBoxLayout_->addWidget(stackedWidget_, 1);
+    }
+
+    if (hBoxLayout_) {
+        hBoxLayout_->addLayout(vBoxLayout_);
+    }
+
+    // Connect displayModeChanged to raise title bar
+    connect(topNavigationInterface_, &TopNavigationInterface::displayModeChanged, this, [this]() {
+        if (titleBar()) titleBar()->raise();
+    });
+
+    if (titleBar()) {
+        titleBar()->raise();
+    }
+}
+
+TopNavigationInterface* TopFluentWindow::navigationInterface() const {
+    return topNavigationInterface_;
+}
+
+NavigationWidget* TopFluentWindow::addSubInterface(QWidget* subInterface, const QVariant& icon,
+                                                   const QString& text,
+                                                   TopNavigationItemPosition position,
+                                                   bool isTransparent, bool expanded) {
+    if (!subInterface) {
+        return nullptr;
+    }
+
+    if (subInterface->objectName().isEmpty()) {
+        return nullptr;
+    }
+
+    subInterface->setProperty("isStackedTransparent", isTransparent);
+
+    if (stackedWidget_) {
+        stackedWidget_->addWidget(subInterface);
+    }
+
+    const QString routeKey = subInterface->objectName();
+
+    NavigationWidget* item = topNavigationInterface_->addItem(
+        routeKey, icon, text, [this, subInterface]() { switchTo(subInterface); }, true, position,
+        text, expanded);
+
+    if (stackedWidget_ && stackedWidget_->count() == 1) {
+        connect(stackedWidget_, &qfw::StackedWidget::currentChanged, this,
+                [this](int index) { onCurrentInterfaceChanged(index); });
+        topNavigationInterface_->setCurrentItem(routeKey);
+
+        if (Router* history = topNavigationInterface_->history();
+            history && stackedWidget_->view()) {
+            history->setDefaultRouteKey(stackedWidget_->view(), routeKey);
+        }
+    }
+
+    updateStackedBackground();
+    return item;
+}
+
+NavigationWidget* TopFluentWindow::addSubInterface(QWidget* subInterface, FluentIconEnum icon,
+                                                   const QString& text,
+                                                   TopNavigationItemPosition position) {
+    return addSubInterface(subInterface, FluentIcon(icon).qicon(), text, position);
+}
+
+NavigationWidget* TopFluentWindow::addSubInterface(QWidget* subInterface,
+                                                   const FluentIconBase& icon, const QString& text,
+                                                   TopNavigationItemPosition position) {
+    return addSubInterface(subInterface, icon.qicon(), text, position);
+}
+
+void TopFluentWindow::removeInterface(QWidget* subInterface, bool isDelete) {
+    if (!subInterface) {
+        return;
+    }
+
+    if (topNavigationInterface_) {
+        topNavigationInterface_->removeWidget(subInterface->objectName());
+    }
+    if (stackedWidget_) {
+        stackedWidget_->removeWidget(subInterface);
+    }
+
+    subInterface->hide();
+    if (isDelete) {
+        subInterface->deleteLater();
+    }
+}
+
+void TopFluentWindow::onCurrentInterfaceChanged(int index) {
+    if (!stackedWidget_ || !topNavigationInterface_) {
+        return;
+    }
+
+    QWidget* w = stackedWidget_->widget(index);
+    if (!w) {
+        return;
+    }
+
+    topNavigationInterface_->setCurrentItem(w->objectName());
+
+    if (Router* history = topNavigationInterface_->history(); history && stackedWidget_->view()) {
+        history->push(stackedWidget_->view(), w->objectName());
+    }
+
+    updateStackedBackground();
+}
+
+void TopFluentWindow::resizeEvent(QResizeEvent* e) {
+    FluentWindowBase::resizeEvent(e);
+
+    if (titleBar()) {
+        titleBar()->move(0, 0);
+        titleBar()->resize(width(), titleBar()->height());
     }
 }
 

@@ -44,6 +44,8 @@ universal_add_executable(qtfluentwidgets_app
     components/sample_card.h
     view/main_window.cpp
     view/main_window.h
+    view/top_main_window.cpp
+    view/top_main_window.h
     view/gallery_interface.cpp
     view/gallery_interface.h
     view/icon_interface.cpp
@@ -146,6 +148,8 @@ set(LUPDATE_SOURCES
     components/sample_card.h
     view/main_window.cpp
     view/main_window.h
+    view/top_main_window.cpp
+    view/top_main_window.h
     view/gallery_interface.cpp
     view/gallery_interface.h
     view/icon_interface.cpp
