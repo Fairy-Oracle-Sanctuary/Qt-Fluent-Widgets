@@ -11,6 +11,7 @@
 #include "common/app_config.h"
 #include "qtfluentwidgets.h"
 #include "view/main_window.h"
+#include "view/top_main_window.h"
 
 int main(int argc, char* argv[]) {
     // Load config early to check dpi scale setting
@@ -88,7 +89,7 @@ int main(int argc, char* argv[]) {
         QStringLiteral("SampleCardView"),
     });
 
-    auto* window = new qfw::MainWindow();
+    auto* window = new qfw::TopMainWindow();
     window->show();
 
     return app.exec();

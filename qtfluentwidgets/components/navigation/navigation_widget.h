@@ -117,6 +117,9 @@ public:
     explicit NavigationToolButton(const QVariant& icon, QWidget* parent = nullptr);
 
     void setCompacted(bool compacted) override;
+
+protected:
+    QMargins marginsForPaint() const override { return QMargins(1, 0, 0, 0); }
 };
 
 class NavigationSeparator : public NavigationWidget {

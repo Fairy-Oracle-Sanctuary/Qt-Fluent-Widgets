@@ -68,6 +68,7 @@ void BannerWidget::paintEvent(QPaintEvent* e) {
     const int h = height();
 
     path.addRoundedRect(QRectF(0, 0, w, h), 10, 10);
+    path.addRect(QRectF(0, 0, 50, 50));
     path.addRect(QRectF(0, h - 50, 50, 50));
     path.addRect(QRectF(w - 50, 0, 50, 50));
     path.addRect(QRectF(w - 50, h - 50, 50, 50));

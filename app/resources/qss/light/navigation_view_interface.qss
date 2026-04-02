@@ -12,5 +12,5 @@ TabInterface QLabel {
 #controlPanel {
     background-color: white;
     border-left: 1px solid rgb(229, 229, 229);
-    border-top-right-radius: 10px;
+    /* border-top-right-radius: 10px; */
 }

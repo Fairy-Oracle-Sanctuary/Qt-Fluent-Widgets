@@ -189,7 +189,7 @@ void NavigationPushButton::paintEvent(QPaintEvent* e) {
         painter.setBrush(QColor(c, c, c, isEnter_ ? 6 : 10));
         painter.drawRoundedRect(rect(), 5, 5);
 
-        if (isSelected_) {
+        if (isSelected_ && canDrawIndicator()) {
             // Use ThemeColorDark1 in dark mode for better visibility
             QColor indicatorColor;
             if (isDarkTheme()) {
@@ -230,7 +230,9 @@ void NavigationPushButton::paintEvent(QPaintEvent* e) {
 // NavigationToolButton
 // ==========================================================================
 NavigationToolButton::NavigationToolButton(const QVariant& icon, QWidget* parent)
-    : NavigationPushButton(icon, QString(), false, parent) {}
+    : NavigationPushButton(icon, QString(), false, parent) {
+    setFixedSize(40, 36);
+}
 
 void NavigationToolButton::setCompacted(bool compacted) {
     Q_UNUSED(compacted);
