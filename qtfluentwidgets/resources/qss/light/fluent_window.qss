@@ -16,6 +16,11 @@ SplitFluentWindow>StackedWidget {
     border-top: none;
 }
 
+StackedWidget[isTopWindow=true] {
+    border-top-left-radius: 0px;
+    border-top: none;
+}
+
 FluentWindowBase {
     background-color: transparent;
 }

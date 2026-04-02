@@ -10,6 +10,7 @@
 #include <QVariant>
 
 #include "components/navigation/navigation_panel.h"
+#include "components/navigation/top_navigation_interface.h"
 #include "components/widgets/frameless_window.h"
 #include "components/window/title_bar.h"
 
@@ -132,6 +133,13 @@ public:
     explicit FluentWidgetTitleBar(QWidget* parent);
 };
 
+class TopFluentTitleBar : public FluentTitleBar {
+    Q_OBJECT
+
+public:
+    explicit TopFluentTitleBar(QWidget* parent);
+};
+
 class FluentWindow : public FluentWindowBase {
     Q_OBJECT
 
@@ -246,6 +254,56 @@ class SplitFluentWindow : public FluentWindow {
 
 public:
     explicit SplitFluentWindow(QWidget* parent = nullptr);
+};
+
+class TopNavigationInterface;
+
+class TopFluentWindow : public FluentWindowBase {
+    Q_OBJECT
+
+public:
+    explicit TopFluentWindow(QWidget* parent = nullptr);
+
+    TopNavigationInterface* navigationInterface() const;
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, const QVariant& icon,
+                                      const QString& text,
+                                      NavigationItemPosition position) override {
+        return addSubInterface(subInterface, icon, text,
+                               static_cast<TopNavigationItemPosition>(position), false, false);
+    }
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, const QVariant& icon,
+                                      const QString& text, TopNavigationItemPosition position,
+                                      bool isTransparent, bool expanded);
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, const QVariant& icon,
+                                      const QString& text, TopNavigationItemPosition position) {
+        return addSubInterface(subInterface, icon, text, position, false, false);
+    }
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, const QIcon& icon, const QString& text,
+                                      TopNavigationItemPosition position) {
+        return addSubInterface(subInterface, QVariant(icon), text, position);
+    }
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, FluentIconEnum icon,
+                                      const QString& text, TopNavigationItemPosition position);
+
+    NavigationWidget* addSubInterface(QWidget* subInterface, const FluentIconBase& icon,
+                                      const QString& text, TopNavigationItemPosition position);
+
+    void removeInterface(QWidget* subInterface, bool isDelete = false) override;
+
+protected slots:
+    void onCurrentInterfaceChanged(int index);
+
+protected:
+    void resizeEvent(QResizeEvent* e) override;
+
+protected:
+    QPointer<TopNavigationInterface> topNavigationInterface_;
+    QPointer<QVBoxLayout> vBoxLayout_;
 };
 
 }  // namespace qfw

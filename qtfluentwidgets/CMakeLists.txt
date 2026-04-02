@@ -72,6 +72,10 @@ universal_add_library(qtfluentwidgets STATIC
     components/navigation/navigation_widget.h
     components/navigation/navigation_panel.cpp
     components/navigation/navigation_panel.h
+    components/navigation/top_navigation_panel.cpp
+    components/navigation/top_navigation_panel.h
+    components/navigation/top_navigation_interface.cpp
+    components/navigation/top_navigation_interface.h
     components/navigation/navigation_bar.cpp
     components/navigation/navigation_bar.h
     components/navigation/navigation_interface.cpp
