@@ -98,9 +98,12 @@ target_link_libraries(your_app PRIVATE
 #include <qtfluentwidgets.h>
 
 int main(int argc, char *argv[]) {
+    // Initialize Qt resources from static library
+    Q_INIT_RESOURCE(resource);
+
     QApplication app(argc, argv);
     
-    // 设置主题 (Light, Dark, 或 Auto)
+    // Set theme (Light, Dark, or Auto)
     qfw::setTheme(qfw::Theme::Light);
     
     // 创建 Fluent 窗口
