@@ -1,10 +1,12 @@
 #include "common/smooth_scroll.h"
 
 #include <QAbstractScrollArea>
+#include <QDebug>
 #include <QScrollBar>
 #include <QWheelEvent>
-#include <QDebug>
 #include <QtMath>
+#include <cmath>
+
 
 namespace qfw {
 
@@ -19,7 +21,7 @@ void SmoothScroll::setSmoothMode(SmoothMode mode) { smoothMode_ = mode; }
 
 void SmoothScroll::wheelEvent(QWheelEvent* e) {
     int delta = e->angleDelta().y() != 0 ? e->angleDelta().y() : e->angleDelta().x();
-    
+
     // Also check pixelDelta for macOS trackpad support
     if (delta == 0) {
         delta = e->pixelDelta().y() != 0 ? e->pixelDelta().y() : e->pixelDelta().x();
