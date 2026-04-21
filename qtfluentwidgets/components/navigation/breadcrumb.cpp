@@ -8,6 +8,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QResizeEvent>
+#include <cmath>
 
 #include "common/config.h"
 #include "common/font.h"
