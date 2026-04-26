@@ -7,10 +7,15 @@
 #include <QTimer>
 #include <QWheelEvent>
 #include <QApplication>
+#include <QPaintEvent>
 
 #import <Cocoa/Cocoa.h>
 
 namespace qfw {
+
+// ============================================================================
+// MacFramelessWindowBase
+// ============================================================================
 
 MacFramelessWindowBase::MacFramelessWindowBase() = default;
 MacFramelessWindowBase::~MacFramelessWindowBase() = default;
@@ -19,15 +24,47 @@ void MacFramelessWindowBase::setResizeEnabled(bool enabled) { resizeEnabled_ = e
 
 bool MacFramelessWindowBase::isResizeEnabled() const { return resizeEnabled_; }
 
+void MacFramelessWindowBase::setSystemTitleBarButtonVisible(bool visible) {
+    systemButtonVisible_ = visible;
+    
+    NSWindow* nsWindow = (__bridge NSWindow*)nsWindow_;
+    if (!nsWindow) {
+        return;
+    }
+    
+    [nsWindow setShowsToolbarButton:visible];
+    
+    BOOL isHidden = !visible;
+    [nsWindow standardWindowButton:NSWindowCloseButton].hidden = isHidden;
+    [nsWindow standardWindowButton:NSWindowZoomButton].hidden = isHidden;
+    [nsWindow standardWindowButton:NSWindowMiniaturizeButton].hidden = isHidden;
+    
+    if (visible) {
+        updateSystemButtonRect();
+    }
+}
+
+bool MacFramelessWindowBase::isSystemButtonVisible() const {
+    return systemButtonVisible_;
+}
+
+QRect MacFramelessWindowBase::systemTitleBarRect(const QSize& size) const {
+    // Default: left side. Override to move to right side.
+    // For right side: return QRect(size.width() - 75, 0, 75, size.height());
+    return QRect(0, 0, 75, size.height());
+}
+
 void MacFramelessWindowBase::initFrameless(QWidget* window) {
     if (!window) {
         return;
     }
+    
+    window_ = window;
 
     // Ensure this widget is treated as a top-level window.
     window->setWindowFlag(Qt::Window, true);
 
-    // Scheme 1 baseline: use Qt frameless hint.
+    // Use Qt frameless hint.
     const Qt::WindowFlags stayOnTop = (window->windowFlags() & Qt::WindowStaysOnTopHint)
                                           ? Qt::WindowStaysOnTopHint
                                           : Qt::WindowFlags{};
@@ -39,7 +76,6 @@ void MacFramelessWindowBase::initFrameless(QWidget* window) {
     window->setAutoFillBackground(false);
 
     // Fix trackpad scrolling not working on macOS with frameless windows.
-    // Without WA_OpaquePaintEvent, Qt's scroll events from trackpad are not delivered.
     window->setAttribute(Qt::WA_OpaquePaintEvent, false);
     window->setAttribute(Qt::WA_NoSystemBackground, false);
 }
@@ -50,7 +86,6 @@ static NSWindow* resolveNSWindow(QWidget* widget) {
     }
 
     // QWidget::winId() is an NSView* on macOS (via Cocoa platform plugin).
-    // Using it avoids relying on Qt private QPA headers.
     NSView* view = (__bridge NSView*)reinterpret_cast<void*>(widget->winId());
     if (!view) {
         return nil;
@@ -63,16 +98,15 @@ void MacFramelessWindowBase::applyCocoaWindowStyle(QWidget* window) {
     if (!nsWindow) {
         return;
     }
+    
+    nsWindow_ = (__bridge void*)nsWindow;
 
-    // Use Cocoa API even for scheme 1: configure titlebar to be transparent and content sized.
+    // Use Cocoa API: configure titlebar to be transparent and content sized.
     nsWindow.titleVisibility = NSWindowTitleHidden;
     nsWindow.titlebarAppearsTransparent = YES;
 
     // Let content view extend into titlebar.
     nsWindow.styleMask |= NSWindowStyleMaskFullSizeContentView;
-
-    // Keep standard buttons (traffic lights) as Cocoa-managed; the window is still frameless on Qt side.
-    // Do NOT hide them here; you may later reposition them in a more advanced scheme.
 
     // Ensure the window background is clear so Qt can draw its own background.
     nsWindow.opaque = NO;
@@ -89,6 +123,9 @@ void MacFramelessWindowBase::applyCocoaWindowStyle(QWidget* window) {
         nsWindow.styleMask |= NSWindowStyleMaskResizable;
     }
 
+    // Hide system title bar initially
+    hideSystemTitleBar();
+
     if (nsWindow.contentView) {
         [nsWindow.contentView setNeedsLayout:YES];
         [nsWindow.contentView layoutSubtreeIfNeeded];
@@ -99,9 +136,7 @@ void MacFramelessWindowBase::applyCocoaWindowStyle(QWidget* window) {
     }
 
     // Use a slightly delayed timer to ensure Cocoa style has fully propagated
-    // before forcing layout recompute. This fixes titlebar child widget
-    // vertical misalignment on initial show.
-    QTimer::singleShot(10, window, [window]() {
+    QTimer::singleShot(10, window, [this, window]() {
         if (!window) {
             return;
         }
@@ -121,7 +156,100 @@ void MacFramelessWindowBase::applyCocoaWindowStyle(QWidget* window) {
                 w->updateGeometry();
             }
         }
+        
+        // Update system button position if visible
+        if (systemButtonVisible_) {
+            updateSystemButtonRect();
+        }
     });
+}
+
+void MacFramelessWindowBase::hideSystemTitleBar() {
+    extendTitleBarToClientArea();
+    
+    NSWindow* nsWindow = (__bridge NSWindow*)nsWindow_;
+    if (!nsWindow) {
+        return;
+    }
+
+    // Disable the moving behavior of system
+    [nsWindow setMovableByWindowBackground:NO];
+    [nsWindow setMovable:NO];
+
+    // Hide title bar buttons and title
+    [nsWindow setTitleVisibility:NSWindowTitleHidden];
+    setSystemTitleBarButtonVisible(false);
+}
+
+void MacFramelessWindowBase::extendTitleBarToClientArea() {
+    NSWindow* nsWindow = (__bridge NSWindow*)nsWindow_;
+    if (!nsWindow) {
+        return;
+    }
+    
+    [nsWindow setStyleMask:[nsWindow styleMask] | NSWindowStyleMaskFullSizeContentView];
+    [nsWindow setTitlebarAppearsTransparent:YES];
+}
+
+void MacFramelessWindowBase::updateSystemTitleBar() {
+    extendTitleBarToClientArea();
+    setSystemTitleBarButtonVisible(systemButtonVisible_);
+}
+
+void MacFramelessWindowBase::updateSystemButtonRect() {
+    if (!systemButtonVisible_ || !window_) {
+        return;
+    }
+    
+    NSWindow* nsWindow = (__bridge NSWindow*)nsWindow_;
+    if (!nsWindow) {
+        return;
+    }
+
+    // Get system title bar buttons
+    NSButton* leftButton = [nsWindow standardWindowButton:NSWindowCloseButton];
+    NSButton* midButton = [nsWindow standardWindowButton:NSWindowMiniaturizeButton];
+    NSButton* rightButton = [nsWindow standardWindowButton:NSWindowZoomButton];
+    
+    if (!leftButton || !midButton || !rightButton) {
+        return;
+    }
+
+    // Get system title bar
+    NSView* titlebar = [rightButton superview];
+    CGFloat titlebarHeight = [titlebar frame].size.height;
+
+    CGFloat spacing = [midButton frame].origin.x - [leftButton frame].origin.x;
+    CGFloat width = [midButton frame].size.width;
+    CGFloat height = [midButton frame].size.height;
+
+    NSSize viewSize;
+    if ([nsWindow contentView]) {
+        viewSize = [[nsWindow contentView] frame].size;
+    } else {
+        viewSize = [nsWindow frame].size;
+    }
+
+    // Get the target rect from virtual method
+    QSize qtSize(static_cast<int>(viewSize.width), static_cast<int>(titlebarHeight));
+    QRect rect = systemTitleBarRect(qtSize);
+    QPoint center = rect.center();
+
+    // The origin of the NSWindow coordinate system is in the lower left corner,
+    // we do the necessary transformations
+    CGFloat centerY = titlebarHeight - center.y();
+
+    // Adjust the position of minimize button
+    NSPoint centerOrigin = NSMakePoint(center.x() - width / 2, centerY - height / 2);
+    [midButton setFrameOrigin:centerOrigin];
+
+    // Adjust the position of close button
+    NSPoint leftOrigin = NSMakePoint(centerOrigin.x - spacing, centerOrigin.y);
+    [leftButton setFrameOrigin:leftOrigin];
+
+    // Adjust the position of zoom button
+    NSPoint rightOrigin = NSMakePoint(centerOrigin.x + spacing, centerOrigin.y);
+    [rightButton setFrameOrigin:rightOrigin];
 }
 
 // ============================================================================
@@ -139,6 +267,11 @@ void MacFramelessWindow::showEvent(QShowEvent* e) {
 
     cocoaApplied_ = true;
     applyCocoaWindowStyle(this);
+}
+
+void MacFramelessWindow::paintEvent(QPaintEvent* e) {
+    QWidget::paintEvent(e);
+    updateSystemTitleBar();
 }
 
 // ============================================================================
@@ -181,6 +314,11 @@ bool MacFramelessMainWindow::event(QEvent* e) {
     return QMainWindow::event(e);
 }
 
+void MacFramelessMainWindow::paintEvent(QPaintEvent* e) {
+    QMainWindow::paintEvent(e);
+    updateSystemTitleBar();
+}
+
 // ============================================================================
 // MacFramelessDialog
 // ============================================================================
@@ -196,6 +334,11 @@ void MacFramelessDialog::showEvent(QShowEvent* e) {
 
     cocoaApplied_ = true;
     applyCocoaWindowStyle(this);
+}
+
+void MacFramelessDialog::paintEvent(QPaintEvent* e) {
+    QDialog::paintEvent(e);
+    updateSystemTitleBar();
 }
 
 }  // namespace qfw
