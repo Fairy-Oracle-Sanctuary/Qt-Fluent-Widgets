@@ -36,14 +36,14 @@ protected:
     void initFrameless(QWidget* window);
     void applyCocoaWindowStyle(QWidget* window);
     void updateSystemButtonRect();
+    void updateSystemTitleBar();
+    void hideSystemTitleBar();
+    void extendTitleBarToClientArea();
 
     bool resizeEnabled_ = true;
     bool systemButtonVisible_ = false;
 
 private:
-    void hideSystemTitleBar();
-    void extendTitleBarToClientArea();
-    void updateSystemTitleBar();
 
     QWidget* window_ = nullptr;
     void* nsWindow_ = nullptr;  // NSWindow* stored as void* to avoid Objective-C in header
