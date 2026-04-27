@@ -342,7 +342,7 @@ void TitleBarBase::mousePressEvent(QMouseEvent* event) {
 
 bool TitleBarBase::eventFilter(QObject* watched, QEvent* event) {
     if (watched == window() && event->type() == QEvent::WindowStateChange) {
-        maxBtn_->setMaximized(window()->isMaximized());
+        maxBtn_->setMaximized(window()->isMaximized() || window()->isFullScreen());
     }
     return QWidget::eventFilter(watched, event);
 }
@@ -387,10 +387,16 @@ void TitleBarBase::updateButtonColors() {
 
 void TitleBarBase::toggleMaximized() {
     if (auto* w = window()) {
-        if (w->isMaximized()) {
+        if (w->isMaximized() || w->isFullScreen()) {
             w->showNormal();
         } else {
+#ifdef Q_OS_MAC
+            // On macOS, showMaximized() only zooms the window (fits content),
+            // use showFullScreen() for true fullscreen like the green traffic light button
+            w->showFullScreen();
+#else
             w->showMaximized();
+#endif
         }
     }
 }
