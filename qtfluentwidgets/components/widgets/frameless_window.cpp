@@ -84,6 +84,20 @@ void FluentMainWindow::showEvent(QShowEvent* e) {
 }
 
 void FluentMainWindow::paintEvent(QPaintEvent* e) {
+#ifdef Q_OS_WIN
+    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
+    // WA_TranslucentBackground may cause Windows to set WS_EX_TRANSPARENT,
+    // which makes the window click-through. Remove it on every paint.
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    if (hWnd) {
+        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+        if (exStyle & WS_EX_TRANSPARENT) {
+            exStyle &= ~WS_EX_TRANSPARENT;
+            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
+        }
+    }
+#endif
+
     if (micaApplied_) {
         QPainter painter(this);
         painter.setCompositionMode(QPainter::CompositionMode_Clear);
