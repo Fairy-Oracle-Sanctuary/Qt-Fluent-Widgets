@@ -6,6 +6,7 @@
 
 #include "common/translator.h"
 #include "components/widgets/button.h"
+#include "components/widgets/card_widget.h"
 #include "components/widgets/info_badge.h"
 #include "components/widgets/info_bar.h"
 #include "components/widgets/label.h"
@@ -13,9 +14,30 @@
 #include "components/widgets/progress_ring.h"
 #include "components/widgets/spin_box.h"
 #include "components/widgets/state_tool_tip.h"
+#include "components/widgets/switch_button.h"
 #include "components/widgets/tool_tip.h"
 
 namespace qfw {
+
+static QWidget* createGroupHeaderCardWidgetDemo(StatusInfoInterface* self) {
+    auto* card = new GroupHeaderCardWidget(self->tr("Group header card"), self);
+    card->setMinimumWidth(420);
+
+    auto* switchButton = new SwitchButton(card);
+    switchButton->setChecked(true);
+    card->addGroup(FluentIcon(FluentIconEnum::Transparent), self->tr("Mica"),
+                   self->tr("A group row with a SwitchButton"), switchButton);
+
+    auto* button = new PushButton(self->tr("Action"), card);
+    card->addGroup(FluentIcon(FluentIconEnum::Send), self->tr("Action"),
+                   self->tr("A group row with a PushButton"), button);
+
+    auto* badge = new InfoBadge(3, card);
+    card->addGroup(FluentIcon(FluentIconEnum::Message), self->tr("Messages"),
+                   self->tr("A group row with an InfoBadge"), badge);
+
+    return card;
+}
 
 // ==========================================================================
 // ProgressWidget
@@ -84,9 +106,14 @@ StatusInfoInterface::StatusInfoInterface(QWidget* parent)
     pixmapLabel->setToolTipDuration(2000);
     pixmapLabel->installEventFilter(new ToolTipFilter(pixmapLabel, 0, ToolTipPosition::Top));
     pixmapLabel->setFixedSize(160, 160);
-    addExampleCard(tr("A label with a ToolTip"), pixmapLabel,
+    addExampleCard(tr("A label with tool tip"), pixmapLabel,
                    "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/blob/PySide6/examples/"
                    "status_info/tool_tip/demo.py");
+
+    // Group header card widget
+    addExampleCard(tr("Group header card widget"), createGroupHeaderCardWidgetDemo(this),
+                   "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/blob/PySide6/examples/"
+                   "widgets/card_widget/demo.py");
 
     // Info badge
     auto* badgeWidget = new QWidget(this);
