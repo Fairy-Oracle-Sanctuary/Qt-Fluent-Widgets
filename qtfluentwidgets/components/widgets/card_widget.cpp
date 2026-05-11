@@ -288,7 +288,7 @@ HeaderCardWidget::HeaderCardWidget(QWidget* parent) : SimpleCardWidget(parent) {
     vBoxLayout_->setContentsMargins(0, 0, 0, 0);
     vBoxLayout_->addWidget(headerView_);
     vBoxLayout_->addWidget(separator_);
-    vBoxLayout_->addWidget(view_);
+    vBoxLayout_->addWidget(view_, 1);
 
     viewLayout_->setContentsMargins(24, 24, 24, 24);
 
@@ -432,6 +432,17 @@ void CardGroupWidget::addWidget(QWidget* widget, int stretch) {
 // ==========================================================================
 // GroupHeaderCardWidget
 // ==========================================================================
+GroupHeaderCardWidget::GroupHeaderCardWidget(QWidget* parent) : HeaderCardWidget(parent) {
+    // Base class constructor called HeaderCardWidget::postInit() (not our override)
+    // due to C++ virtual dispatch rules in constructors. Call our postInit() now.
+    GroupHeaderCardWidget::postInit();
+}
+
+GroupHeaderCardWidget::GroupHeaderCardWidget(const QString& title, QWidget* parent)
+    : HeaderCardWidget(title, parent) {
+    GroupHeaderCardWidget::postInit();
+}
+
 void GroupHeaderCardWidget::postInit() {
     HeaderCardWidget::postInit();
 
@@ -441,7 +452,7 @@ void GroupHeaderCardWidget::postInit() {
 
     if (viewLayout_) {
         viewLayout_->setContentsMargins(0, 0, 0, 0);
-        viewLayout_->addLayout(groupLayout_);
+        viewLayout_->addLayout(groupLayout_, 1);
     }
 }
 

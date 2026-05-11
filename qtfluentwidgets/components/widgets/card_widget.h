@@ -177,7 +177,8 @@ class GroupHeaderCardWidget : public HeaderCardWidget {
     Q_OBJECT
 
 public:
-    using HeaderCardWidget::HeaderCardWidget;
+    explicit GroupHeaderCardWidget(QWidget* parent = nullptr);
+    explicit GroupHeaderCardWidget(const QString& title, QWidget* parent = nullptr);
 
     CardGroupWidget* addGroup(const QIcon& icon, const QString& title, const QString& content,
                               QWidget* widget, int stretch = 0);

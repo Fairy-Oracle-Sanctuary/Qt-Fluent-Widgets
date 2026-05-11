@@ -3,6 +3,7 @@
 build/
 qframelesswindow/
 qfluentwidgets/
+QFluentKit/
 QWidget-FancyUI-main/
 Release/
 CMakeLists.txt.user
