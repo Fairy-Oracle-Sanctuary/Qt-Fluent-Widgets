@@ -284,11 +284,15 @@ void WindowsWindowEffect::setMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) 
 
     // Mica/system backdrop often won't render correctly on layered windows.
     // Qt may set WS_EX_LAYERED when using translucent background attributes.
+    // WS_EX_TRANSPARENT causes click-through and must also be removed.
     LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
     if (exStyle & WS_EX_LAYERED) {
         exStyle &= ~WS_EX_LAYERED;
-        ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
     }
+    if (exStyle & WS_EX_TRANSPARENT) {
+        exStyle &= ~WS_EX_TRANSPARENT;
+    }
+    ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
 
     // Match Python implementation for frameless windows.
     // Using extremely large left/right margins helps DWM treat the whole client area

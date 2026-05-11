@@ -258,7 +258,17 @@ void WindowsFramelessWindow::showEvent(QShowEvent* e) {
 }
 
 void WindowsFramelessWindow::paintEvent(QPaintEvent* e) {
-    // Match Python: no special paint handling
+#ifdef Q_OS_WIN
+    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    if (hWnd) {
+        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+        if (exStyle & WS_EX_TRANSPARENT) {
+            exStyle &= ~WS_EX_TRANSPARENT;
+            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
+        }
+    }
+#endif
     QWidget::paintEvent(e);
 }
 
@@ -282,6 +292,16 @@ bool WindowsFramelessMainWindow::nativeEvent(const QByteArray& eventType, void* 
 void WindowsFramelessMainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
 
+    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    if (hWnd) {
+        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+        if (exStyle & WS_EX_TRANSPARENT) {
+            exStyle &= ~WS_EX_TRANSPARENT;
+            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
+        }
+    }
+
     if (effectsApplied_) {
         return;
     }
@@ -289,7 +309,6 @@ void WindowsFramelessMainWindow::showEvent(QShowEvent* e) {
     effectsApplied_ = true;
 
     // Styles are already set in initFrameless (match FancyUI)
-    const HWND hWnd = reinterpret_cast<HWND>(winId());
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
@@ -317,6 +336,16 @@ bool WindowsFramelessDialog::nativeEvent(const QByteArray& eventType, void* mess
 void WindowsFramelessDialog::showEvent(QShowEvent* e) {
     QDialog::showEvent(e);
 
+    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    if (hWnd) {
+        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+        if (exStyle & WS_EX_TRANSPARENT) {
+            exStyle &= ~WS_EX_TRANSPARENT;
+            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
+        }
+    }
+
     if (effectsApplied_) {
         return;
     }
@@ -324,7 +353,6 @@ void WindowsFramelessDialog::showEvent(QShowEvent* e) {
     effectsApplied_ = true;
 
     // Styles are already set in initFrameless (match FancyUI)
-    const HWND hWnd = reinterpret_cast<HWND>(winId());
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
