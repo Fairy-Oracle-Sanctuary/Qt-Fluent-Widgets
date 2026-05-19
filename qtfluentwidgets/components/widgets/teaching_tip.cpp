@@ -6,6 +6,7 @@
 #include <QShowEvent>
 #include <QTimer>
 
+#include "common/qtcompat.h"
 #include "common/screen.h"
 #include "common/style_sheet.h"
 #include "components/widgets/flyout.h"
@@ -579,7 +580,7 @@ TeachingTip::TeachingTip(FlyoutViewBase* view, QWidget* target, int duration,
 
     // Check platform for window configuration
     QString platformName = QGuiApplication::platformName();
-    isWayland_ = (platformName == QStringLiteral("wayland") || 
+    isWayland_ = (platformName == QStringLiteral("wayland") ||
                   platformName == QStringLiteral("wayland-egl"));
 
     if (!isWayland_) {
@@ -730,6 +731,56 @@ PopupTeachingTip::PopupTeachingTip(FlyoutViewBase* view, QWidget* target, int du
                                    bool isDeleteOnClose)
     : TeachingTip(view, target, duration, tailPosition, parent, isDeleteOnClose) {
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+
+    // Install event filter to handle click outside (modal behavior like Flyout)
+    qApp->installEventFilter(this);
+}
+
+void PopupTeachingTip::closeEvent(QCloseEvent* e) {
+    // Remove event filter when closing
+    qApp->removeEventFilter(this);
+    TeachingTip::closeEvent(e);
+}
+
+bool PopupTeachingTip::eventFilter(QObject* obj, QEvent* e) {
+    // Handle click outside to close (modal behavior like Flyout)
+    if (isVisible() && e->type() == QEvent::MouseButtonPress) {
+        QMouseEvent* me = static_cast<QMouseEvent*>(e);
+        QPoint globalPos = me->QMouseEvent_globalPosition_toPoint();
+        if (!rect().contains(mapFromGlobal(globalPos))) {
+            // Clicked outside the popup, close it
+            close();
+            return true;
+        }
+    }
+
+    // Call parent eventFilter for position updates
+    return TeachingTip::eventFilter(obj, e);
+}
+
+PopupTeachingTip* PopupTeachingTip::make(FlyoutViewBase* view, QWidget* target, int duration,
+                                         TeachingTipTailPosition tailPosition, QWidget* parent,
+                                         bool isDeleteOnClose) {
+    auto* w = new PopupTeachingTip(view, target, duration, tailPosition, parent, isDeleteOnClose);
+    w->show();
+    return w;
+}
+
+PopupTeachingTip* PopupTeachingTip::create(QWidget* target, const QString& title,
+                                           const QString& content, const QVariant& icon,
+                                           const QVariant& image, bool isClosable, int duration,
+                                           TeachingTipTailPosition tailPosition, QWidget* parent,
+                                           bool isDeleteOnClose) {
+    auto* view = new TeachingTipView(title, content, QIcon(), image, isClosable, tailPosition);
+
+    if (icon.canConvert<QIcon>()) {
+        view->setIcon(icon.value<QIcon>());
+    }
+
+    auto* tip =
+        PopupTeachingTip::make(view, target, duration, tailPosition, parent, isDeleteOnClose);
+    connect(view, &FlyoutView::closed, tip, &PopupTeachingTip::close);
+    return tip;
 }
 
 }  // namespace qfw
