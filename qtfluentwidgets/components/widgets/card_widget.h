@@ -191,8 +191,11 @@ public:
 
 protected:
     void postInit() override;
+    QSize sizeHint() const override;
 
 private:
+    void updateMinimumHeight();
+
     QList<QPointer<CardGroupWidget>> groupWidgets_;
     QPointer<QVBoxLayout> groupLayout_;
 };
