@@ -27,6 +27,8 @@
 
 namespace qfw {
 
+static constexpr int BORDER_WIDTH = 8;
+
 static bool isMaximized(HWND hWnd) { return hWnd && ::IsZoomed(hWnd); }
 
 static bool isFullScreen(HWND hWnd) {
@@ -69,6 +71,8 @@ static bool hasSystemBackdrop(HWND hWnd) {
         return false;
     }
 
+    // 0 = Auto, 1 = None, 2 = Mica, 3 = Acrylic, 4 = MicaAlt
+    // Only Mica/MicaAlt are known to degrade when we intercept WM_NCCALCSIZE.
     return backdropType == 2 || backdropType == 4;
 }
 
@@ -78,16 +82,16 @@ static void ensureResizableStyle(HWND hWnd) {
     }
 
     LONG_PTR style = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
-    if (style) {
-        style |= WS_BORDER | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX | WS_SYSMENU;
-        ::SetWindowLongPtrW(hWnd, GWL_STYLE, style);
+    if (!style) {
+        return;
     }
 
-    LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
-    if (exStyle & WS_EX_TRANSPARENT) {
-        exStyle &= ~WS_EX_TRANSPARENT;
-        ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
-    }
+    // Keep only WS_THICKFRAME for resizing via WM_NCHITTEST.
+    // Remove WS_SYSMENU/WS_MINIMIZEBOX/WS_MAXIMIZEBOX to prevent native titlebar buttons.
+    // Remove WS_CAPTION to ensure no native title bar is rendered.
+    style &= ~(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+    style |= WS_THICKFRAME;
+    ::SetWindowLongPtrW(hWnd, GWL_STYLE, style);
 
     ::SetWindowPos(hWnd, nullptr, 0, 0, 0, 0,
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
@@ -105,6 +109,8 @@ void WindowsFramelessWindowBase::initFrameless(QWidget* window) {
         return;
     }
 
+    // Ensure this widget is treated as a top-level window.
+    // Some composition effects (acrylic/mica) won't apply reliably to non-window widgets.
     window->setWindowFlag(Qt::Window, true);
 
     if (!windowEffect_) {
@@ -115,22 +121,10 @@ void WindowsFramelessWindowBase::initFrameless(QWidget* window) {
                                           ? Qt::WindowStaysOnTopHint
                                           : Qt::WindowFlags{};
 
-    window->setWindowFlags(window->windowFlags() | Qt::FramelessWindowHint | stayOnTop);
-
-#ifdef Q_OS_WIN
-    const HWND hWnd = reinterpret_cast<HWND>(window->winId());
-    if (hWnd) {
-        MARGINS margins = {1, 1, 0, 1};
-        DwmExtendFrameIntoClientArea(hWnd, &margins);
-
-        LONG_PTR style = ::GetWindowLongPtrW(hWnd, GWL_STYLE);
-        if (style) {
-            style |=
-                WS_BORDER | WS_CAPTION | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_SIZEBOX | WS_SYSMENU;
-            ::SetWindowLongPtrW(hWnd, GWL_STYLE, style);
-        }
-    }
-#endif
+    // Do NOT force Qt::FramelessWindowHint.
+    // We implement frameless behavior via nativeEvent (WM_NCCALCSIZE/WM_NCHITTEST), which is
+    // more compatible with Win11 system backdrop (Mica).
+    window->setWindowFlags(Qt::Window | window->windowFlags() | stayOnTop);
 }
 
 bool WindowsFramelessWindowBase::handleNativeEvent(QWidget* window, void* message,
@@ -144,76 +138,133 @@ bool WindowsFramelessWindowBase::handleNativeEvent(QWidget* window, void* messag
         return false;
     }
 
-    LONG_PTR exStyle = ::GetWindowLongPtrW(msg->hwnd, GWL_EXSTYLE);
-    if (exStyle & WS_EX_TRANSPARENT) {
-        exStyle &= ~WS_EX_TRANSPARENT;
-        ::SetWindowLongPtrW(msg->hwnd, GWL_EXSTYLE, exStyle);
-    }
-
     switch (msg->message) {
-        case WM_MOUSEACTIVATE:
-            *result = MA_ACTIVATE;
-            return true;
         case WM_NCACTIVATE:
         case WM_NCPAINT:
+            // Do not suppress default non-client processing.
+            // Suppressing these messages may break maximize/restore animations.
             return false;
         case WM_NCHITTEST: {
-            if (!resizeEnabled_ || isMaximized(msg->hwnd) || isFullScreen(msg->hwnd)) {
-                *result = ::DefWindowProcW(msg->hwnd, msg->message, msg->wParam, msg->lParam);
-                return true;
+            if (!resizeEnabled_) {
+                return false;
             }
 
             const HWND hWnd = msg->hwnd;
 
-            RECT windowRect{};
-            ::GetWindowRect(hWnd, &windowRect);
+            POINT globalPt{GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam)};
+            POINT clientPt = globalPt;
+            ::ScreenToClient(hWnd, &clientPt);
 
-            POINT pt{GET_X_LPARAM(msg->lParam), GET_Y_LPARAM(msg->lParam)};
+            RECT clientRect{};
+            ::GetClientRect(hWnd, &clientRect);
 
-            const int xBorder = resizeBorderThickness(true);
-            const int yBorder = resizeBorderThickness(false);
+            const int w = clientRect.right - clientRect.left;
+            const int h = clientRect.bottom - clientRect.top;
 
-            // Right edge
-            if (pt.x <= windowRect.right && pt.x >= windowRect.right - xBorder) {
-                if (pt.y <= windowRect.bottom && pt.y >= windowRect.bottom - yBorder) {
-                    *result = HTBOTTOMRIGHT;
-                } else if (pt.y >= windowRect.top && pt.y <= windowRect.top + yBorder) {
-                    *result = HTTOPRIGHT;
-                } else {
-                    *result = HTRIGHT;
-                }
+            const int bw = (isMaximized(hWnd) || isFullScreen(hWnd)) ? 0 : BORDER_WIDTH;
+
+            const bool lx = clientPt.x < bw;
+            const bool rx = clientPt.x > w - bw;
+            const bool ty = clientPt.y < bw;
+            const bool by = clientPt.y > h - bw;
+
+            if (lx && ty) {
+                *result = HTTOPLEFT;
                 return true;
             }
-            // Bottom edge
-            if (pt.y <= windowRect.bottom && pt.y >= windowRect.bottom - yBorder) {
-                if (pt.x >= windowRect.left && pt.x <= windowRect.left + xBorder) {
-                    *result = HTBOTTOMLEFT;
-                } else {
-                    *result = HTBOTTOM;
-                }
+            if (rx && by) {
+                *result = HTBOTTOMRIGHT;
                 return true;
             }
-            // Top edge
-            if (pt.y >= windowRect.top && pt.y <= windowRect.top + yBorder) {
-                if (pt.x >= windowRect.left && pt.x <= windowRect.left + xBorder) {
-                    *result = HTTOPLEFT;
-                } else {
-                    *result = HTTOP;
-                }
+            if (rx && ty) {
+                *result = HTTOPRIGHT;
                 return true;
             }
-            // Left edge
-            if (pt.x >= windowRect.left && pt.x <= windowRect.left + xBorder) {
+            if (lx && by) {
+                *result = HTBOTTOMLEFT;
+                return true;
+            }
+            if (ty) {
+                *result = HTTOP;
+                return true;
+            }
+            if (by) {
+                *result = HTBOTTOM;
+                return true;
+            }
+            if (lx) {
                 *result = HTLEFT;
                 return true;
             }
+            if (rx) {
+                *result = HTRIGHT;
+                return true;
+            }
 
-            *result = ::DefWindowProcW(msg->hwnd, msg->message, msg->wParam, msg->lParam);
-            return true;
+            return false;
         }
-        case WM_NCCALCSIZE:
-            *result = 0;
-            return true;
+        case WM_NCCALCSIZE: {
+            // If mica/acrylic has been enabled for this HWND, handle it specially.
+            // The window property is set by WindowsWindowEffect::setMicaEffect/setAcrylicEffect.
+            if (::GetPropW(msg->hwnd, L"qfw_mica_enabled") ||
+                ::GetPropW(msg->hwnd, L"qfw_acrylic_enabled")) {
+                // Match FancyUI: return 0 to remove the native title bar & borders.
+                // But when maximized, still adjust the client rect to avoid overflow.
+                if (msg->wParam) {
+                    NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(msg->lParam);
+                    if (params) {
+                        const HWND hWnd = msg->hwnd;
+                        const bool max = isMaximized(hWnd);
+                        const bool full = isFullScreen(hWnd);
+                        if (max && !full) {
+                            const int ty = resizeBorderThickness(false);
+                            const int tx = resizeBorderThickness(true);
+                            params->rgrc[0].top += ty;
+                            params->rgrc[0].bottom -= ty;
+                            params->rgrc[0].left += tx;
+                            params->rgrc[0].right -= tx;
+                        }
+                    }
+                }
+                *result = 0;
+                return true;
+            }
+
+            // If Mica/system backdrop is enabled, do not override default non-client
+            // calculations. Intercepting WM_NCCALCSIZE can cause the backdrop to degrade
+            // into a solid color on some Qt frameless windows.
+            if (hasSystemBackdrop(msg->hwnd)) {
+                return false;
+            }
+
+            if (msg->wParam) {
+                // Remove the default frame.
+                // When maximized, shrink client rect to avoid covering the monitor edges.
+                NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(msg->lParam);
+                if (!params) {
+                    return false;
+                }
+
+                const HWND hWnd = msg->hwnd;
+                const bool max = isMaximized(hWnd);
+                const bool full = isFullScreen(hWnd);
+
+                if (max && !full) {
+                    const int ty = resizeBorderThickness(false);
+                    const int tx = resizeBorderThickness(true);
+                    params->rgrc[0].top += ty;
+                    params->rgrc[0].bottom -= ty;
+                    params->rgrc[0].left += tx;
+                    params->rgrc[0].right -= tx;
+                }
+
+                // Match qframelesswindow (python): return WVR_REDRAW when wParam is set.
+                // This helps Windows re-run non-client calculations and keeps animations working.
+                *result = WVR_REDRAW;
+                return true;
+            }
+            return false;
+        }
         default:
             break;
     }
@@ -248,27 +299,24 @@ void WindowsFramelessWindow::showEvent(QShowEvent* e) {
 
     effectsApplied_ = true;
 
-    // Styles are already set in initFrameless (match FancyUI)
     const HWND hWnd = reinterpret_cast<HWND>(winId());
+    ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
-        windowEffect_->setWindowCornerPreference(hWnd, 2);  // Round corners
     }
 }
 
 void WindowsFramelessWindow::paintEvent(QPaintEvent* e) {
-#ifdef Q_OS_WIN
-    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
     const HWND hWnd = reinterpret_cast<HWND>(winId());
-    if (hWnd) {
-        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
-        if (exStyle & WS_EX_TRANSPARENT) {
-            exStyle &= ~WS_EX_TRANSPARENT;
-            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
-        }
+    if (hWnd &&
+        (::GetPropW(hWnd, L"qfw_mica_enabled") || ::GetPropW(hWnd, L"qfw_acrylic_enabled"))) {
+        QPainter painter(this);
+        painter.setCompositionMode(QPainter::CompositionMode_Clear);
+        painter.eraseRect(rect());
+        return QWidget::paintEvent(e);
     }
-#endif
+
     QWidget::paintEvent(e);
 }
 
@@ -292,27 +340,17 @@ bool WindowsFramelessMainWindow::nativeEvent(const QByteArray& eventType, void* 
 void WindowsFramelessMainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
 
-    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
-    const HWND hWnd = reinterpret_cast<HWND>(winId());
-    if (hWnd) {
-        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
-        if (exStyle & WS_EX_TRANSPARENT) {
-            exStyle &= ~WS_EX_TRANSPARENT;
-            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
-        }
-    }
-
     if (effectsApplied_) {
         return;
     }
 
     effectsApplied_ = true;
 
-    // Styles are already set in initFrameless (match FancyUI)
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
-        windowEffect_->setWindowCornerPreference(hWnd, 2);  // Round corners
     }
 }
 
@@ -336,28 +374,18 @@ bool WindowsFramelessDialog::nativeEvent(const QByteArray& eventType, void* mess
 void WindowsFramelessDialog::showEvent(QShowEvent* e) {
     QDialog::showEvent(e);
 
-    // Fix click-through on Qt 5.15.2 with Mica/Acrylic:
-    const HWND hWnd = reinterpret_cast<HWND>(winId());
-    if (hWnd) {
-        LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
-        if (exStyle & WS_EX_TRANSPARENT) {
-            exStyle &= ~WS_EX_TRANSPARENT;
-            ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, exStyle);
-        }
-    }
-
     if (effectsApplied_) {
         return;
     }
 
     effectsApplied_ = true;
 
-    // Styles are already set in initFrameless (match FancyUI)
+    const HWND hWnd = reinterpret_cast<HWND>(winId());
+    ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
         windowEffect_->disableMaximizeButton(hWnd);
-        windowEffect_->setWindowCornerPreference(hWnd, 2);  // Round corners
     }
 }
 
