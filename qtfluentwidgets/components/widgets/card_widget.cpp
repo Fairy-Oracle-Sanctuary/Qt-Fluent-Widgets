@@ -224,7 +224,15 @@ void ElevatedCardWidget::enterEvent(enterEvent_QEnterEvent* e) {
     SimpleCardWidget::enterEvent(e);
 
     if (elevatedAni_ && elevatedAni_->state() != QAbstractAnimation::Running) {
-        originalPos_ = pos();
+        // If FlowLayout's geometry animation is running, use its end position as the
+        // "original" position to avoid snapping to an intermediate animation position
+        // when the mouse leaves.
+        auto* flowAni = property("flowAni").value<QPropertyAnimation*>();
+        if (flowAni && flowAni->state() == QAbstractAnimation::Running) {
+            originalPos_ = flowAni->endValue().toRect().topLeft();
+        } else {
+            originalPos_ = pos();
+        }
     }
 
     startElevateAnimation(pos(), pos() - QPoint(0, 3));
@@ -232,7 +240,15 @@ void ElevatedCardWidget::enterEvent(enterEvent_QEnterEvent* e) {
 
 void ElevatedCardWidget::leaveEvent(QEvent* e) {
     SimpleCardWidget::leaveEvent(e);
-    startElevateAnimation(pos(), originalPos_);
+
+    // If FlowLayout's geometry animation is still running, use its end position instead of
+    // originalPos_ to avoid snapping to a stale position
+    auto* flowAni = property("flowAni").value<QPropertyAnimation*>();
+    if (flowAni && flowAni->state() == QAbstractAnimation::Running) {
+        startElevateAnimation(pos(), flowAni->endValue().toRect().topLeft());
+    } else {
+        startElevateAnimation(pos(), originalPos_);
+    }
 }
 
 void ElevatedCardWidget::mousePressEvent(QMouseEvent* e) {
