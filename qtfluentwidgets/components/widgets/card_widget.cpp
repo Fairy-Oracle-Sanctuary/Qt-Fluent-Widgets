@@ -473,6 +473,7 @@ CardGroupWidget* GroupHeaderCardWidget::addGroup(const QIcon& icon, const QStrin
     }
 
     groupWidgets_.append(group);
+    updateMinimumHeight();  // Auto-update minimum height for proper layout
     return group;
 }
 
@@ -489,5 +490,27 @@ CardGroupWidget* GroupHeaderCardWidget::addGroup(const QString& iconPath, const 
 }
 
 int GroupHeaderCardWidget::groupCount() const { return groupWidgets_.size(); }
+
+QSize GroupHeaderCardWidget::sizeHint() const {
+    // Calculate size based on header + groups
+    QSize baseHint = HeaderCardWidget::sizeHint();
+
+    if (groupLayout_) {
+        int contentHeight = groupLayout_->sizeHint().height();
+        if (contentHeight > 0) {
+            baseHint.setHeight(baseHint.height() + contentHeight);
+        }
+    }
+
+    return baseHint;
+}
+
+void GroupHeaderCardWidget::updateMinimumHeight() {
+    // Auto-update minimum height based on content
+    QSize hint = sizeHint();
+    if (hint.height() > 0) {
+        setMinimumHeight(hint.height());
+    }
+}
 
 }  // namespace qfw

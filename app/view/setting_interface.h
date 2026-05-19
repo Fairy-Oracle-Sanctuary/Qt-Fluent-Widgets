@@ -10,6 +10,7 @@
 #include "components/settings/options_setting_card.h"
 #include "components/settings/setting_card.h"
 #include "components/settings/setting_card_group.h"
+#include "components/widgets/card_widget.h"
 #include "components/widgets/scroll_area.h"
 
 namespace qfw {
@@ -39,6 +40,9 @@ private:
     SettingCardGroup* materialGroup_ = nullptr;
     SettingCardGroup* updateSoftwareGroup_ = nullptr;
     SettingCardGroup* aboutGroup_ = nullptr;
+
+    // GroupHeaderCardWidget example
+    GroupHeaderCardWidget* groupHeaderCard_ = nullptr;
 
     FolderListSettingCard* musicFolderCard_ = nullptr;
     PushSettingCard* downloadFolderCard_ = nullptr;

@@ -8,7 +8,7 @@
 #include "common/gallery_style_sheet.h"
 #include "common/signal_bus.h"
 #include "components/widgets/info_bar.h"
-#include "components/widgets/label.h"
+#include "components/widgets/switch_button.h"
 
 namespace qfw {
 
@@ -93,6 +93,19 @@ SettingInterface::SettingInterface(QWidget* parent) : ScrollArea(parent) {
     aboutCard_ = new PrimaryPushSettingCard(tr("Check update"), FluentIconEnum::Info, tr("About"),
                                             aboutContent, aboutGroup_);
 
+    // GroupHeaderCardWidget example (demonstrates fix for ExpandLayout layout issue)
+    groupHeaderCard_ = new GroupHeaderCardWidget(tr("Group Header Card Example"), scrollWidget_);
+    auto* switch1 = new SwitchButton(groupHeaderCard_);
+    auto* switch2 = new SwitchButton(groupHeaderCard_);
+    auto* switch3 = new SwitchButton(groupHeaderCard_);
+    groupHeaderCard_->addGroup(FluentIcon(FluentIconEnum::Folder), tr("Folder"),
+                               tr("Folder content"), switch1);
+    groupHeaderCard_->addGroup(FluentIcon(FluentIconEnum::Tag), tr("Tag"), tr("Tag content"),
+                               switch2);
+    groupHeaderCard_->addGroup(FluentIcon(FluentIconEnum::Setting), tr("Setting"),
+                               tr("Setting content"), switch3);
+    // Note: setMinimumHeight() is no longer needed - it's auto-updated in addGroup()
+
     initWidget();
     initLayout();
     connectSignalToSlot();
@@ -138,6 +151,7 @@ void SettingInterface::initLayout() {
     // add setting card group to layout
     expandLayout_->setSpacing(28);
     expandLayout_->setContentsMargins(36, 10, 36, 0);
+    expandLayout_->addWidget(groupHeaderCard_);  // Add GroupHeaderCardWidget example
     expandLayout_->addWidget(musicInThisPCGroup_);
     expandLayout_->addWidget(personalGroup_);
     expandLayout_->addWidget(materialGroup_);
