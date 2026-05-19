@@ -254,6 +254,7 @@ int FlowLayout::doLayout(const QRect& rect, bool move) const {
                 auto* ani = anis_[i];
                 if (target != ani->endValue().toRect()) {
                     ani->stop();
+                    // item->setGeometry(target);
                     ani->setEndValue(target);
                     aniRestart = true;
                 }
