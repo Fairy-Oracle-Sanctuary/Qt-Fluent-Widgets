@@ -323,6 +323,22 @@ public:
         FlyoutViewBase* view, QWidget* target, int duration = 1000,
         TeachingTipTailPosition tailPosition = TeachingTipTailPosition::Bottom,
         QWidget* parent = nullptr, bool isDeleteOnClose = true);
+
+    static PopupTeachingTip* make(
+        FlyoutViewBase* view, QWidget* target, int duration = 1000,
+        TeachingTipTailPosition tailPosition = TeachingTipTailPosition::Bottom,
+        QWidget* parent = nullptr, bool isDeleteOnClose = true);
+
+    static PopupTeachingTip* create(
+        QWidget* target, const QString& title, const QString& content,
+        const QVariant& icon = QVariant(), const QVariant& image = QVariant(),
+        bool isClosable = true, int duration = 1000,
+        TeachingTipTailPosition tailPosition = TeachingTipTailPosition::Bottom,
+        QWidget* parent = nullptr, bool isDeleteOnClose = true);
+
+protected:
+    void closeEvent(QCloseEvent* e) override;
+    bool eventFilter(QObject* obj, QEvent* e) override;
 };
 
 }  // namespace qfw

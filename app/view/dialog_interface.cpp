@@ -1,8 +1,8 @@
 #include "view/dialog_interface.h"
 
 #include <QColor>
-#include <QUrl>
 #include <QDebug>
+#include <QUrl>
 
 #include "common/translator.h"
 #include "components/dialog_box/color_dialog.h"
@@ -13,6 +13,7 @@
 #include "components/widgets/label.h"
 #include "components/widgets/line_edit.h"
 #include "components/widgets/teaching_tip.h"
+
 
 namespace qfw {
 
@@ -152,13 +153,13 @@ void DialogInterface::showComplexFlyout() {
 }
 
 void DialogInterface::showBottomTeachingTip() {
-    TeachingTip::create(teachingButton_, QStringLiteral("Lesson 4"),
-                        tr("With respect, let's advance towards a new stage of the spin."),
-                        QVariant(),  // icon
-                        QVariant(),  // image
-                        true,        // closable
-                        -1,          // duration (-1 means no auto-close)
-                        TeachingTipTailPosition::Bottom, this);
+    PopupTeachingTip::create(teachingButton_, QStringLiteral("Lesson 4"),
+                             tr("With respect, let's advance towards a new stage of the spin."),
+                             QVariant(),  // icon
+                             QVariant(),  // image
+                             true,        // closable
+                             -1,          // duration (-1 means no auto-close)
+                             TeachingTipTailPosition::Bottom, this);
 }
 
 void DialogInterface::showLeftBottomTeachingTip() {
@@ -173,8 +174,8 @@ void DialogInterface::showLeftBottomTeachingTip() {
     button->setFixedWidth(120);
     view->addWidget(button, 0, Qt::AlignRight);
 
-    auto* t = TeachingTip::make(view, teachingRightButton_, 3000, pos, this);
-    connect(view, &TeachingTipView::closed, t, &TeachingTip::close);
+    auto* t = PopupTeachingTip::make(view, teachingRightButton_, 3000, pos, this);
+    connect(view, &TeachingTipView::closed, t, &PopupTeachingTip::close);
 }
 
 // CustomMessageBox implementation
