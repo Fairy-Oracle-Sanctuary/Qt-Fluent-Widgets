@@ -489,7 +489,7 @@ CardGroupWidget* GroupHeaderCardWidget::addGroup(const QIcon& icon, const QStrin
     }
 
     groupWidgets_.append(group);
-    updateMinimumHeight();  // Auto-update minimum height for proper layout
+    // updateMinimumHeight();  // Auto-update minimum height for proper layout
     return group;
 }
 
