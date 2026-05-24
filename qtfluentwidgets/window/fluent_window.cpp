@@ -198,6 +198,11 @@ void FluentWidget::showEvent(QShowEvent* e) {
     }
 }
 
+void FluentWidget::hideEvent(QHideEvent* e) {
+    FluentMainWindow::hideEvent(e);
+    micaApplied_ = false;
+}
+
 // ============================================================================
 // FluentWindowBase
 // ============================================================================
