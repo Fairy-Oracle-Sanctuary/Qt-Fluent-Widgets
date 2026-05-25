@@ -293,18 +293,16 @@ bool WindowsFramelessWindow::nativeEvent(const QByteArray& eventType, void* mess
 void WindowsFramelessWindow::showEvent(QShowEvent* e) {
     QWidget::showEvent(e);
 
-    if (effectsApplied_) {
-        return;
-    }
-
-    effectsApplied_ = true;
-
     const HWND hWnd = reinterpret_cast<HWND>(winId());
+    // Always re-apply the resizable / frameless window style and window
+    // animation/shadow. Qt or DWM may restore native frame styles or drop the
+    // animation after a hide/show cycle.
     ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
     }
+    effectsApplied_ = true;
 }
 
 void WindowsFramelessWindow::paintEvent(QPaintEvent* e) {
@@ -340,18 +338,16 @@ bool WindowsFramelessMainWindow::nativeEvent(const QByteArray& eventType, void* 
 void WindowsFramelessMainWindow::showEvent(QShowEvent* e) {
     QMainWindow::showEvent(e);
 
-    if (effectsApplied_) {
-        return;
-    }
-
-    effectsApplied_ = true;
-
     const HWND hWnd = reinterpret_cast<HWND>(winId());
+    // Always re-apply the resizable / frameless window style and window
+    // animation/shadow. Qt or DWM may restore native frame styles or drop the
+    // animation after a hide/show cycle.
     ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
     }
+    effectsApplied_ = true;
 }
 
 // ============================================================================
@@ -374,19 +370,18 @@ bool WindowsFramelessDialog::nativeEvent(const QByteArray& eventType, void* mess
 void WindowsFramelessDialog::showEvent(QShowEvent* e) {
     QDialog::showEvent(e);
 
-    if (effectsApplied_) {
-        return;
-    }
-
-    effectsApplied_ = true;
-
     const HWND hWnd = reinterpret_cast<HWND>(winId());
+    // Always re-apply the resizable / frameless window style and window
+    // animation/shadow.
     ensureResizableStyle(hWnd);
     if (windowEffect_) {
         windowEffect_->addWindowAnimation(hWnd);
         windowEffect_->addShadowEffect(hWnd);
-        windowEffect_->disableMaximizeButton(hWnd);
+        if (!effectsApplied_) {
+            windowEffect_->disableMaximizeButton(hWnd);
+        }
     }
+    effectsApplied_ = true;
 }
 
 }  // namespace qfw

@@ -349,6 +349,49 @@ void WindowsWindowEffect::setMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) 
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 }
 
+void WindowsWindowEffect::refreshMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) {
+    if (!hWnd) {
+        return;
+    }
+
+    // Strip WS_EX_LAYERED / WS_EX_TRANSPARENT which Qt may have re-applied
+    // after hide/show (these break Mica rendering and cause click-through).
+    LONG_PTR exStyle = ::GetWindowLongPtrW(hWnd, GWL_EXSTYLE);
+    LONG_PTR newExStyle = exStyle & ~(WS_EX_LAYERED | WS_EX_TRANSPARENT);
+    if (newExStyle != exStyle) {
+        ::SetWindowLongPtrW(hWnd, GWL_EXSTYLE, newExStyle);
+    }
+
+    // Re-extend the frame into client area (this can be lost after hide/show
+    // and is required for Mica + frameless to render properly).
+    MARGINS margins{16777215, 16777215, 0, 0};
+    DwmExtendFrameIntoClientArea(hWnd, &margins);
+
+    // Re-mark the window so our nativeEvent handler can bypass WM_NCCALCSIZE
+    // logic. The property is on the HWND and normally persists across
+    // hide/show, but we re-set it defensively in case the HWND was recreated.
+    ::SetPropW(hWnd, L"qfw_mica_enabled", reinterpret_cast<HANDLE>(1));
+
+    const BOOL hostBackdropBrush = TRUE;
+    DwmSetWindowAttribute(hWnd, DWMWA_USE_HOSTBACKDROPBRUSH, &hostBackdropBrush,
+                          sizeof(hostBackdropBrush));
+
+    // Re-apply the DWM backdrop attribute. Avoid SetWindowPos(FRAMECHANGED),
+    // which can disrupt Qt's mouse tracking and the frameless WM_NCHITTEST
+    // handling after hide/show.
+    const int backdropType = isAlt ? 4 : 2;
+    HRESULT hr =
+        DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &backdropType, sizeof(backdropType));
+    if (FAILED(hr)) {
+        const int value = 1;
+        DwmSetWindowAttribute(hWnd, static_cast<DWMWINDOWATTRIBUTE>(1029), &value, sizeof(value));
+    }
+
+    const BOOL darkModeValue = isDarkMode ? TRUE : FALSE;
+    DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkModeValue,
+                          sizeof(darkModeValue));
+}
+
 void WindowsWindowEffect::setBorderAccentColor(HWND hWnd, const QColor& color) {
     if (!hWnd) {
         return;

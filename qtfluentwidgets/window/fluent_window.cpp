@@ -104,7 +104,12 @@ void FluentWidget::applyMica() {
         return;
     }
 
-    setAttribute(Qt::WA_TranslucentBackground, true);
+    // Only set translucent background attribute once: calling it again after the
+    // native window is realized may recreate the HWND and disrupt the frameless
+    // native event handling (causing stuck hover / unmovable title bar issues).
+    if (!testAttribute(Qt::WA_TranslucentBackground)) {
+        setAttribute(Qt::WA_TranslucentBackground, true);
+    }
 
     WindowsWindowEffect eff;
     eff.setMicaEffect(hWnd, isDarkTheme(), false);
@@ -195,12 +200,32 @@ void FluentWidget::showEvent(QShowEvent* e) {
         if (isMicaEffectEnabled()) {
             applyMica();
         }
+    } else if (isMicaEffectEnabled()) {
+        // On re-show after hide, only refresh DWM backdrop attribute.
+        // Avoid full applyMica() which touches window styles and breaks Qt
+        // mouse tracking / native frameless event handling.
+#ifdef Q_OS_WIN
+        const HWND hWnd = reinterpret_cast<HWND>(winId());
+        if (hWnd) {
+            WindowsWindowEffect eff;
+            eff.refreshMicaEffect(hWnd, isDarkTheme(), false);
+        }
+#endif
     }
 }
 
 void FluentWidget::hideEvent(QHideEvent* e) {
     FluentMainWindow::hideEvent(e);
-    micaApplied_ = false;
+    // Do NOT reset micaApplied_ here. We keep the first-time setup (styles, frame
+    // extension) intact, and use the lightweight refreshMicaEffect on re-show.
+
+    // Reset hover state for all title bar buttons (mouse leave events are not
+    // delivered when the window is hidden while cursor is over a button).
+    if (titleBar_) {
+        for (auto* btn : titleBar_->findChildren<qfw::TitleBarButton*>()) {
+            btn->setState(qfw::TitleBarButtonState::Normal);
+        }
+    }
 }
 
 // ============================================================================

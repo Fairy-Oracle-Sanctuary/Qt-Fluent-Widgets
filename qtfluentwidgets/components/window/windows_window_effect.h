@@ -20,6 +20,10 @@ public:
                           bool enableShadow = true, int animationId = 0);
 
     void setMicaEffect(HWND hWnd, bool isDarkMode = false, bool isAlt = false);
+    // Lightweight refresh: only re-applies the DWM backdrop type attribute,
+    // without touching window styles or frame. Use this to restore Mica after
+    // hide/show without breaking native event/mouse tracking.
+    void refreshMicaEffect(HWND hWnd, bool isDarkMode = false, bool isAlt = false);
 
     void setBorderAccentColor(HWND hWnd, const QColor& color);
     void removeBorderAccentColor(HWND hWnd);
