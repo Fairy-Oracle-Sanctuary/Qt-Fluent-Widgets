@@ -27,6 +27,7 @@ ScrollInterface::ScrollInterface(QWidget* parent)
     scrollArea->horizontalScrollBar()->setValue(0);
     scrollArea->setWidget(label1);
     scrollArea->setFixedSize(775, 430);
+    scrollArea->enableTransparentBackground();
 
     auto* card1 = addExampleCard(tr("Smooth scroll area"), scrollArea,
                                  "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/blob/PySide6/"
@@ -41,6 +42,7 @@ ScrollInterface::ScrollInterface(QWidget* parent)
 
     smoothScrollArea->setWidget(label2);
     smoothScrollArea->setFixedSize(660, 540);
+    smoothScrollArea->enableTransparentBackground();
 
     auto* card2 =
         addExampleCard(tr("Smooth scroll area implemented by animation"), smoothScrollArea,
@@ -56,6 +58,7 @@ ScrollInterface::ScrollInterface(QWidget* parent)
 
     singleScrollArea->setWidget(label3);
     singleScrollArea->setFixedSize(660, 498);
+    singleScrollArea->enableTransparentBackground();
 
     auto* card3 = addExampleCard(tr("Single direction scroll scroll area"), singleScrollArea,
                                  "https://github.com/zhiyiYo/PyQt-Fluent-Widgets/blob/PySide6/"
