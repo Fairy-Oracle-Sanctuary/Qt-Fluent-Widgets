@@ -25,6 +25,16 @@ CardWidget::CardWidget(QWidget* parent) : QFrame(parent) {
 
     setBorderRadius(5);
     setMouseTracking(true);
+
+    connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme) {
+        if (isPressed_) {
+            setBackgroundColor(pressedBackgroundColor());
+        } else if (isHover_) {
+            setBackgroundColor(hoverBackgroundColor());
+        } else {
+            setBackgroundColor(normalBackgroundColor());
+        }
+    });
 }
 
 void CardWidget::setClickEnabled(bool enabled) {
@@ -489,7 +499,7 @@ CardGroupWidget* GroupHeaderCardWidget::addGroup(const QIcon& icon, const QStrin
     }
 
     groupWidgets_.append(group);
-    // updateMinimumHeight();  // Auto-update minimum height for proper layout
+    updateMinimumHeight();  // Auto-update minimum height for proper layout
     return group;
 }
 
