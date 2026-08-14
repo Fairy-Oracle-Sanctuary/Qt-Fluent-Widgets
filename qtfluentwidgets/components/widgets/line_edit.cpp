@@ -253,23 +253,36 @@ bool CompleterMenu::eventFilter(QObject* obj, QEvent* event) {
     // Redirect input to line edit
     QKeyEvent keyPress(QEvent::KeyPress, keyEvent->key(), keyEvent->modifiers(), keyEvent->text(),
                        keyEvent->isAutoRepeat(), keyEvent->count());
-    QKeyEvent keyRelease(QEvent::KeyRelease, keyEvent->key(), keyEvent->modifiers(),
-                         keyEvent->text(), keyEvent->isAutoRepeat(), keyEvent->count());
-
     qApp->sendEvent(lineEdit_, &keyPress);
-    qApp->sendEvent(view(), event);
 
-    if (keyEvent->key() == Qt::Key_Escape) {
-        close();
-    }
-
-    if ((keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) &&
-        view()->currentRow() >= 0) {
-        QListWidgetItem* currentItem = view()->currentItem();
-        if (currentItem) {
-            onCompletionItemSelected(currentItem->text(), view()->currentRow());
+    // Do not synchronously resend the original event to view(). An unhandled key event from the
+    // list propagates back to this popup, re-enters this filter, and overflows the stack while a
+    // completer is visible (notably when repeatedly pressing Backspace).
+    switch (keyEvent->key()) {
+        case Qt::Key_Up:
+        case Qt::Key_Down: {
+            const int count = view()->count();
+            if (count > 0) {
+                int row = view()->currentRow();
+                row = keyEvent->key() == Qt::Key_Up ? row - 1 : row + 1;
+                view()->setCurrentRow(qBound(0, row < 0 ? 0 : row, count - 1));
+            }
+            break;
         }
-        close();
+        case Qt::Key_Escape:
+            close();
+            break;
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+            if (view()->currentRow() >= 0) {
+                if (QListWidgetItem* currentItem = view()->currentItem()) {
+                    onCompletionItemSelected(currentItem->text(), view()->currentRow());
+                }
+            }
+            close();
+            break;
+        default:
+            break;
     }
 
     return true;
