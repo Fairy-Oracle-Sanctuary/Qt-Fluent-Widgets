@@ -120,7 +120,9 @@ void FluentWidget::setMicaEffectEnabled(bool enabled) {
 #ifdef Q_OS_WIN
     if (enabled && isMicaSupported()) {
         isMicaEnabled_ = true;
-        applyMica();
+        if (isVisible()) {
+            applyMica();
+        }
         setBackgroundColor(normalBackgroundColor());
     } else {
         isMicaEnabled_ = false;
@@ -162,12 +164,9 @@ void FluentWidget::setTitleBar(TitleBarBase* titleBar) {
 }
 
 void FluentWidget::onThemeChangedFinished() {
-    // Update background color for theme change
+    // FluentMainWindow owns the themeChanged -> applyMica() connection. Only update
+    // the Qt-side background here so a theme switch performs one native Mica refresh.
     setBackgroundColor(normalBackgroundColor());
-
-    if (isMicaEffectEnabled()) {
-        applyMica();
-    }
 }
 
 void FluentWidget::resizeEvent(QResizeEvent* e) {
@@ -196,10 +195,8 @@ void FluentWidget::showEvent(QShowEvent* e) {
     FluentMainWindow::showEvent(e);
 
     if (!micaApplied_) {
+        // FluentMainWindow::showEvent() has already invoked the virtual applyMica().
         micaApplied_ = true;
-        if (isMicaEffectEnabled()) {
-            applyMica();
-        }
     } else if (isMicaEffectEnabled()) {
         // On re-show after hide, only refresh DWM backdrop attribute.
         // Avoid full applyMica() which touches window styles and breaks Qt
