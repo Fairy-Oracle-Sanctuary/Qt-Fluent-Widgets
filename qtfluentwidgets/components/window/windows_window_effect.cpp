@@ -315,8 +315,17 @@ void WindowsWindowEffect::setMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) 
     }
 
     // Get Windows build number (best-effort, for diagnostics only).
-    // We still *prefer* trying DWMWA_SYSTEMBACKDROP_TYPE first below.
+    // We still *prefer* trying DWMWA_SYSTEMBACKDROP_TYPE below.
     const DWORD buildNumber = getWindowsBuildNumber();
+
+    // Set the color mode before selecting the backdrop. Applying it afterwards can
+    // leave the old Mica brush cached until the window is activated again.
+    const BOOL darkModeValue = isDarkMode ? TRUE : FALSE;
+    const HRESULT darkHr = DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                                                  &darkModeValue, sizeof(darkModeValue));
+    if (FAILED(darkHr)) {
+        qWarning() << "DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE) failed:" << darkHr;
+    }
 
     // Prefer DWMWA_SYSTEMBACKDROP_TYPE (Win11 22H2+). This is the modern, documented path.
     // 2 = Mica, 4 = MicaAlt
@@ -334,14 +343,6 @@ void WindowsWindowEffect::setMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) 
         if (FAILED(hr)) {
             qWarning() << "DwmSetWindowAttribute(1029) failed:" << hr;
         }
-    }
-
-    // Set immersive dark mode
-    const BOOL darkModeValue = isDarkMode ? TRUE : FALSE;
-    const HRESULT darkHr = DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                                                 &darkModeValue, sizeof(darkModeValue));
-    if (FAILED(darkHr)) {
-        qWarning() << "DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE) failed:" << darkHr;
     }
 
     // Force refresh
@@ -376,7 +377,11 @@ void WindowsWindowEffect::refreshMicaEffect(HWND hWnd, bool isDarkMode, bool isA
     DwmSetWindowAttribute(hWnd, DWMWA_USE_HOSTBACKDROPBRUSH, &hostBackdropBrush,
                           sizeof(hostBackdropBrush));
 
-    // Re-apply the DWM backdrop attribute. Avoid SetWindowPos(FRAMECHANGED),
+    const BOOL darkModeValue = isDarkMode ? TRUE : FALSE;
+    DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkModeValue,
+                          sizeof(darkModeValue));
+
+    // Re-apply the DWM backdrop attribute after its color mode. Avoid SetWindowPos(FRAMECHANGED),
     // which can disrupt Qt's mouse tracking and the frameless WM_NCHITTEST
     // handling after hide/show.
     const int backdropType = isAlt ? 4 : 2;
@@ -387,9 +392,6 @@ void WindowsWindowEffect::refreshMicaEffect(HWND hWnd, bool isDarkMode, bool isA
         DwmSetWindowAttribute(hWnd, static_cast<DWMWINDOWATTRIBUTE>(1029), &value, sizeof(value));
     }
 
-    const BOOL darkModeValue = isDarkMode ? TRUE : FALSE;
-    DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &darkModeValue,
-                          sizeof(darkModeValue));
 }
 
 void WindowsWindowEffect::setBorderAccentColor(HWND hWnd, const QColor& color) {
