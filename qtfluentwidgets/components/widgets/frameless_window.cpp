@@ -11,6 +11,8 @@
 #include "components/window/title_bar.h"
 
 #ifdef Q_OS_WIN
+#include <dwmapi.h>
+
 #include "components/window/windows_window_effect.h"
 #endif
 
@@ -18,6 +20,32 @@ namespace qfw {
 
 FluentMainWindow::FluentMainWindow(QWidget* parent) : FramelessMainWindow(parent) {
     setWindowTitle(QStringLiteral("qfluentwidgets frameless window"));
+
+    micaRefreshTimer_ = new QTimer(this);
+    micaRefreshTimer_->setSingleShot(true);
+    QObject::connect(micaRefreshTimer_, &QTimer::timeout, this, [this]() {
+        if (!isVisible()) {
+            return;
+        }
+
+        applyMica();
+        update();
+
+#ifdef Q_OS_WIN
+        const HWND hWnd = reinterpret_cast<HWND>(winId());
+        if (hWnd) {
+            // A focus change makes DWM repaint both the non-client frame and the
+            // translucent Qt child hierarchy. Do the equivalent after the theme
+            // transaction so stale Mica pixels are not kept until re-activation.
+            ::RedrawWindow(hWnd, nullptr, nullptr,
+                           RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN | RDW_UPDATENOW);
+            ::DwmFlush();
+        }
+#endif
+    });
+
+    QObject::connect(&qfw::QConfig::instance(), &qfw::QConfig::themeChangedFinished, this,
+                     [this]() { micaRefreshTimer_->start(0); });
 
     auto* root = new QWidget(this);
     auto* rootLayout = new QVBoxLayout(root);
@@ -77,9 +105,6 @@ void FluentMainWindow::showEvent(QShowEvent* e) {
     if (!micaApplied_) {
         micaApplied_ = true;
         applyMica();
-
-        QObject::connect(&qfw::QConfig::instance(), &qfw::QConfig::themeChanged, this,
-                         [this]() { applyMica(); });
     }
 }
 

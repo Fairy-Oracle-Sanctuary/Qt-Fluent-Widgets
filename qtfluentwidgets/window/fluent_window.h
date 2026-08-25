@@ -65,7 +65,7 @@ protected:
     QColor normalBackgroundColor() const;
 
 private:
-    void applyMica();
+    void applyMica() override;
 
     bool micaApplied_ = false;
     bool isMicaEnabled_ = false;
