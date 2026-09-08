@@ -169,6 +169,7 @@ SwitchButton::SwitchButton(const QString& text, QWidget* parent, IndicatorPositi
 }
 
 void SwitchButton::initWidget() {
+    setProperty("qssClass", "SwitchButton");
     setAttribute(Qt::WA_StyledBackground);
     installEventFilter(this);
     setFixedHeight(22);
@@ -228,8 +229,8 @@ void SwitchButton::setTextColor(const QColor& light, const QColor& dark) {
     darkTextColor_ = dark;
 
     setCustomStyleSheet(
-        label_, QString("SwitchButton>QLabel{color:%1}").arg(lightTextColor_.name(QColor::HexArgb)),
-        QString("SwitchButton>QLabel{color:%1}").arg(darkTextColor_.name(QColor::HexArgb)));
+        label_, QString("QLabel{color:%1}").arg(lightTextColor_.name(QColor::HexArgb)),
+        QString("QLabel{color:%1}").arg(darkTextColor_.name(QColor::HexArgb)));
 }
 
 void SwitchButton::setCheckedIndicatorColor(const QColor& light, const QColor& dark) {

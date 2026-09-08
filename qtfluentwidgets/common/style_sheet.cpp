@@ -555,6 +555,7 @@ static QString fixTypeSelectors(const QString& qss) {
         QStringLiteral("SplitDropButton"),
         QStringLiteral("PrimarySplitDropButton"),
         QStringLiteral("PushButton"),
+        QStringLiteral("SwitchButton"),
         QStringLiteral("TabBar"),
         QStringLiteral("SimpleCardWidget"),
         QStringLiteral("ElevatedCardWidget"),

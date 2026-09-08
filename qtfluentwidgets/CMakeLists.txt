@@ -211,7 +211,8 @@ universal_add_library(qtfluentwidgets STATIC
 )
 
 if(MSVC)
-    target_compile_options(qtfluentwidgets PRIVATE /utf-8)
+    # Allow parallel cl.exe processes to share the program database in Debug builds.
+    target_compile_options(qtfluentwidgets PRIVATE /utf-8 /FS)
 endif()
 
 # macOS-specific Objective-C++ source
