@@ -982,7 +982,7 @@ void RoundMenu::mouseMoveEvent(QMouseEvent* e) {
         return;
     }
 
-    const QPoint pos = e->globalPosition().toPoint();
+    const QPoint pos = e->QMouseEvent_globalPosition_toPoint();
 
     MenuActionListWidget* view = parentMenu_->view_;
 
