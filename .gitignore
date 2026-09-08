@@ -10,3 +10,4 @@ CMakeLists.txt.user
 build-mac/
 .DS_Store
 .vscode/
+build-qt515/
