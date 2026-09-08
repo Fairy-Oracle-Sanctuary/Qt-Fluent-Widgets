@@ -59,6 +59,8 @@ universal_add_executable(qtfluentwidgets_app
     view/home_interface.cpp
     view/layout_interface.cpp
     view/layout_interface.h
+    view/issue_13_interface.cpp
+    view/issue_13_interface.h
     view/material_interface.cpp
     view/material_interface.h
     view/menu_interface.cpp
@@ -169,6 +171,8 @@ set(LUPDATE_SOURCES
     view/home_interface.h
     view/layout_interface.cpp
     view/layout_interface.h
+    view/issue_13_interface.cpp
+    view/issue_13_interface.h
     view/material_interface.cpp
     view/material_interface.h
     view/menu_interface.cpp
