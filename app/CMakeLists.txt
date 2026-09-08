@@ -118,6 +118,11 @@ target_link_libraries(qtfluentwidgets_app PRIVATE
     Qt${QT_VERSION_MAJOR}::Svg
 )
 
+if(MSVC)
+    # Prevent C1041 when CMake/MSBuild compiles multiple sources in parallel.
+    target_compile_options(qtfluentwidgets_app PRIVATE /utf-8 /FS)
+endif()
+
 target_include_directories(qtfluentwidgets_app PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

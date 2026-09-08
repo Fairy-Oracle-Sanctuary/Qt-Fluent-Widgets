@@ -69,13 +69,11 @@ void FluentLabelBase::setTextColor(const QColor& light, const QColor& dark) {
     lightColor_ = QColor(light);
     darkColor_ = QColor(dark);
 
-    // Use the actual qssClass property value for the selector
-    QString qssClass = property("qssClass").toString();
-    if (qssClass.isEmpty()) {
-        qssClass = QStringLiteral("FluentLabelBase");
-    }
-
-    QString selector = QStringLiteral("*[qssClass=\"%1\"]").arg(qssClass);
+    // This stylesheet belongs to the label itself, so use a stable Qt base-class
+    // selector. Derived labels change qssClass after FluentLabelBase::init();
+    // binding the color rule to that temporary value makes the initial rule stop
+    // matching until the first theme change.
+    const QString selector = QStringLiteral("QLabel");
     qfw::setCustomStyleSheet(
         this,
         QStringLiteral("%1{color:%2}").arg(selector, lightColor_.name(QColor::NameFormat::HexArgb)),
