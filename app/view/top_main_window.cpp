@@ -12,6 +12,7 @@
 #include "view/gallery_interface.h"
 #include "view/home_interface.h"
 #include "view/icon_interface.h"
+#include "view/issue_13_interface.h"
 #include "view/layout_interface.h"
 #include "view/material_interface.h"
 #include "view/menu_interface.h"
@@ -76,6 +77,11 @@ void TopMainWindow::initNavigation() {
     auto* layoutPage = new LayoutInterface(this);
     layoutPage->setObjectName(QStringLiteral("layoutInterface"));
     addSubInterface(layoutPage, FluentIconEnum::Layout, t.layout(), TopNavigationItemPosition::Left);
+
+    auto* issue13Page = new Issue13Interface(this);
+    issue13Page->setObjectName(QStringLiteral("issue13Interface"));
+    addSubInterface(issue13Page, FluentIconEnum::DeveloperTools, tr("Issue #13"),
+                    TopNavigationItemPosition::Left);
 
     auto* materialPage = new MaterialInterface(this);
     materialPage->setObjectName(QStringLiteral("materialInterface"));

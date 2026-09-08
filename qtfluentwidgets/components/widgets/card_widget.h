@@ -83,6 +83,7 @@ public:
     explicit ElevatedCardWidget(QWidget* parent = nullptr);
 
 protected:
+    bool event(QEvent* e) override;
     void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
@@ -91,10 +92,16 @@ protected:
     QColor pressedBackgroundColor() const override;
 
 private:
+    void bindFlowAnimation(QPropertyAnimation* animation);
+    QPropertyAnimation* flowAnimation();
+    void onFlowAnimationFinished();
     void startElevateAnimation(const QPoint& start, const QPoint& end);
 
     QPointer<DropShadowAnimation> shadowAni_;
     QPointer<QPropertyAnimation> elevatedAni_;
+    QPointer<QPropertyAnimation> flowAni_;
+    QMetaObject::Connection flowStateChangedConnection_;
+    QMetaObject::Connection flowFinishedConnection_;
     QPoint originalPos_;
 };
 

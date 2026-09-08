@@ -1,6 +1,7 @@
 #include "components/widgets/card_widget.h"
 
 #include <QEnterEvent>
+#include <QDynamicPropertyChangeEvent>
 #include <QEvent>
 #include <QMouseEvent>
 #include <QPainter>
@@ -230,39 +231,105 @@ void ElevatedCardWidget::startElevateAnimation(const QPoint& start, const QPoint
     elevatedAni_->start();
 }
 
-void ElevatedCardWidget::enterEvent(enterEvent_QEnterEvent* e) {
-    SimpleCardWidget::enterEvent(e);
-
-    if (elevatedAni_ && elevatedAni_->state() != QAbstractAnimation::Running) {
-        // If FlowLayout's geometry animation is running, use its end position as the
-        // "original" position to avoid snapping to an intermediate animation position
-        // when the mouse leaves.
-        auto* flowAni = property("flowAni").value<QPropertyAnimation*>();
-        if (flowAni && flowAni->state() == QAbstractAnimation::Running) {
-            originalPos_ = flowAni->endValue().toRect().topLeft();
-        } else {
-            originalPos_ = pos();
+bool ElevatedCardWidget::event(QEvent* e) {
+    if (e && e->type() == QEvent::DynamicPropertyChange) {
+        const auto* propertyEvent = static_cast<QDynamicPropertyChangeEvent*>(e);
+        if (propertyEvent->propertyName() == QByteArrayLiteral("flowAni")) {
+            bindFlowAnimation(property("flowAni").value<QPropertyAnimation*>());
         }
     }
 
-    startElevateAnimation(pos(), pos() - QPoint(0, 3));
+    return SimpleCardWidget::event(e);
+}
+
+void ElevatedCardWidget::bindFlowAnimation(QPropertyAnimation* animation) {
+    if (flowAni_ == animation) {
+        return;
+    }
+
+    QObject::disconnect(flowStateChangedConnection_);
+    QObject::disconnect(flowFinishedConnection_);
+    flowAni_ = animation;
+
+    if (!flowAni_) {
+        return;
+    }
+
+    flowStateChangedConnection_ =
+        connect(flowAni_, &QAbstractAnimation::stateChanged, this,
+                [this](QAbstractAnimation::State newState, QAbstractAnimation::State) {
+                    if (newState == QAbstractAnimation::Running && elevatedAni_) {
+                        // FlowLayout owns the widget position while its geometry animation runs.
+                        elevatedAni_->stop();
+                    }
+                });
+
+    flowFinishedConnection_ =
+        connect(flowAni_, &QAbstractAnimation::finished, this,
+                &ElevatedCardWidget::onFlowAnimationFinished);
+}
+
+QPropertyAnimation* ElevatedCardWidget::flowAnimation() {
+    auto* animation = property("flowAni").value<QPropertyAnimation*>();
+    bindFlowAnimation(animation);
+    return animation;
+}
+
+void ElevatedCardWidget::onFlowAnimationFinished() {
+    if (!flowAni_) {
+        return;
+    }
+
+    const QRect targetGeometry = flowAni_->endValue().toRect();
+    originalPos_ = targetGeometry.topLeft();
+
+    // Re-apply elevation from the final layout position only after FlowLayout
+    // has released geometry ownership.
+    if (isHover_) {
+        startElevateAnimation(pos(), originalPos_ - QPoint(0, 3));
+    }
+}
+
+void ElevatedCardWidget::enterEvent(enterEvent_QEnterEvent* e) {
+    SimpleCardWidget::enterEvent(e);
+
+    if (auto* animation = flowAnimation();
+        animation && animation->state() == QAbstractAnimation::Running) {
+        if (elevatedAni_) {
+            elevatedAni_->stop();
+        }
+        return;
+    }
+
+    if (elevatedAni_ && elevatedAni_->state() != QAbstractAnimation::Running) {
+        originalPos_ = pos();
+    }
+
+    startElevateAnimation(pos(), originalPos_ - QPoint(0, 3));
 }
 
 void ElevatedCardWidget::leaveEvent(QEvent* e) {
     SimpleCardWidget::leaveEvent(e);
 
-    // If FlowLayout's geometry animation is still running, use its end position instead of
-    // originalPos_ to avoid snapping to a stale position
-    auto* flowAni = property("flowAni").value<QPropertyAnimation*>();
-    if (flowAni && flowAni->state() == QAbstractAnimation::Running) {
-        startElevateAnimation(pos(), flowAni->endValue().toRect().topLeft());
-    } else {
-        startElevateAnimation(pos(), originalPos_);
+    if (auto* animation = flowAnimation();
+        animation && animation->state() == QAbstractAnimation::Running) {
+        if (elevatedAni_) {
+            elevatedAni_->stop();
+        }
+        return;
     }
+
+    startElevateAnimation(pos(), originalPos_);
 }
 
 void ElevatedCardWidget::mousePressEvent(QMouseEvent* e) {
     SimpleCardWidget::mousePressEvent(e);
+
+    if (auto* animation = flowAnimation();
+        animation && animation->state() == QAbstractAnimation::Running) {
+        return;
+    }
+
     startElevateAnimation(pos(), originalPos_);
 }
 
