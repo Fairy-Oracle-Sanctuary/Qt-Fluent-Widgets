@@ -1,159 +1,186 @@
 <p align="center">
-  <img width="18%" align="center" src="qtfluentwidgets\resources\images\logo.png" alt="logo">
+  <img width="18%" src="qtfluentwidgets/resources/images/logo.png" alt="Qt-Fluent-Widgets logo">
 </p>
-  <h1 align="center">
-  Qt-Fluent-Widgets
-</h1>
+
+<h1 align="center">Qt-Fluent-Widgets</h1>
+
 <p align="center">
-  A fluent design widgets library based on <a href="https://github.com/zhiyiYo/PyQt-Fluent-Widgets">PyQt-Fluent-Widgets</a>
+  A native C++ Fluent Design widget library for Qt 5 and Qt 6, ported from
+  <a href="https://github.com/zhiyiYo/PyQt-Fluent-Widgets">PyQt-Fluent-Widgets</a>.
 </p>
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)
-[![GPLv3](https://img.shields.io/badge/License-GPLv3-blue?color=#4ec820)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?color=#4ec820)]()
-[![Qt](https://img.shields.io/badge/Qt-5.15+%20%7C%206.5+-green.svg)](https://www.qt.io)
+[![Latest tag](https://img.shields.io/github/v/tag/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets?sort=semver&label=version)](https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets/tags)
+[![License](https://img.shields.io/github/license/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets)](LICENSE)
+![Platforms](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+[![Qt](https://img.shields.io/badge/Qt-5.15.2%2B%20%7C%206.x-41CD52?logo=qt&logoColor=white)](https://www.qt.io)
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)
 
 </div>
 
 <p align="center">
-English | <a href="docs/README_zh.md">简体中文</a>
+  English | <a href="docs/README_zh.md">简体中文</a>
 </p>
 
 <p align="center">
-  <img src="docs\source\_static\Interface_en.png" alt="interface"/>
+  <img src="docs/source/_static/Interface_en.png" alt="Qt-Fluent-Widgets gallery">
 </p>
 
-## 📖 Introduction
+## Introduction
 
-Qt-Fluent-Widgets is a **C++ native port** of the popular [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) library by **zhiyiYo**. It provides a comprehensive set of modern Fluent Design UI widgets for Qt6 applications.
+Qt-Fluent-Widgets brings Fluent Design controls and window shells to native C++ Qt applications. The project builds as a static library, supports light, dark, and system themes, and includes a Gallery application that demonstrates the available controls.
 
-This library aims to bring the beautiful Fluent Design System to native C++ Qt applications, offering:
-- 🎨 **Fluent Design aesthetics** - Acrylic, Mica, and modern styling
-- 🧩 **Rich widget collection** - Buttons, menus, dialogs, navigation, and more
-- ⚡ **High performance** - Native C++ implementation
-- 🔧 **Easy integration** - Static library that links directly to your Qt project
+Highlights:
 
-## ✨ Features
+- Native C++17 implementation with Qt Widgets
+- One codebase for Qt 5.15.2+ and Qt 6.x
+- Fluent window shells with side, compact, split, and top navigation
+- Theme-aware controls, icons, animations, and Fluent materials
+- CMake integration through the `qtfluentwidgets` target
 
-| Category | Widgets |
-|----------|---------|
-| **Buttons** | PushButton, ToolButton, RadioButton, CheckBox, ToggleButton, SplitButton |
-| **Input** | LineEdit, ComboBox, SpinBox, DoubleSpinBox, TextEdit |
-| **Dialogs** | MessageBox, ColorDialog, Flyout, TeachingTip |
-| **Navigation** | NavigationView, BreadcrumbBar, Pivot, SegmentedWidget, TabBar |
-| **Status** | InfoBar, ProgressBar, ProgressRing, StateToolTip, ToolTip, InfoBadge |
-| **Menus** | RoundMenu, CommandBar, CheckableMenu |
-| **Material** | Acrylic, Mica effect (Windows 11) |
-| **Layout** | FlowLayout with animation support |
+## Components
 
-## 📋 Requirements
+| Category | Representative classes |
+| --- | --- |
+| Windows | `FluentWindow`, `MSFluentWindow`, `SplitFluentWindow`, `TopFluentWindow` |
+| Navigation | `NavigationInterface`, `TopNavigationInterface`, `NavigationBar`, `BreadcrumbBar`, `Pivot`, `SegmentedWidget`, `TabBar` |
+| Buttons and input | `PushButton`, `ToolButton`, `ToggleButton`, `SplitPushButton`, `LineEdit`, `ComboBox`, `SpinBox`, `Slider`, `SwitchButton` |
+| Cards and settings | `CardWidget`, `HeaderCardWidget`, `GroupHeaderCardWidget`, `SettingCard`, `ExpandSettingCard`, `OptionsSettingCard` |
+| Data and media | `ListView`, `TableView`, `TreeView`, `FlipView`, `HorizontalFlipView`, `PipsPager`, `ImageLabel`, `AvatarWidget` |
+| Date and time | `TimePicker`, `DatePicker`, `CalendarPicker`, `FastCalendarPicker` |
+| Feedback and dialogs | `InfoBar`, `InfoBadge`, `ProgressBar`, `ProgressRing`, `Flyout`, `TeachingTip`, `MessageBox`, `ColorDialog` |
+| Layout | `FlowLayout`, `ExpandLayout`, `VBoxLayout` |
+| Materials | Acrylic controls and Windows 11 Mica effects |
 
-- **Qt 5.15+ or Qt 6.5+**
-  - Windows: Qt 6.5+ recommended
-  - macOS: Qt 6.9.0 recommended
-  - Linux: Qt 6.5+ recommended
-  - Qt 5.15 LTS also supported
-- **CMake 3.16+**
-- **C++17 compiler**
-  - MSVC 2019+ (Windows)
-  - Clang (macOS, via Xcode or Command Line Tools)
+The table is an overview rather than a complete API list. See [`qtfluentwidgets/qtfluentwidgets.h`](qtfluentwidgets/qtfluentwidgets.h) and the Gallery source for the currently exported controls and usage examples.
 
-## 🚀 Quick Start
+## Requirements
 
-### 1. Clone the Repository
+- Qt 5.15.2+ or Qt 6.x with the `Widgets` and `Svg` modules
+- The Gallery additionally requires Qt `LinguistTools`
+- CMake 3.16+
+- A C++17 compiler, such as MSVC 2019+, recent GCC, or recent Clang
 
-```bash
-git clone https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets.git
-cd Qt-Fluent-Widgets
-```
+The compiler ABI must match the Qt package. For example, the official `msvc2019_64` Qt package must be built with a compatible 64-bit MSVC toolchain.
 
-### 2. Build the Library
+## Build the Gallery
+
+Configure CMake with the installation prefix of the Qt version you want to use:
 
 ```bash
-mkdir build && cd build
-cmake ..
-cmake --build . --config Release
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x/compiler_64
+cmake --build build --config Release --parallel
 ```
 
-### 3. Integrate into Your Project
+`--config Release` is used by multi-configuration generators such as Visual Studio and Xcode. With a single-configuration generator such as Ninja, add `-DCMAKE_BUILD_TYPE=Release` while configuring.
 
-Add to your `CMakeLists.txt`:
+### Windows: Qt 5.15.2 and MSVC 2019
+
+```powershell
+cmake -S . -B build-qt515 `
+  -G "Visual Studio 16 2019" -A x64 `
+  -DCMAKE_PREFIX_PATH="D:/Qt/5.15.2/msvc2019_64"
+
+cmake --build build-qt515 --config Release --parallel
+./build-qt515/app/Release/qtfluentwidgets_app.exe
+```
+
+Use a separate build directory when switching Qt versions or generators. The repository root builds both the static library and the Gallery. Release builds enable IPO/LTO when supported; pass `-DQFW_ENABLE_IPO=OFF` to disable it.
+
+Typical Gallery executable locations are:
+
+- Visual Studio Release: `build/app/Release/qtfluentwidgets_app.exe`
+- Single-configuration Linux/macOS build: `build/app/qtfluentwidgets_app`
+
+The current Gallery starts with `TopFluentWindow` and includes light/dark theme switching plus demonstrations for the control categories above.
+
+## Integrate the Library
+
+Add the library subdirectory directly if your application does not need to build the Gallery:
 
 ```cmake
-add_subdirectory(Qt-Fluent-Widgets)
+cmake_minimum_required(VERSION 3.16)
+project(MyFluentApp LANGUAGES CXX)
 
-target_link_libraries(your_app PRIVATE
-    qtfluentwidgets
-    Qt6::Widgets
-    Qt6::Svg
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Svg)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Svg)
+
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/Qt-Fluent-Widgets/qtfluentwidgets
+    ${CMAKE_CURRENT_BINARY_DIR}/qtfluentwidgets-build
 )
+
+add_executable(my_app main.cpp)
+target_link_libraries(my_app PRIVATE qtfluentwidgets)
 ```
 
-### 4. Basic Usage
+Because the library is static, initialize its compiled resource collection once in your executable:
 
 ```cpp
 #include <QApplication>
 #include <qtfluentwidgets.h>
 
-int main(int argc, char *argv[]) {
-    // Initialize Qt resources from static library
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
     Q_INIT_RESOURCE(resource);
 
-    QApplication app(argc, argv);
+    qfw::setTheme(qfw::Theme::Auto);
 
-    // Set theme (Light, Dark, or Auto)
-    qfw::setTheme(qfw::Theme::Light);
-
-    // Create a fluent window
-    qfw::FluentWindow window;
+    qfw::TopFluentWindow window;
     window.setWindowTitle("My Fluent App");
-    window.resize(800, 600);
+    window.resize(1000, 700);
     window.show();
 
     return app.exec();
 }
 ```
 
-## 🎯 Gallery Application
+## Windows Deployment
 
-The repository includes a demo gallery application showcasing all widgets:
+`qtfluentwidgets` is static, but an application built against the standard Qt packages still needs the Qt runtime DLLs and plugins. Deploy them next to the executable with the `windeployqt` from the same Qt installation used for the build:
 
-```bash
-cd build
-./app/qtfluentwidgets_app  # Linux/macOS
-qtfluentwidgets_app.exe     # Windows
+```powershell
+D:/Qt/5.15.2/msvc2019_64/bin/windeployqt.exe `
+  --release build-qt515/app/Release/qtfluentwidgets_app.exe
 ```
 
-## 🌐 Supported Platforms
+## Troubleshooting
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Windows | ✅ Full support | Acrylic/Mica effects, frameless window |
-| macOS | ✅ Full support | Frameless window with native Cocoa integration |
-| Linux | ✅ Full support | Frameless window with Qt6 system resize API |
+- **`spawn ninja ENOENT`**: install Ninja and add it to `PATH`, or select an installed generator such as `Visual Studio 16 2019` in VS Code/CMake Tools.
+- **CMake mixes two Qt versions**: use a fresh build directory and make `CMAKE_PREFIX_PATH` point to exactly one Qt installation. For Qt 5, a Qt 6 `qt.toolchain.cmake` must not be reused.
+- **A Qt DLL cannot be found**: run the matching `windeployqt`, or temporarily add that Qt installation's `bin` directory to `PATH` while developing.
+- **MSVC reports PDB write conflicts**: the project enables `/FS`; avoid building the same build directory from multiple IDE or terminal processes at once.
 
-## 📝 License
+## Platform Notes
 
-This project is licensed under **GPLv3** - see the [LICENSE](LICENSE) file for details.
+| Platform | Notes |
+| --- | --- |
+| Windows | Frameless windows and native effects are supported; Mica requires Windows 11. |
+| macOS | Frameless windows use native Cocoa integration. |
+| Linux | Frameless resize uses Qt's public system-resize API; appearance can vary by window manager and compositor. |
 
-## 🙏 Acknowledgments
+## License
 
-- **zhiyiYo** - Creator of the original [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) library
-- **zhiyiYo** - [Official documentation & demos](https://qfluentwidgets.com/) (Python version)
-- **COLORREF** - [QWidget-FancyUI](https://github.com/COLORREF/QWidget-FancyUI) for frameless window implementation reference on Windows
-- Microsoft - Fluent Design System inspiration
-- Qt Framework - The foundation for cross-platform UI development
+This project is licensed under [GPLv3](LICENSE).
 
-> **Note**: This project is a C++ implementation referenced from the Python version of PyQt-Fluent-Widgets. The original author offers a commercial C++ version, but this project was independently developed by studying the open-source Python codebase. The Windows frameless window implementation references QWidget-FancyUI.
+## Acknowledgments
 
-## 🤝 Contributing
+- [zhiyiYo/PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets), the Python implementation used as the main design and behavior reference
+- [QWidget-FancyUI](https://github.com/COLORREF/QWidget-FancyUI), referenced by the Windows frameless-window implementation
+- Microsoft Fluent Design System and the Qt framework
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+This repository is an independent C++ implementation based on the behavior of the open-source Python project. The upstream author also offers a separate commercial C++ product.
 
-## 🏆 Contributors
+## Contributing
+
+Issues and pull requests are welcome. When reporting a problem, include the operating system, Qt version, compiler, generator, build type, and a minimal reproduction when possible.
+
+## Contributors
 
 <a href="https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets&v=2" />
+  <img src="https://contrib.rocks/image?repo=Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets&v=2" alt="Contributors">
 </a>
