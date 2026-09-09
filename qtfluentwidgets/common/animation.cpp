@@ -71,10 +71,19 @@ DropShadowAnimation::DropShadowAnimation(QWidget* parent, const QColor& color, q
     shadow->setColor(Qt::transparent);
     shadow->setBlurRadius(0);
     shadow->setOffset(0, 0);
+    shadow->setEnabled(false);
     parent->setGraphicsEffect(shadow);
 
     colorAni = new QPropertyAnimation(this, "color", this);
     blurAni = new QPropertyAnimation(this, "blurRadius", this);
+
+    const auto disableShadowIfIdle = [this]() {
+        if (shadow && shadow->color().alpha() == 0 && qFuzzyIsNull(shadow->blurRadius())) {
+            shadow->setEnabled(false);
+        }
+    };
+    connect(colorAni, &QPropertyAnimation::finished, this, disableShadowIfIdle);
+    connect(blurAni, &QPropertyAnimation::finished, this, disableShadowIfIdle);
 }
 
 QColor DropShadowAnimation::color() const {
@@ -89,6 +98,9 @@ void DropShadowAnimation::setBlurRadius(qreal r) {
 }
 
 void DropShadowAnimation::_onHover(QEnterEvent* e) {
+    if (shadow) {
+        shadow->setEnabled(true);
+    }
     colorAni->stop();
     blurAni->stop();
     colorAni->setEndValue(normalColor);

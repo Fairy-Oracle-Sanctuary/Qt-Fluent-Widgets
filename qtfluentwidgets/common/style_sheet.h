@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QList>
 #include <QObject>
 #include <QPointer>
@@ -188,7 +189,7 @@ private:
         QSharedPointer<StyleSheetCompose> source;
     };
 
-    QList<Item> items_;
+    QHash<QWidget*, Item> items_;
     bool nextLazyUpdate_ = false;
 };
 

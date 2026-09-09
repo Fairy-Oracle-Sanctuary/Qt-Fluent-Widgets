@@ -468,13 +468,29 @@ void LineEdit::adjustTextMargins() {
 }
 
 void LineEdit::focusOutEvent(QFocusEvent* e) {
+    editingCursorPosition_ = cursorPosition();
     QLineEdit::focusOutEvent(e);
     if (clearButton_) {
         clearButton_->hide();
     }
+
+    // An unfocused field is a value preview, so show the beginning of a long
+    // value instead of the tail that QLineEdit keeps visible for its cursor.
+    if (!text().isEmpty()) {
+        setCursorPosition(0);
+        isShowingTextStart_ = true;
+    } else {
+        isShowingTextStart_ = false;
+    }
 }
 
 void LineEdit::focusInEvent(QFocusEvent* e) {
+    if (isShowingTextStart_) {
+        const int textLength = static_cast<int>(text().size());
+        setCursorPosition(qBound(0, editingCursorPosition_, textLength));
+        isShowingTextStart_ = false;
+    }
+
     QLineEdit::focusInEvent(e);
 
     if (!clearButton_) {
@@ -487,6 +503,16 @@ void LineEdit::focusInEvent(QFocusEvent* e) {
 }
 
 void LineEdit::onTextChanged(const QString& text) {
+    if (!hasFocus()) {
+        // QLineEdit::setText() positions the cursor at the end.  Preserve that
+        // as the editing position but use position zero for the idle preview.
+        editingCursorPosition_ = static_cast<int>(text.size());
+        setCursorPosition(0);
+        isShowingTextStart_ = !text.isEmpty();
+    } else {
+        isShowingTextStart_ = false;
+    }
+
     if (!clearButton_) {
         return;
     }

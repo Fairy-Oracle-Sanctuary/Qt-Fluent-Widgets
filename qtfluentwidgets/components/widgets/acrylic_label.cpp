@@ -54,27 +54,34 @@ AcrylicTextureLabel::AcrylicTextureLabel(const QColor& tintColor, const QColor& 
       noiseOpacity_(noiseOpacity),
       noiseImage_(QStringLiteral(":/qfluentwidgets/images/acrylic/noise.png")) {
     setAttribute(Qt::WA_TranslucentBackground);
+    rebuildTexture();
 }
 
 void AcrylicTextureLabel::setTintColor(const QColor& color) {
+    if (tintColor_ == color) {
+        return;
+    }
+
     tintColor_ = color;
+    rebuildTexture();
     update();
+}
+
+void AcrylicTextureLabel::rebuildTexture() {
+    textureImage_ = QImage(64, 64, QImage::Format_ARGB32_Premultiplied);
+    textureImage_.fill(luminosityColor_);
+
+    QPainter painter(&textureImage_);
+    painter.fillRect(textureImage_.rect(), tintColor_);
+    painter.setOpacity(noiseOpacity_);
+    painter.drawImage(textureImage_.rect(), noiseImage_);
 }
 
 void AcrylicTextureLabel::paintEvent(QPaintEvent* e) {
     Q_UNUSED(e);
 
-    QImage texture(64, 64, QImage::Format_ARGB32_Premultiplied);
-    texture.fill(luminosityColor_);
-
-    QPainter tp(&texture);
-    tp.fillRect(texture.rect(), tintColor_);
-
-    tp.setOpacity(noiseOpacity_);
-    tp.drawImage(texture.rect(), noiseImage_);
-
     QPainter painter(this);
-    painter.fillRect(rect(), QBrush(texture));
+    painter.fillRect(rect(), QBrush(textureImage_));
 }
 
 AcrylicLabel::AcrylicLabel(int blurRadius, const QColor& tintColor, const QColor& luminosityColor,
@@ -137,7 +144,9 @@ AcrylicBrush::AcrylicBrush(QWidget* device, int blurRadius, const QColor& tintCo
       tintColor_(tintColor),
       luminosityColor_(luminosityColor),
       noiseOpacity_(noiseOpacity),
-      noiseImage_(QStringLiteral(":/qfluentwidgets/images/acrylic/noise.png")) {}
+      noiseImage_(QStringLiteral(":/qfluentwidgets/images/acrylic/noise.png")) {
+    rebuildTexture();
+}
 
 void AcrylicBrush::setBlurRadius(int radius) {
     if (radius == blurRadius_) {
@@ -149,14 +158,24 @@ void AcrylicBrush::setBlurRadius(int radius) {
 }
 
 void AcrylicBrush::setTintColor(const QColor& color) {
+    if (tintColor_ == color) {
+        return;
+    }
+
     tintColor_ = color;
+    rebuildTexture();
     if (device_) {
         device_->update();
     }
 }
 
 void AcrylicBrush::setLuminosityColor(const QColor& color) {
+    if (luminosityColor_ == color) {
+        return;
+    }
+
     luminosityColor_ = color;
+    rebuildTexture();
     if (device_) {
         device_->update();
     }
@@ -188,9 +207,9 @@ void AcrylicBrush::grabImage(const QRect& rect) {
 
 void AcrylicBrush::setImage(const QPixmap& image) {
     originalImage_ = image;
-    if (!image.isNull()) {
-        image_ = blurPixmap(image, blurRadius_);
-    }
+    image_ = image.isNull() ? QPixmap() : blurPixmap(image, blurRadius_);
+    scaledImage_ = QPixmap();
+    scaledImageSize_ = QSize();
 
     if (device_) {
         device_->update();
@@ -198,24 +217,44 @@ void AcrylicBrush::setImage(const QPixmap& image) {
 }
 
 void AcrylicBrush::setClipPath(const QPainterPath& path) {
+    if (clipPath_ == path) {
+        return;
+    }
+
     clipPath_ = path;
     if (device_) {
         device_->update();
     }
 }
 
-QImage AcrylicBrush::textureImage() const {
-    QImage texture(64, 64, QImage::Format_ARGB32_Premultiplied);
-    texture.fill(luminosityColor_);
+void AcrylicBrush::rebuildTexture() {
+    textureImageCache_ = QImage(64, 64, QImage::Format_ARGB32_Premultiplied);
+    textureImageCache_.fill(luminosityColor_);
 
-    QPainter painter(&texture);
-    painter.fillRect(texture.rect(), tintColor_);
+    QPainter painter(&textureImageCache_);
+    painter.fillRect(textureImageCache_.rect(), tintColor_);
 
     painter.setOpacity(noiseOpacity_);
-    painter.drawImage(texture.rect(), noiseImage_);
-
-    return texture;
+    painter.drawImage(textureImageCache_.rect(), noiseImage_);
 }
+
+void AcrylicBrush::updateScaledImage() {
+    const QSize targetSize = device_ ? device_->size() : QSize();
+    if (targetSize == scaledImageSize_) {
+        return;
+    }
+
+    scaledImageSize_ = targetSize;
+    if (image_.isNull() || targetSize.isEmpty()) {
+        scaledImage_ = QPixmap();
+        return;
+    }
+
+    scaledImage_ =
+        image_.scaled(targetSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+}
+
+QImage AcrylicBrush::textureImage() const { return textureImageCache_; }
 
 void AcrylicBrush::paint(QPainter* painter) {
     if (!device_ || !painter) {
@@ -229,13 +268,12 @@ void AcrylicBrush::paint(QPainter* painter) {
         painter->setClipPath(clipPath_);
     }
 
-    if (!image_.isNull()) {
-        const QPixmap scaled = image_.scaled(device_->size(), Qt::KeepAspectRatioByExpanding,
-                                             Qt::SmoothTransformation);
-        painter->drawPixmap(0, 0, scaled);
+    updateScaledImage();
+    if (!scaledImage_.isNull()) {
+        painter->drawPixmap(0, 0, scaledImage_);
     }
 
-    painter->fillRect(device_->rect(), QBrush(textureImage()));
+    painter->fillRect(device_->rect(), QBrush(textureImageCache_));
 
     if (!clipPath_.isEmpty()) {
         painter->restore();

@@ -4,12 +4,16 @@
 #include <qpainterpath.h>
 
 #include <QAction>
+#include <QCache>
 #include <QColor>
+#include <QCryptographicHash>
 #include <QFile>
+#include <QFileInfo>
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QMenu>
+#include <QPixmapCache>
 #include <QRegularExpression>
 #include <QSet>
 #include <QXmlStreamReader>
@@ -18,6 +22,100 @@
 #include <cmath>
 
 namespace qfw {
+
+namespace {
+
+QCache<QString, QString>& rawSvgCache() {
+    // Cache cost is measured in KiB. Resource SVG files are immutable for the
+    // lifetime of the process; external files use their timestamp in the key.
+    static QCache<QString, QString> cache(4 * 1024);
+    return cache;
+}
+
+QCache<QString, QString>& modifiedSvgCache() {
+    static QCache<QString, QString> cache(8 * 1024);
+    return cache;
+}
+
+int svgCacheCost(const QString& svg) {
+    return qMax(1, static_cast<int>((svg.size() * sizeof(QChar) + 1023) / 1024));
+}
+
+QString svgSourceKey(const QString& iconPath) {
+    if (iconPath.startsWith(QStringLiteral(":"))) {
+        return iconPath;
+    }
+
+    const QFileInfo info(iconPath);
+    return iconPath + QStringLiteral("|size=") + QString::number(info.size()) +
+           QStringLiteral("|mtime=") + QString::number(info.lastModified().toMSecsSinceEpoch());
+}
+
+QString svgVariantKey(const QString& sourceKey, const QList<int>& indexes,
+                      const QVariantMap& attributes) {
+    QString key = sourceKey;
+    key += QStringLiteral("|indexes=");
+    for (int index : indexes) {
+        key += QString::number(index);
+        key += QLatin1Char(',');
+    }
+
+    key += QStringLiteral("|attributes=");
+    for (auto it = attributes.cbegin(); it != attributes.cend(); ++it) {
+        key += it.key();
+        key += QLatin1Char('=');
+        key += it.value().toString();
+        key += QLatin1Char(';');
+    }
+    return key;
+}
+
+qreal painterDevicePixelRatio(const QPainter* painter) {
+    if (!painter || !painter->device()) {
+        return 1.0;
+    }
+    return qMax<qreal>(1.0, painter->device()->devicePixelRatioF());
+}
+
+void drawCachedSvg(const QString& sourceKey, const QString& iconPath,
+                   const QByteArray& iconData, QPainter* painter, const QRect& rect) {
+    if (!painter || rect.isEmpty()) {
+        return;
+    }
+
+    const qreal dpr = painterDevicePixelRatio(painter);
+    const QString pixmapKey =
+        QStringLiteral("qfw-svg|%1|%2x%3|dpr=%4")
+            .arg(sourceKey)
+            .arg(rect.width())
+            .arg(rect.height())
+            .arg(QString::number(dpr, 'f', 3));
+
+    QPixmap pixmap;
+    if (!QPixmapCache::find(pixmapKey, &pixmap)) {
+        QSvgRenderer renderer;
+        const bool loaded = iconData.isEmpty() ? renderer.load(iconPath) : renderer.load(iconData);
+        if (!loaded || !renderer.isValid()) {
+            return;
+        }
+
+        const QSize pixelSize(qMax(1, static_cast<int>(std::ceil(rect.width() * dpr))),
+                              qMax(1, static_cast<int>(std::ceil(rect.height() * dpr))));
+        pixmap = QPixmap(pixelSize);
+        pixmap.setDevicePixelRatio(dpr);
+        pixmap.fill(Qt::transparent);
+
+        QPainter pixmapPainter(&pixmap);
+        renderer.render(&pixmapPainter,
+                        QRectF(QPointF(0, 0), QSizeF(rect.width(), rect.height())));
+        pixmapPainter.end();
+        QPixmapCache::insert(pixmapKey, pixmap);
+    }
+
+    painter->drawPixmap(rect, pixmap);
+}
+
+}  // namespace
 
 // ============================================================================
 // FluentIconEngine
@@ -160,13 +258,13 @@ QPixmap FontIconEngine::pixmap(const QSize& size, QIcon::Mode mode, QIcon::State
 // ============================================================================
 
 void drawSvgIcon(const QString& iconPath, QPainter* painter, const QRect& rect) {
-    QSvgRenderer renderer(iconPath);
-    renderer.render(painter, QRectF(rect));
+    drawCachedSvg(svgSourceKey(iconPath), iconPath, QByteArray(), painter, rect);
 }
 
 void drawSvgIcon(const QByteArray& iconData, QPainter* painter, const QRect& rect) {
-    QSvgRenderer renderer(iconData);
-    renderer.render(painter, QRectF(rect));
+    const QByteArray digest = QCryptographicHash::hash(iconData, QCryptographicHash::Sha1).toHex();
+    drawCachedSvg(QStringLiteral("data:") + QString::fromLatin1(digest), QString(), iconData,
+                  painter, rect);
 }
 
 QString getIconColor(Theme theme, bool reverse) {
@@ -186,16 +284,27 @@ QString writeSvg(const QString& iconPath, const QList<int>& indexes,
         return QString();
     }
 
-    QFile file(iconPath);
-    if (!file.open(QFile::ReadOnly)) {
-        return QString();
-    }
+    const QString sourceKey = svgSourceKey(iconPath);
+    QString svgContent;
+    if (const QString* cached = rawSvgCache().object(sourceKey)) {
+        svgContent = *cached;
+    } else {
+        QFile file(iconPath);
+        if (!file.open(QFile::ReadOnly)) {
+            return QString();
+        }
 
-    QString svgContent = QString::fromUtf8(file.readAll());
-    file.close();
+        svgContent = QString::fromUtf8(file.readAll());
+        rawSvgCache().insert(sourceKey, new QString(svgContent), svgCacheCost(svgContent));
+    }
 
     if (attributes.isEmpty()) {
         return svgContent;
+    }
+
+    const QString variantKey = svgVariantKey(sourceKey, indexes, attributes);
+    if (const QString* cached = modifiedSvgCache().object(variantKey)) {
+        return *cached;
     }
 
     // Apply attributes to <path> elements.
@@ -247,6 +356,7 @@ QString writeSvg(const QString& iconPath, const QList<int>& indexes,
         ++pathIndex;
     }
 
+    modifiedSvgCache().insert(variantKey, new QString(modifiedSvg), svgCacheCost(modifiedSvg));
     return modifiedSvg;
 }
 

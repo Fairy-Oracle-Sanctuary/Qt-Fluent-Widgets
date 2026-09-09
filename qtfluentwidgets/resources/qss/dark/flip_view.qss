@@ -1,4 +1,5 @@
-FlipView {
+*[qssClass="FlipView"],
+#flipViewViewport {
     background-color: transparent;
     border: none;
 }

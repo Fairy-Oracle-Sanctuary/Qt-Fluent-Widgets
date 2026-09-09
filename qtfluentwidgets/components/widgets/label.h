@@ -3,6 +3,7 @@
 #include <QColor>
 #include <QImage>
 #include <QLabel>
+#include <QPainterPath>
 #include <QPointer>
 #include <QPushButton>
 #include <QUrl>
@@ -188,11 +189,15 @@ protected:
     void paintEvent(QPaintEvent* e) override;
 
     virtual void postInit();
+    const QImage& sourceImage() const { return image_; }
 
 private slots:
     void onFrameChanged(int index);
 
 private:
+    void invalidateScaledImage();
+    void rebuildClipPath();
+    void updateScaledImage();
     void setMovie(QMovie* movie);
 
     QImage image_;
@@ -202,6 +207,13 @@ private:
     int topRightRadius_ = 0;
     int bottomLeftRadius_ = 0;
     int bottomRightRadius_ = 0;
+
+    QPainterPath clipPath_;
+    QSize clipPathSize_;
+    QImage scaledImage_;
+    QSize scaledImagePixelSize_;
+    qreal scaledImageDevicePixelRatio_ = 0;
+    qint64 scaledImageSourceKey_ = -1;
 };
 
 class AvatarWidget : public ImageLabel {
@@ -230,10 +242,19 @@ protected:
 private:
     void drawImageAvatar(QPainter& painter);
     void drawTextAvatar(QPainter& painter);
+    void invalidateImageCache();
+    void rebuildClipPath();
+    void updateImageCache();
 
     int radius_ = 48;
     QColor lightBackgroundColor_;
     QColor darkBackgroundColor_;
+    QPainterPath clipPath_;
+    QSize clipPathSize_;
+    QImage imageCache_;
+    QSize imageCachePixelSize_;
+    qreal imageCacheDevicePixelRatio_ = 0;
+    qint64 imageCacheSourceKey_ = -1;
 };
 
 class HyperlinkLabel : public QPushButton {

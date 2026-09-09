@@ -120,6 +120,11 @@ target_link_libraries(qtfluentwidgets_app PRIVATE
     Qt${QT_VERSION_MAJOR}::Svg
 )
 
+target_compile_definitions(qtfluentwidgets_app PRIVATE
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
+    $<$<CONFIG:Release>:QT_NO_INFO_OUTPUT>
+)
+
 if(MSVC)
     # Prevent C1041 when CMake/MSBuild compiles multiple sources in parallel.
     target_compile_options(qtfluentwidgets_app PRIVATE /utf-8 /FS)

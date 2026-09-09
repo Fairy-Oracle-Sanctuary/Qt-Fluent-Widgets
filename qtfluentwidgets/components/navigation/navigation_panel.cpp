@@ -113,6 +113,12 @@ NavigationPanel::NavigationPanel(QWidget* parent, bool isMinimalEnabled)
 void NavigationPanel::initWidget() {
     resize(48, height());
     setAttribute(Qt::WA_StyledBackground);
+    updateAcrylicColor();
+
+    connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme) {
+        updateAcrylicColor();
+        update();
+    });
 
     if (window()) {
         window()->installEventFilter(this);
@@ -755,6 +761,19 @@ void NavigationPanel::updateAcrylicColor() {
     }
 }
 
+void NavigationPanel::updateAcrylicClipPath() {
+    if (acrylicClipSize_ == size()) {
+        return;
+    }
+
+    QPainterPath path;
+    path.setFillRule(Qt::WindingFill);
+    path.addRoundedRect(0, 1, width() - 1, height() - 1, 7, 7);
+    path.addRect(0, 1, 8, height() - 1);
+    acrylicBrush_.setClipPath(path);
+    acrylicClipSize_ = size();
+}
+
 bool NavigationPanel::canDrawAcrylic() const {
     return acrylicBrush_.isAvailable() && isAcrylicEnabled_;
 }
@@ -766,14 +785,7 @@ void NavigationPanel::paintEvent(QPaintEvent* e) {
     }
 
     QPainter painter(this);
-
-    QPainterPath path;
-    path.setFillRule(Qt::WindingFill);
-    path.addRoundedRect(0, 1, width() - 1, height() - 1, 7, 7);
-    path.addRect(0, 1, 8, height() - 1);
-    acrylicBrush_.setClipPath(path);
-
-    updateAcrylicColor();
+    updateAcrylicClipPath();
     acrylicBrush_.paint(&painter);
     QFrame::paintEvent(e);
 }

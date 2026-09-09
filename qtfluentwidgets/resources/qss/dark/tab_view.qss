@@ -3,6 +3,7 @@ TabBar {
     background-color: transparent;
 }
 
+#tabBarViewport,
 #view {
     background-color: transparent;
 }

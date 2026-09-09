@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QLabel>
+#include <QList>
 #include <QPointer>
 #include <QSize>
 #include <QSizePolicy>
@@ -135,6 +136,7 @@ public:
     explicit InfoBadgeManager(QWidget* target, InfoBadge* badge);
 
     static InfoBadgeManager* make(InfoBadgePosition position, QWidget* target, InfoBadge* badge);
+    static void updateForTarget(QWidget* target);
 
     QPoint position() const;
 
@@ -142,6 +144,7 @@ protected:
     bool eventFilter(QObject* watched, QEvent* e) override;
 
 private:
+    static QList<QPointer<InfoBadgeManager>>& instances();
     QRect targetRectInBadgeParent() const;
 
     InfoBadgePosition position_ = InfoBadgePosition::TopRight;

@@ -1,8 +1,10 @@
 #include "components/widgets/progress_bar.h"
 
+#include <QHideEvent>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QLocale>
+#include <QShowEvent>
 #include <QtMath>
 
 #include "common/color.h"
@@ -28,6 +30,9 @@ ProgressBar::ProgressBar(QWidget* parent, bool useAni) : QProgressBar(parent), _
 float ProgressBar::getVal() const { return _val; }
 
 void ProgressBar::setVal(float v) {
+    if (qFuzzyCompare(1.0f + _val, 1.0f + v)) {
+        return;
+    }
     _val = v;
     update();
 }
@@ -124,7 +129,8 @@ QString ProgressBar::valText() const {
 }
 
 void ProgressBar::setValue(int value) {
-    if (!_useAni) {
+    if (!_useAni || !isVisible()) {
+        ani->stop();
         _val = value;
         QProgressBar::setValue(value);
         update();
@@ -132,6 +138,7 @@ void ProgressBar::setValue(int value) {
     }
 
     ani->stop();
+    ani->setStartValue(_val);
     ani->setEndValue(static_cast<float>(value));
     ani->setDuration(150);
     ani->start();
@@ -203,6 +210,9 @@ IndeterminateProgressBar::IndeterminateProgressBar(QWidget* parent, bool startAn
 float IndeterminateProgressBar::shortPos() const { return _shortPos; }
 
 void IndeterminateProgressBar::setShortPos(float p) {
+    if (qFuzzyCompare(1.0f + _shortPos, 1.0f + p)) {
+        return;
+    }
     _shortPos = p;
     update();
 }
@@ -210,6 +220,9 @@ void IndeterminateProgressBar::setShortPos(float p) {
 float IndeterminateProgressBar::longPos() const { return _longPos; }
 
 void IndeterminateProgressBar::setLongPos(float p) {
+    if (qFuzzyCompare(1.0f + _longPos, 1.0f + p)) {
+        return;
+    }
     _longPos = p;
     update();
 }
@@ -231,14 +244,23 @@ void IndeterminateProgressBar::setCustomBarColor(const QColor& light, const QCol
 }
 
 void IndeterminateProgressBar::start() {
+    startRequested_ = true;
+    userPaused_ = false;
+    visibilityPaused_ = false;
     _isError = false;
     _shortPos = 0;
     _longPos = 0;
-    aniGroup->start();
+    aniGroup->stop();
+    if (isVisible()) {
+        aniGroup->start();
+    }
     update();
 }
 
 void IndeterminateProgressBar::stop() {
+    startRequested_ = false;
+    userPaused_ = false;
+    visibilityPaused_ = false;
     aniGroup->stop();
     _shortPos = 0;
     _longPos = 0;
@@ -250,12 +272,23 @@ bool IndeterminateProgressBar::isStarted() const {
 }
 
 void IndeterminateProgressBar::pause() {
-    aniGroup->pause();
+    userPaused_ = true;
+    if (aniGroup->state() == QAbstractAnimation::Running) {
+        aniGroup->pause();
+    }
     update();
 }
 
 void IndeterminateProgressBar::resume() {
-    aniGroup->resume();
+    userPaused_ = false;
+    if (startRequested_ && isVisible()) {
+        if (aniGroup->state() == QAbstractAnimation::Paused) {
+            aniGroup->resume();
+        } else if (aniGroup->state() == QAbstractAnimation::Stopped) {
+            aniGroup->start();
+        }
+    }
+    visibilityPaused_ = false;
     update();
 }
 
@@ -268,11 +301,14 @@ void IndeterminateProgressBar::setPaused(bool isPaused) {
 }
 
 bool IndeterminateProgressBar::isPaused() const {
-    return aniGroup->state() == QParallelAnimationGroup::Paused;
+    return userPaused_;
 }
 
 void IndeterminateProgressBar::error() {
     _isError = true;
+    startRequested_ = false;
+    userPaused_ = false;
+    visibilityPaused_ = false;
     aniGroup->stop();
     update();
 }
@@ -296,6 +332,29 @@ QColor IndeterminateProgressBar::barColor() const {
         return isDarkTheme() ? QColor(252, 225, 0) : QColor(157, 93, 0);
     }
     return isDarkTheme() ? darkBarColor() : lightBarColor();
+}
+
+void IndeterminateProgressBar::hideEvent(QHideEvent* e) {
+    QProgressBar::hideEvent(e);
+    if (aniGroup->state() == QAbstractAnimation::Running) {
+        aniGroup->pause();
+        visibilityPaused_ = true;
+    }
+}
+
+void IndeterminateProgressBar::showEvent(QShowEvent* e) {
+    QProgressBar::showEvent(e);
+    if (!startRequested_ || userPaused_) {
+        visibilityPaused_ = false;
+        return;
+    }
+
+    if (visibilityPaused_ && aniGroup->state() == QAbstractAnimation::Paused) {
+        aniGroup->resume();
+    } else if (aniGroup->state() == QAbstractAnimation::Stopped) {
+        aniGroup->start();
+    }
+    visibilityPaused_ = false;
 }
 
 void IndeterminateProgressBar::paintEvent(QPaintEvent* e) {

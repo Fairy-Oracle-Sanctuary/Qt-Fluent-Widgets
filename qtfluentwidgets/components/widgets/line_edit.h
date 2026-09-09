@@ -132,6 +132,12 @@ private:
     QCompleter* completer_ = nullptr;
     CompleterMenu* completerMenu_ = nullptr;
 
+    // QLineEdit scrolls horizontally to keep its cursor visible.  While the
+    // editor is unfocused we temporarily place that cursor at the beginning,
+    // then restore the actual editing position when focus returns.
+    int editingCursorPosition_ = 0;
+    bool isShowingTextStart_ = false;
+
 protected:
     bool isClearButtonEnabled_ = false;
     bool isError_ = false;

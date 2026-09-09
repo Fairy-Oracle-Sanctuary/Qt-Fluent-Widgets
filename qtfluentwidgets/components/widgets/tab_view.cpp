@@ -365,6 +365,8 @@ void TabItem::drawText(QPainter* painter) {
 TabBar::TabBar(QWidget* parent) : SingleDirectionScrollArea(parent, Qt::Horizontal) { init(); }
 
 void TabBar::init() {
+    setProperty("qssClass", "TabBar");
+
     currentIndex_ = -1;
     isMovable_ = false;
     isScrollable_ = false;
@@ -388,6 +390,16 @@ void TabBar::init() {
     setWidgetResizable(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    // QAbstractScrollArea enables palette-based background filling on its
+    // viewport by default.  Styling only TabBar and the scroll widget leaves
+    // that intermediate layer opaque (especially with Qt 5), so disable the
+    // fill and style the viewport explicitly.
+    if (QWidget* tabViewport = viewport()) {
+        tabViewport->setObjectName(QStringLiteral("tabBarViewport"));
+        tabViewport->setAutoFillBackground(false);
+        tabViewport->setAttribute(Qt::WA_OpaquePaintEvent, false);
+    }
 
     hBoxLayout_->setSizeConstraint(QHBoxLayout::SetMaximumSize);
 

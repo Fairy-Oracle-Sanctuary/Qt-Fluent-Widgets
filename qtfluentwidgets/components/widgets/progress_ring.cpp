@@ -1,7 +1,9 @@
 #include "components/widgets/progress_ring.h"
 
+#include <QHideEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QShowEvent>
 
 #include "common/color.h"
 #include "common/font.h"
@@ -25,6 +27,9 @@ ProgressRing::ProgressRing(QWidget* parent, bool useAni) : ProgressBar(parent, u
 int ProgressRing::strokeWidth() const { return _strokeWidth; }
 
 void ProgressRing::setStrokeWidth(int w) {
+    if (_strokeWidth == w) {
+        return;
+    }
     _strokeWidth = w;
     update();
 }
@@ -126,6 +131,9 @@ IndeterminateProgressRing::IndeterminateProgressRing(QWidget* parent, bool start
 int IndeterminateProgressRing::startAngle() const { return _startAngle; }
 
 void IndeterminateProgressRing::setStartAngle(int angle) {
+    if (_startAngle == angle) {
+        return;
+    }
     _startAngle = angle;
     update();
 }
@@ -133,6 +141,9 @@ void IndeterminateProgressRing::setStartAngle(int angle) {
 int IndeterminateProgressRing::spanAngle() const { return _spanAngle; }
 
 void IndeterminateProgressRing::setSpanAngle(int angle) {
+    if (_spanAngle == angle) {
+        return;
+    }
     _spanAngle = angle;
     update();
 }
@@ -140,17 +151,28 @@ void IndeterminateProgressRing::setSpanAngle(int angle) {
 int IndeterminateProgressRing::strokeWidth() const { return _strokeWidth; }
 
 void IndeterminateProgressRing::setStrokeWidth(int w) {
+    if (_strokeWidth == w) {
+        return;
+    }
     _strokeWidth = w;
     update();
 }
 
 void IndeterminateProgressRing::start() {
+    startRequested_ = true;
+    visibilityPaused_ = false;
     _startAngle = 0;
     _spanAngle = 0;
-    aniGroup->start();
+    aniGroup->stop();
+    if (isVisible()) {
+        aniGroup->start();
+    }
+    update();
 }
 
 void IndeterminateProgressRing::stop() {
+    startRequested_ = false;
+    visibilityPaused_ = false;
     aniGroup->stop();
     _startAngle = 0;
     _spanAngle = 0;
@@ -177,6 +199,29 @@ void IndeterminateProgressRing::setCustomBackgroundColor(const QColor& light, co
     lightBackgroundColor = light;
     darkBackgroundColor = dark;
     update();
+}
+
+void IndeterminateProgressRing::hideEvent(QHideEvent* e) {
+    QProgressBar::hideEvent(e);
+    if (aniGroup->state() == QAbstractAnimation::Running) {
+        aniGroup->pause();
+        visibilityPaused_ = true;
+    }
+}
+
+void IndeterminateProgressRing::showEvent(QShowEvent* e) {
+    QProgressBar::showEvent(e);
+    if (!startRequested_) {
+        visibilityPaused_ = false;
+        return;
+    }
+
+    if (visibilityPaused_ && aniGroup->state() == QAbstractAnimation::Paused) {
+        aniGroup->resume();
+    } else if (aniGroup->state() == QAbstractAnimation::Stopped) {
+        aniGroup->start();
+    }
+    visibilityPaused_ = false;
 }
 
 void IndeterminateProgressRing::paintEvent(QPaintEvent* e) {
