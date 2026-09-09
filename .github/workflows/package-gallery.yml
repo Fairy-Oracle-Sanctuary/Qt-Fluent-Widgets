@@ -1,0 +1,100 @@
+name: Package Gallery
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-windows:
+    name: Windows x64 / Qt ${{ matrix.qt_version }}
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - qt_version: 5.15.2
+            qt_arch: win64_msvc2019_64
+          - qt_version: 6.7.3
+            qt_arch: win64_msvc2019_64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt_version }}
+          arch: ${{ matrix.qt_arch }}
+          cache: true
+
+      - name: Configure Release build
+        shell: pwsh
+        run: >-
+          cmake -S . -B build
+          -G "Visual Studio 17 2022" -A x64
+          -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR"
+          -DQFW_ENABLE_IPO=ON
+
+      - name: Build Gallery
+        shell: pwsh
+        run: cmake --build build --config Release --target qtfluentwidgets_app --parallel
+
+      - name: Deploy and create package
+        id: package
+        shell: pwsh
+        run: |
+          $packageName = "Qt-Fluent-Widgets-Gallery-Windows-x64-Qt${{ matrix.qt_version }}"
+          $packageDir = Join-Path $env:RUNNER_TEMP $packageName
+          $zipPath = Join-Path $env:RUNNER_TEMP "$packageName.zip"
+          $sourceExe = Join-Path $env:GITHUB_WORKSPACE "build\app\Release\qtfluentwidgets_app.exe"
+          $targetExe = Join-Path $packageDir "qtfluentwidgets_app.exe"
+          $deployTool = Join-Path $env:QT_ROOT_DIR "bin\windeployqt.exe"
+
+          if (-not (Test-Path -LiteralPath $sourceExe)) {
+              throw "Gallery executable was not generated: $sourceExe"
+          }
+          if (-not (Test-Path -LiteralPath $deployTool)) {
+              throw "windeployqt was not found: $deployTool"
+          }
+
+          New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+          Copy-Item -LiteralPath $sourceExe -Destination $targetExe
+
+          & $deployTool --release --compiler-runtime --no-translations $targetExe
+          if ($LASTEXITCODE -ne 0) {
+              throw "windeployqt failed with exit code $LASTEXITCODE"
+          }
+
+          Copy-Item -LiteralPath "LICENSE" -Destination (Join-Path $packageDir "LICENSE.txt")
+          Copy-Item -LiteralPath "README.md" -Destination $packageDir
+          Copy-Item -LiteralPath "docs\README_zh.md" -Destination (Join-Path $packageDir "README_zh.md")
+
+          Compress-Archive -Path (Join-Path $packageDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
+
+          if (-not (Test-Path -LiteralPath $zipPath)) {
+              throw "Package archive was not generated: $zipPath"
+          }
+
+          "package_name=$packageName" >> $env:GITHUB_OUTPUT
+          "package_zip=$zipPath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload Gallery package
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.package.outputs.package_name }}
+          path: ${{ steps.package.outputs.package_zip }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
