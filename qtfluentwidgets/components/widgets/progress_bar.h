@@ -6,6 +6,9 @@
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
 
+class QHideEvent;
+class QShowEvent;
+
 namespace qfw {
 
 class ProgressBar : public QProgressBar {
@@ -98,6 +101,8 @@ public:
 
 protected:
     void paintEvent(QPaintEvent* e) override;
+    void hideEvent(QHideEvent* e) override;
+    void showEvent(QShowEvent* e) override;
 
 private:
     float _shortPos = 0;
@@ -111,6 +116,9 @@ private:
     QPropertyAnimation* longBarAni = nullptr;
     QParallelAnimationGroup* aniGroup = nullptr;
     QSequentialAnimationGroup* longBarAniGroup = nullptr;
+    bool startRequested_ = false;
+    bool userPaused_ = false;
+    bool visibilityPaused_ = false;
 };
 
 }  // namespace qfw

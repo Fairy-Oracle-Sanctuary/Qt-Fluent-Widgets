@@ -8,13 +8,10 @@
 #include "common/animation.h"
 #include "components/navigation/navigation_widget.h"
 
-class QScrollArea;
-
 namespace qfw {
 
-class ScrollArea;
+class SingleDirectionScrollArea;
 class NavigationToolButton;
-class RoundMenu;
 class Router;
 
 enum class TopNavigationDisplayMode {
@@ -115,7 +112,7 @@ protected:
 private slots:
     void onWidgetClicked(bool triggeredByUser);
     void onIndicatorAniFinished();
-    void showOverflowMenu();
+    void onScrollChanged();
 
 private:
     void initWidget();
@@ -126,7 +123,6 @@ private:
     void insertWidgetToLayout(int index, NavigationWidget* widget,
                               TopNavigationItemPosition position);
 
-    void updateOverflow();
     void adjustIndicatorPos();
 
 private:
@@ -137,13 +133,11 @@ private:
     QString currentRouteKey_;
 
     QMap<QString, NavigationWidget*> items_;
-    QList<NavigationWidget*> overflowWidgets_;
 
-    ScrollArea* scrollArea_ = nullptr;
+    SingleDirectionScrollArea* scrollArea_ = nullptr;
     QWidget* scrollWidget_ = nullptr;
 
     NavigationToolButton* returnButton_ = nullptr;
-    NavigationToolButton* moreButton_ = nullptr;
 
     QHBoxLayout* hBoxLayout_ = nullptr;
     QHBoxLayout* leftLayout_ = nullptr;

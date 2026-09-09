@@ -1,16 +1,14 @@
 #include "components/navigation/top_navigation_panel.h"
 
-#include <QAction>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QScrollBar>
-#include <QStyleOption>
 
 #include "common/color.h"
 #include "common/icon.h"
 #include "common/router.h"
 #include "common/style_sheet.h"
-#include "components/widgets/menu.h"
+#include "components/widgets/info_badge.h"
 #include "components/widgets/scroll_area.h"
 #include "components/widgets/tool_tip.h"
 
@@ -84,14 +82,11 @@ void TopNavigationPanel::initWidget() {
     setAttribute(Qt::WA_StyledBackground);
 
     // Create widgets
-    scrollArea_ = new ScrollArea(this);
+    scrollArea_ = new SingleDirectionScrollArea(this, Qt::Horizontal);
     scrollWidget_ = new QWidget();
     returnButton_ = new NavigationToolButton(QVariant::fromValue(static_cast<const FluentIconBase*>(
                                                  new FluentIcon(FluentIconEnum::Return))),
                                              this);
-    moreButton_ = new NavigationToolButton(QVariant::fromValue(static_cast<const FluentIconBase*>(
-                                               new FluentIcon(FluentIconEnum::More))),
-                                           this);
 
     // Create layouts
     hBoxLayout_ = new QHBoxLayout(this);
@@ -106,19 +101,15 @@ void TopNavigationPanel::initWidget() {
     returnButton_->installEventFilter(new ToolTipFilter(returnButton_, 1000));
     returnButton_->setToolTip(tr("Back"));
 
-    // Configure more button
-    moreButton_->hide();
-    connect(moreButton_, &NavigationToolButton::clicked, this,
-            &TopNavigationPanel::showOverflowMenu);
-    moreButton_->installEventFilter(new ToolTipFilter(moreButton_, 1000));
-    moreButton_->setToolTip(tr("More"));
-
     // Configure scroll area
-    scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scrollArea_->verticalScrollBar()->setEnabled(false);
+    scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scrollArea_->setWidget(scrollWidget_);
     scrollArea_->setWidgetResizable(true);
+    scrollArea_->enableTransparentBackground();
+
+    connect(scrollArea_->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+            &TopNavigationPanel::onScrollChanged);
 
     scrollWidget_->setObjectName("scrollWidget");
 
@@ -130,9 +121,8 @@ void TopNavigationPanel::initWidget() {
             &TopNavigationPanel::onIndicatorAniFinished);
 
     // Apply style sheet
-    setStyleSheet(FluentStyleSheetSource(FluentStyleSheet::NavigationInterface).content());
-    scrollWidget_->setStyleSheet(
-        FluentStyleSheetSource(FluentStyleSheet::NavigationInterface).content());
+    qfw::setStyleSheet(this, FluentStyleSheet::NavigationInterface);
+    qfw::setStyleSheet(scrollWidget_, FluentStyleSheet::NavigationInterface);
 }
 
 void TopNavigationPanel::initLayout() {
@@ -151,6 +141,7 @@ void TopNavigationPanel::initLayout() {
 
     hBoxLayout_->addLayout(leftLayout_);
     hBoxLayout_->addWidget(scrollArea_, 1);
+    hBoxLayout_->addLayout(centerLayout_);
     hBoxLayout_->addLayout(rightLayout_);
 
     leftLayout_->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -159,10 +150,6 @@ void TopNavigationPanel::initLayout() {
     scrollLayout_->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     leftLayout_->addWidget(returnButton_);
-    rightLayout_->addWidget(moreButton_);
-
-    // Add spacing between return button and scroll area
-    hBoxLayout_->insertSpacing(1, 4);
 }
 
 void TopNavigationPanel::setDisplayMode(TopNavigationDisplayMode mode) {
@@ -176,8 +163,6 @@ void TopNavigationPanel::setDisplayMode(TopNavigationDisplayMode mode) {
     for (auto* item : items_) {
         item->setCompacted(mode == TopNavigationDisplayMode::Compact);
     }
-
-    updateOverflow();
 }
 
 void TopNavigationPanel::toggle() {
@@ -217,6 +202,10 @@ void TopNavigationPanel::setCurrentItem(const QString& routeKey) {
     if (newItem) {
         lightIndicatorColor_ = newItem->lightIndicatorColor();
         darkIndicatorColor_ = newItem->darkIndicatorColor();
+
+        if (newItem->parentWidget() == scrollWidget_) {
+            scrollArea_->ensureWidgetVisible(newItem, 50, 0);
+        }
     }
 
     // Start animation
@@ -236,14 +225,8 @@ void TopNavigationPanel::removeWidget(const QString& routeKey) {
     }
 
     auto* w = items_.take(routeKey);
-    Router::instance()->remove(routeKey);
-
-    if (overflowWidgets_.contains(w)) {
-        overflowWidgets_.removeOne(w);
-    }
-
+    history_->remove(routeKey);
     w->deleteLater();
-    updateOverflow();
 }
 
 TopNavigationPushButton* TopNavigationPanel::addItem(const QString& routeKey, const QVariant& icon,
@@ -289,7 +272,6 @@ void TopNavigationPanel::insertWidget(int index, const QString& routeKey, Naviga
 
     registerWidget(routeKey, widget, onClick, tooltip);
     insertWidgetToLayout(index, widget, position);
-    updateOverflow();
 }
 
 void TopNavigationPanel::registerWidget(const QString& routeKey, NavigationWidget* widget,
@@ -319,9 +301,8 @@ void TopNavigationPanel::insertWidgetToLayout(int index, NavigationWidget* widge
         centerLayout_->insertWidget(index, widget, 0, Qt::AlignCenter);
     } else if (position == TopNavigationItemPosition::Right) {
         widget->setParent(this);
-        // Keep moreButton as the last widget in right layout
         if (index < 0) {
-            index = qMax(rightLayout_->count() - 1, 0);
+            index = rightLayout_->count();
         }
         rightLayout_->insertWidget(index, widget, 0, Qt::AlignRight | Qt::AlignVCenter);
     } else {
@@ -368,17 +349,12 @@ void TopNavigationPanel::setIndicatorAnimationEnabled(bool enabled) {
 
 QRectF TopNavigationPanel::currentIndicatorGeometry() const {
     auto* item = currentItem();
-    if (!item) {
+    if (!item || !item->isVisible()) {
         return QRectF(0, height() - 6, 16, 3);
     }
 
-    QWidget* anchor = item->isVisible() ? item : moreButton_;
-    if (!anchor || !anchor->isVisible()) {
-        return QRectF(0, height() - 6, 16, 3);
-    }
-
-    QPoint topLeft = anchor->mapTo(this, QPoint(0, 0));
-    QRectF rect(topLeft.x(), topLeft.y(), anchor->width(), anchor->height());
+    QPoint topLeft = item->mapTo(this, QPoint(0, 0));
+    QRectF rect(topLeft.x(), topLeft.y(), item->width(), item->height());
 
     return QRectF(rect.x() - 8 + rect.width() / 2, height() - 9, 16, 3);
 }
@@ -395,103 +371,12 @@ void TopNavigationPanel::onIndicatorAniFinished() {
     // Empty implementation, matching Python version
 }
 
-void TopNavigationPanel::showOverflowMenu() {
-    if (overflowWidgets_.isEmpty()) {
-        return;
-    }
-
-    auto* menu = new RoundMenu("", this);
-    for (auto* w : overflowWidgets_) {
-        QString text;
-        if (auto* pushBtn = qobject_cast<NavigationPushButton*>(w)) {
-            text = pushBtn->text();
-        } else {
-            text = w->property("routeKey").toString();
-        }
-
-        auto* action = new QAction(text, menu);
-        if (auto* pushBtn = qobject_cast<NavigationPushButton*>(w)) {
-            action->setIcon(pushBtn->iconVariant().value<QIcon>());
-        }
-
-        connect(action, &QAction::triggered, w, [w]() {
-            emit w->clicked(true);  // Fix: signal name
-        });
-        menu->addAction(action);
-    }
-
-    QPoint pos = moreButton_->mapToGlobal(moreButton_->rect().bottomLeft());
-    menu->execAt(pos, true, MenuAnimationType::DropDown);
-}
-
-void TopNavigationPanel::updateOverflow() {
-    // Helper to get scroll widgets
-    auto getScrollWidgets = [this]() -> QList<NavigationWidget*> {
-        QList<NavigationWidget*> widgets;
-        for (int i = 0; i < scrollLayout_->count(); ++i) {
-            auto* item = scrollLayout_->itemAt(i);
-            auto* w = qobject_cast<NavigationWidget*>(item ? item->widget() : nullptr);
-            if (w) {
-                widgets.append(w);
-            }
-        }
-        return widgets;
-    };
-
-    // Helper to calculate total width
-    auto totalWidth = [](const QList<NavigationWidget*>& ws, int spacing) -> int {
-        if (ws.isEmpty()) {
-            return 0;
-        }
-        int total = 0;
-        for (auto* w : ws) {
-            total += w->width();
-        }
-        return total + spacing * (ws.size() - 1);
-    };
-
-    // Restore hidden widgets
-    for (auto* w : overflowWidgets_) {
-        if (w) {
-            w->show();
-        }
-    }
-    overflowWidgets_.clear();
-    moreButton_->hide();
-
-    // Allow layout to settle
-    hBoxLayout_->activate();
-
-    auto widgets = getScrollWidgets();
-    if (widgets.isEmpty()) {
-        return;
-    }
-
-    int spacing = scrollLayout_->spacing();
-
-    // First pass without moreButton
-    int available = scrollArea_->width();
-    if (totalWidth(widgets, spacing) <= available) {
-        return;
-    }
-
-    // Show moreButton, relayout, and recompute available width
-    moreButton_->show();
-    hBoxLayout_->activate();
-    available = scrollArea_->width();
-
-    QList<NavigationWidget*> visible = widgets;
-    while (!visible.isEmpty() && totalWidth(visible, spacing) > available) {
-        auto* w = visible.takeLast();
-        w->hide();
-        overflowWidgets_.prepend(w);
-    }
-
-    if (overflowWidgets_.isEmpty()) {
-        moreButton_->hide();
-    }
-
+void TopNavigationPanel::onScrollChanged() {
     adjustIndicatorPos();
+
+    for (auto* item : items_) {
+        InfoBadgeManager::updateForTarget(item);
+    }
 }
 
 void TopNavigationPanel::adjustIndicatorPos() {
@@ -510,7 +395,6 @@ void TopNavigationPanel::showEvent(QShowEvent* e) {
 void TopNavigationPanel::resizeEvent(QResizeEvent* e) {
     QFrame::resizeEvent(e);
     adjustIndicatorPos();
-    updateOverflow();
 }
 
 void TopNavigationPanel::paintEvent(QPaintEvent* e) {

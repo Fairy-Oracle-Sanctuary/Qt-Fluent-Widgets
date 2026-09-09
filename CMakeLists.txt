@@ -25,3 +25,18 @@ endif()
 add_subdirectory(qtfluentwidgets)
 
 add_subdirectory(app)
+
+# Enable whole-program optimization for optimized builds when the selected
+# compiler and generator support it. Unsupported toolchains keep the default
+# behavior instead of failing configuration.
+option(QFW_ENABLE_IPO "Enable interprocedural optimization in Release builds" ON)
+if(QFW_ENABLE_IPO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT QFW_IPO_SUPPORTED OUTPUT QFW_IPO_ERROR)
+    if(QFW_IPO_SUPPORTED)
+        set_property(TARGET qtfluentwidgets PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+        set_property(TARGET qtfluentwidgets_app PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+    else()
+        message(STATUS "IPO/LTO is unavailable: ${QFW_IPO_ERROR}")
+    endif()
+endif()

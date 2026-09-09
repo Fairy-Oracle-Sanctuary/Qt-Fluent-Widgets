@@ -19,6 +19,7 @@ int OpacityAniStackedWidget::addWidget(QWidget* w) {
 
     auto* effect = new QGraphicsOpacityEffect(this);
     effect->setOpacity(1.0);
+    effect->setEnabled(false);
 
     auto* ani = new QPropertyAnimation(effect, QByteArrayLiteral("opacity"), this);
     ani->setDuration(220);
@@ -42,6 +43,20 @@ void OpacityAniStackedWidget::setCurrentIndex(int index) {
 
     if (index < 0 || index >= count()) {
         return;
+    }
+
+    // Opacity effects render the whole page into an intermediate surface.
+    // Keep them disabled outside transitions and clean up interrupted animations.
+    for (const auto& runningAni : anis_) {
+        if (runningAni && runningAni->state() == QAbstractAnimation::Running) {
+            runningAni->stop();
+        }
+    }
+    for (const auto& effect : effects_) {
+        if (effect) {
+            effect->setOpacity(1.0);
+            effect->setEnabled(false);
+        }
     }
 
     QPropertyAnimation* ani = nullptr;
@@ -68,6 +83,9 @@ void OpacityAniStackedWidget::setCurrentIndex(int index) {
 
     nextIndex_ = index;
     if (ani) {
+        if (auto* effect = qobject_cast<QGraphicsOpacityEffect*>(ani->targetObject())) {
+            effect->setEnabled(true);
+        }
         ani->start();
     } else {
         onAniFinished();
@@ -80,6 +98,12 @@ void OpacityAniStackedWidget::setCurrentWidget(QWidget* w) {
 
 void OpacityAniStackedWidget::onAniFinished() {
     QStackedWidget::setCurrentIndex(nextIndex_);
+    for (const auto& effect : effects_) {
+        if (effect) {
+            effect->setOpacity(1.0);
+            effect->setEnabled(false);
+        }
+    }
 }
 
 // ============================================================================
@@ -269,9 +293,17 @@ void TransitionStackedWidget::stopAnimation() {
 void TransitionStackedWidget::hideSnapshots() {
     if (currentSnapshot_) {
         currentSnapshot_->hide();
+        currentSnapshot_->clear();
+        if (currentSnapshot_->graphicsEffect()) {
+            currentSnapshot_->graphicsEffect()->setEnabled(false);
+        }
     }
     if (nextSnapshot_) {
         nextSnapshot_->hide();
+        nextSnapshot_->clear();
+        if (nextSnapshot_->graphicsEffect()) {
+            nextSnapshot_->graphicsEffect()->setEnabled(false);
+        }
     }
 }
 
@@ -286,6 +318,7 @@ QLabel* TransitionStackedWidget::createSnapshotLabel() {
     label->setAttribute(Qt::WA_TranslucentBackground);
 
     auto* effect = new QGraphicsOpacityEffect(label);
+    effect->setEnabled(false);
     label->setGraphicsEffect(effect);
     label->hide();
 
@@ -293,11 +326,13 @@ QLabel* TransitionStackedWidget::createSnapshotLabel() {
 }
 
 void TransitionStackedWidget::renderSnapshot(QWidget* widget, QLabel* label) {
-    if (!widget || !label) {
+    if (!widget || !label || size().isEmpty()) {
         return;
     }
 
-    widget->resize(size());
+    if (widget->size() != size()) {
+        widget->resize(size());
+    }
 
     QPixmap pixmap = widget->grab();
 
@@ -307,8 +342,15 @@ void TransitionStackedWidget::renderSnapshot(QWidget* widget, QLabel* label) {
         widget->render(&pixmap);
     }
 
+    label->setUpdatesEnabled(false);
     label->setPixmap(pixmap);
-    label->setGeometry(rect());
+    if (label->geometry() != rect()) {
+        label->setGeometry(rect());
+    }
+    if (label->graphicsEffect()) {
+        label->graphicsEffect()->setEnabled(true);
+    }
+    label->setUpdatesEnabled(true);
     label->show();
     label->raise();
 }

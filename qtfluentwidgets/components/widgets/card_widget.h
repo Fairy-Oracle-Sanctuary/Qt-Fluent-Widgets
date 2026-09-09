@@ -5,6 +5,7 @@
 #include <QIcon>
 #include <QLabel>
 #include <QList>
+#include <QPainterPath>
 #include <QPointer>
 #include <QPropertyAnimation>
 #include <QVBoxLayout>
@@ -55,6 +56,7 @@ protected:
     bool isPressed_ = false;
 
 private:
+    void rebuildBorderPaths();
     void updateBackgroundColor(const QColor& target);
 
     bool clickEnabled_ = false;
@@ -62,6 +64,10 @@ private:
 
     QColor backgroundColor_;
     QPointer<QPropertyAnimation> bgAni_;
+    QPainterPath topBorderPath_;
+    QPainterPath bottomBorderPath_;
+    QSize borderPathSize_;
+    int borderPathRadius_ = -1;
 };
 
 class SimpleCardWidget : public CardWidget {

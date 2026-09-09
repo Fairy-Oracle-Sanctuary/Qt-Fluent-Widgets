@@ -292,8 +292,30 @@ InfoBadgeManager* InfoBadgeManager::make(InfoBadgePosition position, QWidget* ta
     }
 
     auto* m = new InfoBadgeManager(target, badge);
+    m->setParent(badge);
     m->position_ = position;
+    instances().append(m);
     return m;
+}
+
+QList<QPointer<InfoBadgeManager>>& InfoBadgeManager::instances() {
+    static QList<QPointer<InfoBadgeManager>> managers;
+    return managers;
+}
+
+void InfoBadgeManager::updateForTarget(QWidget* target) {
+    auto& managers = instances();
+    for (int i = managers.size() - 1; i >= 0; --i) {
+        auto* manager = managers.at(i).data();
+        if (!manager) {
+            managers.removeAt(i);
+            continue;
+        }
+
+        if (manager->target_ == target && manager->badge_) {
+            manager->badge_->move(manager->position());
+        }
+    }
 }
 
 QRect InfoBadgeManager::targetRectInBadgeParent() const {
@@ -346,7 +368,8 @@ QPoint InfoBadgeManager::position() const {
 
 bool InfoBadgeManager::eventFilter(QObject* watched, QEvent* e) {
     if (watched == target_ && badge_ && e) {
-        if (e->type() == QEvent::Resize || e->type() == QEvent::Move) {
+        if (e->type() == QEvent::Resize || e->type() == QEvent::Move ||
+            e->type() == QEvent::Show) {
             badge_->move(position());
         }
     }

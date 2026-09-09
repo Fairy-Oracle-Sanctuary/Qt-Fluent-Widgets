@@ -247,23 +247,34 @@ void ClickableSlider::mousePressEvent(QMouseEvent* e) {
 // ============================================================================
 
 HollowHandleStyle::HollowHandleStyle(const QMap<QString, QVariant>& config) : QProxyStyle() {
-    this->config = {{"groove.height", 10},
-                    {"sub-page.color", QColor(255, 255, 255)},
-                    {"add-page.color", QColor(255, 255, 255, 64)},
-                    {"handle.color", QColor(255, 255, 255)},
-                    {"handle.ring-width", 4},
-                    {"handle.hollow-radius", 6},
-                    {"handle.margin", 4}};
+    QMap<QString, QVariant> values = {{"groove.height", 10},
+                                      {"sub-page.color", QColor(255, 255, 255)},
+                                      {"add-page.color", QColor(255, 255, 255, 64)},
+                                      {"handle.color", QColor(255, 255, 255)},
+                                      {"handle.ring-width", 4},
+                                      {"handle.hollow-radius", 6},
+                                      {"handle.margin", 4}};
 
     QMapIterator<QString, QVariant> i(config);
     while (i.hasNext()) {
         i.next();
-        this->config[i.key()] = i.value();
+        values[i.key()] = i.value();
     }
 
-    int w = this->config["handle.margin"].toInt() + this->config["handle.ring-width"].toInt() +
-            this->config["handle.hollow-radius"].toInt();
-    this->config["handle.size"] = QSize(2 * w, 2 * w);
+    grooveHeight_ = values["groove.height"].toInt();
+    subPageColor_ = values["sub-page.color"].value<QColor>();
+    addPageColor_ = values["add-page.color"].value<QColor>();
+    handleColor_ = values["handle.color"].value<QColor>();
+
+    const int ringWidth = values["handle.ring-width"].toInt();
+    const int hollowRadius = values["handle.hollow-radius"].toInt();
+    const int radius = ringWidth + hollowRadius;
+    const int halfSize = values["handle.margin"].toInt() + radius;
+    handleSize_ = QSize(2 * halfSize, 2 * halfSize);
+
+    handleRingPath_.addEllipse(QPointF(0, 0), radius, radius);
+    handleRingPath_.addEllipse(QPointF(0, 0), hollowRadius, hollowRadius);
+    handleRingPath_.setFillRule(Qt::OddEvenFill);
 }
 
 QRect HollowHandleStyle::subControlRect(ComplexControl cc, const QStyleOptionComplex* opt,
@@ -278,14 +289,13 @@ QRect HollowHandleStyle::subControlRect(ComplexControl cc, const QStyleOptionCom
     QRect rect = widget->rect();
 
     if (sc == SC_SliderGroove) {
-        int h = config["groove.height"].toInt();
-        return QRect(0, (rect.height() - h) / 2, rect.width(), h);
+        return QRect(0, (rect.height() - grooveHeight_) / 2, rect.width(), grooveHeight_);
     } else if (sc == SC_SliderHandle) {
-        QSize size = config["handle.size"].toSize();
         int x = sliderPositionFromValue(sopt->minimum, sopt->maximum, sopt->sliderPosition,
                                         rect.width());
-        x = static_cast<int>(x * static_cast<double>(rect.width() - size.width()) / rect.width());
-        return QRect(x, 0, size.width(), size.height());
+        x = static_cast<int>(x * static_cast<double>(rect.width() - handleSize_.width()) /
+                             rect.width());
+        return QRect(x, 0, handleSize_.width(), handleSize_.height());
     }
 
     return QProxyStyle::subControlRect(cc, opt, sc, widget);
@@ -309,30 +319,24 @@ void HollowHandleStyle::drawComplexControl(ComplexControl cc, const QStyleOption
 
     // paint groove
     int w = handleRect.x() - grooveRect.x();
-    int h = config["groove.height"].toInt();
 
-    painter->setBrush(config["sub-page.color"].value<QColor>());
-    painter->drawRect(grooveRect.x(), grooveRect.y(), w, h);
+    painter->setBrush(subPageColor_);
+    painter->drawRect(grooveRect.x(), grooveRect.y(), w, grooveHeight_);
 
-    int x2 = w + config["handle.size"].toSize().width();
-    painter->setBrush(config["add-page.color"].value<QColor>());
-    painter->drawRect(x2, grooveRect.y(), grooveRect.width() - w, h);
+    int x2 = w + handleSize_.width();
+    painter->setBrush(addPageColor_);
+    painter->drawRect(x2, grooveRect.y(), grooveRect.width() - w, grooveHeight_);
 
     // paint handle
-    int ringWidth = config["handle.ring-width"].toInt();
-    int hollowRadius = config["handle.hollow-radius"].toInt();
-    int radius = ringWidth + hollowRadius;
-
-    QPainterPath path;
     QPoint center = handleRect.center() + QPoint(1, 1);
-    path.addEllipse(center, radius, radius);
-    path.addEllipse(center, hollowRadius, hollowRadius);
-    path.setFillRule(Qt::OddEvenFill);
 
-    QColor handleColor = config["handle.color"].value<QColor>();
+    QColor handleColor = handleColor_;
     handleColor.setAlpha((sopt->activeSubControls & SC_SliderHandle) ? 153 : 255);
     painter->setBrush(handleColor);
-    painter->drawPath(path);
+    painter->save();
+    painter->translate(center);
+    painter->drawPath(handleRingPath_);
+    painter->restore();
 
     if (slider->isSliderDown()) {
         handleColor.setAlpha(255);

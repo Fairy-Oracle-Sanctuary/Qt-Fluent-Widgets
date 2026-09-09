@@ -56,7 +56,34 @@ int CardWidget::borderRadius() const { return borderRadius_; }
 
 void CardWidget::setBorderRadius(int radius) {
     borderRadius_ = radius;
+    borderPathRadius_ = -1;
     update();
+}
+
+void CardWidget::rebuildBorderPaths() {
+    const int w = width();
+    const int h = height();
+    const int r = borderRadius_;
+    const int d = 2 * r;
+
+    borderPathSize_ = size();
+    borderPathRadius_ = r;
+
+    topBorderPath_ = QPainterPath();
+    topBorderPath_.arcMoveTo(1, h - d - 1, d, d, 240);
+    topBorderPath_.arcTo(1, h - d - 1, d, d, 225, -60);
+    topBorderPath_.lineTo(1, r);
+    topBorderPath_.arcTo(1, 1, d, d, -180, -90);
+    topBorderPath_.lineTo(w - r, 1);
+    topBorderPath_.arcTo(w - d - 1, 1, d, d, 90, -90);
+    topBorderPath_.lineTo(w - 1, h - r);
+    topBorderPath_.arcTo(w - d - 1, h - d - 1, d, d, 0, -60);
+
+    bottomBorderPath_ = QPainterPath();
+    bottomBorderPath_.arcMoveTo(1, h - d - 1, d, d, 240);
+    bottomBorderPath_.arcTo(1, h - d - 1, d, d, 240, 30);
+    bottomBorderPath_.lineTo(w - r - 1, h - 1);
+    bottomBorderPath_.arcTo(w - d - 1, h - d - 1, d, d, 270, 30);
 }
 
 QColor CardWidget::normalBackgroundColor() const {
@@ -119,25 +146,15 @@ void CardWidget::paintEvent(QPaintEvent* e) {
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing);
 
-    const int w = width();
-    const int h = height();
     const int r = borderRadius_;
-    const int d = 2 * r;
+    if (borderPathSize_ != size() || borderPathRadius_ != r) {
+        rebuildBorderPaths();
+    }
 
     const bool dark = isDarkTheme();
 
     // draw top border
     {
-        QPainterPath path;
-        path.arcMoveTo(1, h - d - 1, d, d, 240);
-        path.arcTo(1, h - d - 1, d, d, 225, -60);
-        path.lineTo(1, r);
-        path.arcTo(1, 1, d, d, -180, -90);
-        path.lineTo(w - r, 1);
-        path.arcTo(w - d - 1, 1, d, d, 90, -90);
-        path.lineTo(w - 1, h - r);
-        path.arcTo(w - d - 1, h - d - 1, d, d, 0, -60);
-
         QColor topBorderColor(0, 0, 0, 20);
         if (dark) {
             if (isPressed_) {
@@ -149,20 +166,14 @@ void CardWidget::paintEvent(QPaintEvent* e) {
             topBorderColor = QColor(0, 0, 0, 15);
         }
 
-        painter.strokePath(path, topBorderColor);
+        painter.strokePath(topBorderPath_, topBorderColor);
 
         // draw bottom border
-        QPainterPath path2;
-        path2.arcMoveTo(1, h - d - 1, d, d, 240);
-        path2.arcTo(1, h - d - 1, d, d, 240, 30);
-        path2.lineTo(w - r - 1, h - 1);
-        path2.arcTo(w - d - 1, h - d - 1, d, d, 270, 30);
-
         QColor bottomBorderColor = topBorderColor;
         if (!dark && isHover_ && !isPressed_) {
             bottomBorderColor = QColor(0, 0, 0, 27);
         }
-        painter.strokePath(path2, bottomBorderColor);
+        painter.strokePath(bottomBorderPath_, bottomBorderColor);
     }
 
     // draw background

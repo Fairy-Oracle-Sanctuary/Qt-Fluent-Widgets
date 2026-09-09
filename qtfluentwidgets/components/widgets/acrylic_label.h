@@ -24,10 +24,13 @@ protected:
     void paintEvent(QPaintEvent* e) override;
 
 private:
+    void rebuildTexture();
+
     QColor tintColor_;
     QColor luminosityColor_;
     qreal noiseOpacity_;
     QImage noiseImage_;
+    QImage textureImage_;
 };
 
 class AcrylicLabel : public QLabel {
@@ -77,6 +80,9 @@ public:
     bool isAvailable() const { return true; }
 
 private:
+    void rebuildTexture();
+    void updateScaledImage();
+
     QWidget* device_ = nullptr;
     int blurRadius_;
     QColor tintColor_;
@@ -84,8 +90,11 @@ private:
     qreal noiseOpacity_;
 
     QImage noiseImage_;
+    QImage textureImageCache_;
     QPixmap originalImage_;
     QPixmap image_;
+    QPixmap scaledImage_;
+    QSize scaledImageSize_;
 
     QPainterPath clipPath_;
 };

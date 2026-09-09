@@ -65,7 +65,6 @@ signals:
 
 protected:
     bool eventFilter(QObject* obj, QEvent* e) override;
-    void resizeEvent(QResizeEvent* e) override;
 
 private:
     TopNavigationPanel* panel_ = nullptr;

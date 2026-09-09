@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QMap>
+#include <QPainterPath>
 #include <QPropertyAnimation>
 #include <QProxyStyle>
 #include <QSlider>
@@ -108,7 +109,12 @@ public:
                             const QWidget* widget) const override;
 
 private:
-    QMap<QString, QVariant> config;
+    int grooveHeight_ = 10;
+    QSize handleSize_;
+    QColor subPageColor_;
+    QColor addPageColor_;
+    QColor handleColor_;
+    QPainterPath handleRingPath_;
 };
 
 }  // namespace qfw

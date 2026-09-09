@@ -93,7 +93,9 @@ static bool setStyleSheetIfChanged(QWidget* widget, const QString& qss) {
         timer.restart();
     }
 
-    const bool same = (qss.trimmed() == currentStyle.trimmed());
+    // Styles produced by the manager are deterministic, so an exact comparison
+    // avoids allocating and scanning two trimmed copies on every theme refresh.
+    const bool same = (qss == currentStyle);
     if (qssDebugEnabled()) {
         qssPerfStats().compareMs += timer.elapsed();
     }
@@ -815,8 +817,12 @@ StyleSheetManager& StyleSheetManager::instance() {
 StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
     QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme theme) {
         const bool lazy = nextLazyUpdate_;
-        qInfo().noquote() << "[qfw][theme] themeChanged signal received, theme=" << static_cast<int>(theme)
-                          << "lazy=" << lazy << "items_.size()=" << items_.size();
+        if (qssDebugEnabled()) {
+            qInfo().noquote()
+                << "[qfw][theme] themeChanged signal received, theme="
+                << static_cast<int>(theme) << "lazy=" << lazy
+                << "items_.size()=" << items_.size();
+        }
         nextLazyUpdate_ = false;
         updateStyleSheet(lazy);
         QConfig::instance().notifyThemeChangedFinished();
@@ -825,8 +831,11 @@ StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
     QObject::connect(
         &QConfig::instance(), &QConfig::themeColorChanged, this, [this](const QColor&) {
             const bool lazy = nextLazyUpdate_;
-            qInfo().noquote() << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_="
-                              << lazy << "items_.size()=" << items_.size();
+            if (qssDebugEnabled()) {
+                qInfo().noquote()
+                    << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_="
+                    << lazy << "items_.size()=" << items_.size();
+            }
             nextLazyUpdate_ = false;
             updateStyleSheet(lazy);
         });
@@ -838,7 +847,6 @@ static bool ensureWatchersInstalled(QWidget* widget) {
     }
     if (!widget->property("qfw_watchers_installed").toBool()) {
         widget->installEventFilter(new CustomStyleSheetWatcher(widget));
-        widget->installEventFilter(new DirtyStyleSheetWatcher(widget));
         widget->setProperty("qfw_watchers_installed", true);
     }
     return true;
@@ -856,26 +864,26 @@ void StyleSheetManager::registerWidget(QWidget* widget,
 
     ensureWatchersInstalled(widget);
 
-    for (auto& item : items_) {
-        if (item.widget == widget) {
-            if (!item.source) {
-                item.source = QSharedPointer<StyleSheetCompose>(new StyleSheetCompose(
-                    {source, QSharedPointer<StyleSheetBase>(new CustomStyleSheet(widget))}));
-            } else if (reset) {
-                item.source = QSharedPointer<StyleSheetCompose>(new StyleSheetCompose(
-                    {source, QSharedPointer<StyleSheetBase>(new CustomStyleSheet(widget))}));
-            } else {
-                item.source->add(source);
-            }
-            return;
+    auto it = items_.find(widget);
+    if (it != items_.end()) {
+        Item& item = it.value();
+        if (!item.source) {
+            item.source = QSharedPointer<StyleSheetCompose>(new StyleSheetCompose(
+                {source, QSharedPointer<StyleSheetBase>(new CustomStyleSheet(widget))}));
+        } else if (reset) {
+            item.source = QSharedPointer<StyleSheetCompose>(new StyleSheetCompose(
+                {source, QSharedPointer<StyleSheetBase>(new CustomStyleSheet(widget))}));
+        } else {
+            item.source->add(source);
         }
+        return;
     }
 
     Item item;
     item.widget = widget;
     item.source = QSharedPointer<StyleSheetCompose>(new StyleSheetCompose(
         {source, QSharedPointer<StyleSheetBase>(new CustomStyleSheet(widget))}));
-    items_.append(item);
+    items_.insert(widget, item);
 
     QObject::connect(widget, &QObject::destroyed, this,
                      [this, widget]() { deregisterWidget(widget); });
@@ -886,23 +894,15 @@ void StyleSheetManager::deregisterWidget(QWidget* widget) {
         return;
     }
 
-    for (int i = items_.size() - 1; i >= 0; --i) {
-        if (items_[i].widget == widget) {
-            items_.removeAt(i);
-        }
-    }
+    items_.remove(widget);
 }
 
 QSharedPointer<StyleSheetCompose> StyleSheetManager::source(QWidget* widget) const {
     if (!widget) {
         return {};
     }
-    for (const auto& item : items_) {
-        if (item.widget == widget) {
-            return item.source;
-        }
-    }
-    return {};
+    const auto it = items_.constFind(widget);
+    return (it == items_.constEnd()) ? QSharedPointer<StyleSheetCompose>() : it.value().source;
 }
 
 void StyleSheetManager::setNextLazyUpdate(bool lazy) {
@@ -910,35 +910,42 @@ void StyleSheetManager::setNextLazyUpdate(bool lazy) {
 }
 
 void StyleSheetManager::updateStyleSheet(bool lazy) {
-    QWidgetList topLevelWidgets = QApplication::topLevelWidgets();
-    for (QWidget* w : topLevelWidgets) {
-        w->setUpdatesEnabled(false);
+    QWidgetList disabledForUpdate;
+    const QWidgetList topLevelWidgets = QApplication::topLevelWidgets();
+    for (QWidget* widget : topLevelWidgets) {
+        if (widget && widget->updatesEnabled()) {
+            widget->setUpdatesEnabled(false);
+            disabledForUpdate.append(widget);
+        }
     }
 
-    for (int i = items_.size() - 1; i >= 0; --i) {
-        auto& item = items_[i];
+    for (auto it = items_.begin(); it != items_.end();) {
+        Item& item = it.value();
+        QWidget* widget = item.widget.data();
 
-        if (!item.widget) {
-            items_.removeAt(i);
+        if (!widget) {
+            it = items_.erase(it);
             continue;
         }
 
         // On macOS, visibleRegion() may return empty region for frameless windows
         // Use isVisible() check instead for lazy mode
-        if (lazy && !item.widget->isVisible()) {
-            item.widget->setProperty("dirty-qss", true);
+        if (lazy && !widget->isVisible()) {
+            widget->setProperty("dirty-qss", true);
+            ++it;
             continue;
         }
 
         if (item.source) {
-            QString qss = getStyleSheet(*item.source, Theme::Auto);
-            setStyleSheetIfChanged(item.widget, qss);
+            const QString qss = getStyleSheet(*item.source, Theme::Auto);
+            setStyleSheetIfChanged(widget, qss);
         }
+        ++it;
     }
 
     // 恢复重绘
-    for (QWidget* w : topLevelWidgets) {
-        w->setUpdatesEnabled(true);
+    for (QWidget* widget : disabledForUpdate) {
+        widget->setUpdatesEnabled(true);
     }
 }
 
@@ -981,14 +988,21 @@ void updateDynamicStyle(QWidget* widget) {
 
 bool CustomStyleSheetWatcher::eventFilter(QObject* obj, QEvent* e) {
     auto* w = qobject_cast<QWidget*>(obj);
-    if (!w || e->type() != QEvent::DynamicPropertyChange) {
+    if (!w) {
         return QObject::eventFilter(obj, e);
     }
 
-    const auto* de = static_cast<QDynamicPropertyChangeEvent*>(e);
-    const QByteArray name = de->propertyName();
-    if (name == CustomStyleSheet::LIGHT_QSS_KEY || name == CustomStyleSheet::DARK_QSS_KEY) {
-        addStyleSheet(w, CustomStyleSheet(w), Theme::Auto, true);
+    if (e->type() == QEvent::DynamicPropertyChange) {
+        const auto* de = static_cast<QDynamicPropertyChangeEvent*>(e);
+        const QByteArray name = de->propertyName();
+        if (name == CustomStyleSheet::LIGHT_QSS_KEY || name == CustomStyleSheet::DARK_QSS_KEY) {
+            addStyleSheet(w, CustomStyleSheet(w), Theme::Auto, true);
+        }
+    } else if (e->type() == QEvent::Paint && w->property("dirty-qss").toBool()) {
+        w->setProperty("dirty-qss", false);
+        if (auto s = StyleSheetManager::instance().source(w)) {
+            setStyleSheetIfChanged(w, getStyleSheet(*s, Theme::Auto));
+        }
     }
 
     return QObject::eventFilter(obj, e);

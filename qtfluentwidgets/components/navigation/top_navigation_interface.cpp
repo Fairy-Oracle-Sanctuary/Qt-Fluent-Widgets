@@ -76,10 +76,4 @@ bool TopNavigationInterface::eventFilter(QObject* obj, QEvent* e) {
     return QWidget::eventFilter(obj, e);
 }
 
-void TopNavigationInterface::resizeEvent(QResizeEvent* e) {
-    if (e->oldSize().width() != width()) {
-        panel_->setFixedWidth(width());
-    }
-}
-
 }  // namespace qfw

@@ -234,6 +234,7 @@ void ImageLabel::onFrameChanged(int index) {
         return;
     }
     image_ = movie_->currentImage();
+    invalidateScaledImage();
     update();
 }
 
@@ -242,11 +243,64 @@ void ImageLabel::setBorderRadius(int topLeft, int topRight, int bottomLeft, int 
     topRightRadius_ = topRight;
     bottomLeftRadius_ = bottomLeft;
     bottomRightRadius_ = bottomRight;
+    clipPathSize_ = QSize();
     update();
+}
+
+void ImageLabel::invalidateScaledImage() {
+    scaledImage_ = QImage();
+    scaledImagePixelSize_ = QSize();
+    scaledImageDevicePixelRatio_ = 0;
+    scaledImageSourceKey_ = -1;
+}
+
+void ImageLabel::rebuildClipPath() {
+    clipPath_ = QPainterPath();
+    clipPathSize_ = size();
+
+    const int w = width();
+    const int h = height();
+
+    clipPath_.moveTo(topLeftRadius_, 0);
+    clipPath_.lineTo(w - topRightRadius_, 0);
+
+    int d = topRightRadius_ * 2;
+    clipPath_.arcTo(w - d, 0, d, d, 90, -90);
+    clipPath_.lineTo(w, h - bottomRightRadius_);
+
+    d = bottomRightRadius_ * 2;
+    clipPath_.arcTo(w - d, h - d, d, d, 0, -90);
+    clipPath_.lineTo(bottomLeftRadius_, h);
+
+    d = bottomLeftRadius_ * 2;
+    clipPath_.arcTo(0, h - d, d, d, -90, -90);
+    clipPath_.lineTo(0, topLeftRadius_);
+
+    d = topLeftRadius_ * 2;
+    clipPath_.arcTo(0, 0, d, d, -180, -90);
+}
+
+void ImageLabel::updateScaledImage() {
+    const qreal dpr = devicePixelRatioF();
+    const QSize pixelSize = size() * dpr;
+    const qint64 sourceKey = image_.cacheKey();
+
+    if (scaledImageSourceKey_ == sourceKey && scaledImagePixelSize_ == pixelSize &&
+        scaledImageDevicePixelRatio_ == dpr) {
+        return;
+    }
+
+    scaledImageSourceKey_ = sourceKey;
+    scaledImagePixelSize_ = pixelSize;
+    scaledImageDevicePixelRatio_ = dpr;
+    scaledImage_ = pixelSize.isEmpty()
+                       ? QImage()
+                       : image_.scaled(pixelSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 }
 
 void ImageLabel::setImage(const QString& imagePath) {
     image_ = QImage();
+    invalidateScaledImage();
     movie_.clear();
 
     QImageReader reader(imagePath);
@@ -265,6 +319,7 @@ void ImageLabel::setImage(const QString& imagePath) {
 void ImageLabel::setImage(const QImage& image) {
     movie_.clear();
     image_ = image;
+    invalidateScaledImage();
     if (!image_.isNull()) {
         setFixedSize(image_.size());
     }
@@ -350,6 +405,7 @@ void ImageLabel::setMovie(QMovie* movie) {
     movie_->setParent(this);
     movie_->start();
     image_ = movie_->currentImage();
+    invalidateScaledImage();
     connect(movie_, &QMovie::frameChanged, this, &ImageLabel::onFrameChanged);
 }
 
@@ -362,45 +418,14 @@ void ImageLabel::paintEvent(QPaintEvent* e) {
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing);
 
-    QPainterPath path;
-    const int w = width();
-    const int h = height();
-
-    // top line
-    path.moveTo(topLeftRadius_, 0);
-    path.lineTo(w - topRightRadius_, 0);
-
-    // top right arc
-    int d = topRightRadius_ * 2;
-    path.arcTo(w - d, 0, d, d, 90, -90);
-
-    // right line
-    path.lineTo(w, h - bottomRightRadius_);
-
-    // bottom right arc
-    d = bottomRightRadius_ * 2;
-    path.arcTo(w - d, h - d, d, d, 0, -90);
-
-    // bottom line
-    path.lineTo(bottomLeftRadius_, h);
-
-    // bottom left arc
-    d = bottomLeftRadius_ * 2;
-    path.arcTo(0, h - d, d, d, -90, -90);
-
-    // left line
-    path.lineTo(0, topLeftRadius_);
-
-    // top left arc
-    d = topLeftRadius_ * 2;
-    path.arcTo(0, 0, d, d, -180, -90);
-
-    const QImage scaled = image_.scaled(size() * devicePixelRatioF(), Qt::IgnoreAspectRatio,
-                                        Qt::SmoothTransformation);
+    if (clipPathSize_ != size()) {
+        rebuildClipPath();
+    }
+    updateScaledImage();
 
     painter.setPen(Qt::NoPen);
-    painter.setClipPath(path);
-    painter.drawImage(rect(), scaled);
+    painter.setClipPath(clipPath_);
+    painter.drawImage(rect(), scaledImage_);
 }
 
 // ==========================================================================
@@ -432,6 +457,8 @@ void AvatarWidget::setRadius(int radius) {
     radius_ = radius;
     qfw::setFont(this, radius);
     setFixedSize(2 * radius, 2 * radius);
+    clipPathSize_ = QSize();
+    invalidateImageCache();
     update();
 }
 
@@ -470,24 +497,55 @@ void AvatarWidget::paintEvent(QPaintEvent* e) {
 }
 
 void AvatarWidget::drawImageAvatar(QPainter& painter) {
-    // center crop image
-    const QImage scaled = pixmap().toImage().scaled(
-        size() * devicePixelRatioF(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
-
-    const int iw = scaled.width();
-    const int ih = scaled.height();
-    const int d = static_cast<int>(radius_ * 2 * devicePixelRatioF());
-    const int x = (iw - d) / 2;
-    const int y = (ih - d) / 2;
-
-    const QImage cropped = scaled.copy(x, y, d, d);
-
-    QPainterPath path;
-    path.addEllipse(QRectF(rect()));
+    if (clipPathSize_ != size()) {
+        rebuildClipPath();
+    }
+    updateImageCache();
 
     painter.setPen(Qt::NoPen);
-    painter.setClipPath(path);
-    painter.drawImage(rect(), cropped);
+    painter.setClipPath(clipPath_);
+    painter.drawImage(rect(), imageCache_);
+}
+
+void AvatarWidget::invalidateImageCache() {
+    imageCache_ = QImage();
+    imageCachePixelSize_ = QSize();
+    imageCacheDevicePixelRatio_ = 0;
+    imageCacheSourceKey_ = -1;
+}
+
+void AvatarWidget::rebuildClipPath() {
+    clipPath_ = QPainterPath();
+    clipPath_.addEllipse(QRectF(rect()));
+    clipPathSize_ = size();
+}
+
+void AvatarWidget::updateImageCache() {
+    const QImage& source = sourceImage();
+    const qreal dpr = devicePixelRatioF();
+    const QSize pixelSize = size() * dpr;
+    const qint64 sourceKey = source.cacheKey();
+
+    if (imageCacheSourceKey_ == sourceKey && imageCachePixelSize_ == pixelSize &&
+        imageCacheDevicePixelRatio_ == dpr) {
+        return;
+    }
+
+    imageCacheSourceKey_ = sourceKey;
+    imageCachePixelSize_ = pixelSize;
+    imageCacheDevicePixelRatio_ = dpr;
+
+    if (source.isNull() || pixelSize.isEmpty()) {
+        imageCache_ = QImage();
+        return;
+    }
+
+    const QImage scaled = source.scaled(pixelSize, Qt::KeepAspectRatioByExpanding,
+                                        Qt::SmoothTransformation);
+    const int d = static_cast<int>(radius_ * 2 * dpr);
+    const int x = (scaled.width() - d) / 2;
+    const int y = (scaled.height() - d) / 2;
+    imageCache_ = scaled.copy(x, y, d, d);
 }
 
 void AvatarWidget::drawTextAvatar(QPainter& painter) {

@@ -255,6 +255,11 @@ endif()
 
 target_link_libraries(qtfluentwidgets PUBLIC Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Svg)
 
+target_compile_definitions(qtfluentwidgets PRIVATE
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
+    $<$<CONFIG:Release>:QT_NO_INFO_OUTPUT>
+)
+
 if(APPLE)
     target_link_libraries(qtfluentwidgets PUBLIC "-framework Cocoa")
 endif()

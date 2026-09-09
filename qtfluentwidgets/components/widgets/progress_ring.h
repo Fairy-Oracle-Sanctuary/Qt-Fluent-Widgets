@@ -51,6 +51,8 @@ public:
 
 protected:
     void paintEvent(QPaintEvent* e) override;
+    void hideEvent(QHideEvent* e) override;
+    void showEvent(QShowEvent* e) override;
 
 private:
     int _startAngle = -180;
@@ -70,6 +72,8 @@ private:
     QSequentialAnimationGroup* startAngleAniGroup = nullptr;
     QSequentialAnimationGroup* spanAngleAniGroup = nullptr;
     QParallelAnimationGroup* aniGroup = nullptr;
+    bool startRequested_ = false;
+    bool visibilityPaused_ = false;
 };
 
 } // namespace qfw

@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QPropertyAnimation>
 #include <QRect>
+#include <QSize>
 #include <QString>
 #include <QVBoxLayout>
 #include <QVariant>
@@ -151,6 +152,7 @@ private:
     void initLayout();
 
     void updateAcrylicColor();
+    void updateAcrylicClipPath();
     bool canDrawAcrylic() const;
 
     void registerWidget(const QString& routeKey, const QString& parentRouteKey,
@@ -187,6 +189,7 @@ private:
     QPointer<NavigationIndicator> indicator_;
 
     AcrylicBrush acrylicBrush_;
+    QSize acrylicClipSize_;
 
     QPointer<ScrollArea> scrollArea_;
     QPointer<QWidget> scrollWidget_;

@@ -1,6 +1,7 @@
 #include "flow_layout.h"
 
 #include <QEvent>
+#include <QVector>
 #include <QWidget>
 #include <QWidgetItem>
 
@@ -54,7 +55,8 @@ void FlowLayout::onWidgetAdded(QWidget* w, int index) {
     if (!isInstalledEventFilter_) {
         if (w->parentWidget()) {
             wParent_ = w->parentWidget();
-            w->parentWidget()->installEventFilter(this);
+            wParent_->installEventFilter(this);
+            isInstalledEventFilter_ = true;
         } else {
             w->installEventFilter(this);
         }
@@ -168,9 +170,13 @@ bool FlowLayout::hasHeightForWidth() const { return true; }
 int FlowLayout::heightForWidth(int width) const { return doLayout(QRect(0, 0, width, 0), false); }
 
 void FlowLayout::setGeometry(const QRect& rect) {
+    const bool geometryChanged = (rect != geometry());
     QLayout::setGeometry(rect);
 
     if (needAni_) {
+        if (!geometryChanged && debounceTimer_->isActive()) {
+            return;
+        }
         debounceTimer_->start(80);
     } else {
         doLayout(rect, true);
@@ -203,13 +209,18 @@ void FlowLayout::setHorizontalSpacing(int spacing) { horizontalSpacing_ = spacin
 int FlowLayout::horizontalSpacing() const { return horizontalSpacing_; }
 
 bool FlowLayout::eventFilter(QObject* obj, QEvent* event) {
-    for (auto* item : items_) {
-        if (item->widget() == obj && event->type() == QEvent::ParentChange) {
+    if (event->type() == QEvent::ParentChange) {
+        for (auto* item : items_) {
+            if (item->widget() != obj) {
+                continue;
+            }
+
             wParent_ = obj->parent() ? qobject_cast<QWidget*>(obj->parent()) : nullptr;
             if (wParent_) {
+                obj->removeEventFilter(this);
                 wParent_->installEventFilter(this);
+                isInstalledEventFilter_ = true;
             }
-            isInstalledEventFilter_ = true;
             break;
         }
     }
@@ -223,7 +234,18 @@ bool FlowLayout::eventFilter(QObject* obj, QEvent* event) {
 }
 
 int FlowLayout::doLayout(const QRect& rect, bool move) const {
+    struct AnimationTarget {
+        QPropertyAnimation* animation;
+        QLayoutItem* item;
+        QRect geometry;
+    };
+
     bool aniRestart = false;
+    QVector<AnimationTarget> animationTargets;
+    if (move && needAni_) {
+        animationTargets.reserve(qMin(items_.count(), anis_.count()));
+    }
+
     const auto m = contentsMargins();
     int x = rect.x() + m.left();
     int y = rect.y() + m.top();
@@ -233,40 +255,48 @@ int FlowLayout::doLayout(const QRect& rect, bool move) const {
 
     for (int i = 0; i < items_.count(); ++i) {
         auto* item = items_[i];
-        if (item->widget() && !item->widget()->isVisible() && isTight_) {
+        QWidget* widget = item->widget();
+        if (widget && !widget->isVisible() && isTight_) {
             continue;
         }
 
-        int nextX = x + item->sizeHint().width() + spaceX;
+        const QSize itemSize = item->sizeHint();
+        int nextX = x + itemSize.width() + spaceX;
 
         if (nextX - spaceX > rect.right() - m.right() && rowHeight > 0) {
             x = rect.x() + m.left();
             y = y + rowHeight + spaceY;
-            nextX = x + item->sizeHint().width() + spaceX;
+            nextX = x + itemSize.width() + spaceX;
             rowHeight = 0;
         }
 
         if (move) {
-            QRect target(QPoint(x, y), item->sizeHint());
+            const QRect target(QPoint(x, y), itemSize);
             if (!needAni_) {
-                item->setGeometry(target);
+                if (item->geometry() != target) {
+                    item->setGeometry(target);
+                }
             } else if (i < anis_.count()) {
                 auto* ani = anis_[i];
+                animationTargets.append({ani, item, target});
                 if (target != ani->endValue().toRect()) {
-                    ani->stop();
-                    // item->setGeometry(target);
-                    ani->setEndValue(target);
                     aniRestart = true;
                 }
+            } else if (item->geometry() != target) {
+                item->setGeometry(target);
             }
         }
 
         x = nextX;
-        rowHeight = qMax(rowHeight, item->sizeHint().height());
+        rowHeight = qMax(rowHeight, itemSize.height());
     }
 
     if (needAni_ && aniRestart) {
         aniGroup_->stop();
+        for (const AnimationTarget& target : animationTargets) {
+            target.animation->setStartValue(target.item->geometry());
+            target.animation->setEndValue(target.geometry);
+        }
         aniGroup_->start();
     }
 

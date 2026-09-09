@@ -182,6 +182,8 @@ FlipView::FlipView(Qt::Orientation orientation, QWidget* parent) : QListWidget(p
 }
 
 void FlipView::init() {
+    setProperty("qssClass", "FlipView");
+
     isHover_ = false;
     currentIndex_ = -1;
     aspectRatioMode_ = Qt::IgnoreAspectRatio;
@@ -200,6 +202,17 @@ void FlipView::init() {
     setHorizontalScrollMode(QListWidget::ScrollPerPixel);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    // QListWidget paints its viewport with the Base palette by default.  Keep
+    // both layers non-opaque so the parent background remains visible around
+    // images and while the view is empty.
+    setFrameShape(QFrame::NoFrame);
+    setAutoFillBackground(false);
+    if (QWidget* flipViewport = viewport()) {
+        flipViewport->setObjectName(QStringLiteral("flipViewViewport"));
+        flipViewport->setAutoFillBackground(false);
+        flipViewport->setAttribute(Qt::WA_OpaquePaintEvent, false);
+    }
 
     qfw::setStyleSheet(this, FluentStyleSheet::FlipView);
 
