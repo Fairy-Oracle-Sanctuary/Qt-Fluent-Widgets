@@ -160,6 +160,8 @@ public:
     void setImage(const QString& imagePath);
     void setImage(const QImage& image);
     void setImage(const QPixmap& pixmap);
+    // Keep QLabel's familiar API in sync with ImageLabel's custom painter.
+    void setPixmap(const QPixmap& pixmap);
 
     void scaledToWidth(int width);
     void scaledToHeight(int height);
