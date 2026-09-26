@@ -328,6 +328,8 @@ void ImageLabel::setImage(const QImage& image) {
 
 void ImageLabel::setImage(const QPixmap& pixmap) { setImage(pixmap.toImage()); }
 
+void ImageLabel::setPixmap(const QPixmap& pixmap) { setImage(pixmap); }
+
 void ImageLabel::scaledToWidth(int width) {
     if (isNull()) {
         return;
