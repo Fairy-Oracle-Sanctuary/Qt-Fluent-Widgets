@@ -350,6 +350,27 @@ void WindowsWindowEffect::setMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) 
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 }
 
+void WindowsWindowEffect::removeMicaEffect(HWND hWnd) {
+    if (!hWnd) {
+        return;
+    }
+
+    const int noBackdrop = 1;
+    (void)DwmSetWindowAttribute(hWnd, DWMWA_SYSTEMBACKDROP_TYPE, &noBackdrop,
+                                sizeof(noBackdrop));
+    const int disabled = 0;
+    (void)DwmSetWindowAttribute(hWnd, static_cast<DWMWINDOWATTRIBUTE>(1029),
+                                &disabled, sizeof(disabled));
+    const BOOL noHostBackdropBrush = FALSE;
+    (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_HOSTBACKDROPBRUSH,
+                                &noHostBackdropBrush, sizeof(noHostBackdropBrush));
+    ::RemovePropW(hWnd, L"qfw_mica_enabled");
+    MARGINS margins{1, 1, 1, 1};
+    (void)DwmExtendFrameIntoClientArea(hWnd, &margins);
+    ::SetWindowPos(hWnd, nullptr, 0, 0, 0, 0,
+                   SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+}
+
 void WindowsWindowEffect::refreshMicaEffect(HWND hWnd, bool isDarkMode, bool isAlt) {
     if (!hWnd) {
         return;
