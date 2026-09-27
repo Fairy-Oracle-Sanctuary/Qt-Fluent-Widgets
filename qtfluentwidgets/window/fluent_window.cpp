@@ -101,6 +101,9 @@ QColor FluentWidget::normalBackgroundColor() const {
 
 void FluentWidget::applyMica() {
 #ifdef Q_OS_WIN
+    if (!isMicaEnabled_) {
+        return;
+    }
     const HWND hWnd = reinterpret_cast<HWND>(winId());
     if (!hWnd) {
         return;
@@ -128,6 +131,10 @@ void FluentWidget::setMicaEffectEnabled(bool enabled) {
         setBackgroundColor(normalBackgroundColor());
     } else {
         isMicaEnabled_ = false;
+        if (isVisible()) {
+            WindowsWindowEffect eff;
+            eff.removeMicaEffect(reinterpret_cast<HWND>(winId()));
+        }
         setBackgroundColor(normalBackgroundColor());
     }
 #else
