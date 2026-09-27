@@ -7,8 +7,10 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QResizeEvent>
+#include <QScrollArea>
 #include <QStackedWidget>
 
+#include "common/color.h"
 #include "common/config.h"
 #include "common/icon.h"
 #include "common/router.h"
@@ -553,6 +555,12 @@ MSFluentWindow::MSFluentWindow(QWidget* parent) : FluentWindowBase(parent) {
     setTitleBar(new qfw::MSFluentTitleBar(this));
 
     navigationBar_ = new qfw::NavigationBar(this);
+    // Match the bright dark-mode accent used by the MS navigation bar.
+    navigationBar_->setSelectedColor(QColor(), themedColor(themeColor(), true, QString()));
+    connect(&QConfig::instance(), &QConfig::themeColorChanged, navigationBar_,
+            [this](const QColor& color) {
+                navigationBar_->setSelectedColor(QColor(), themedColor(color, true, QString()));
+            });
 
     // initialize layout (python: margins (0,48,0,0))
     if (hBoxLayout_) {
@@ -616,6 +624,15 @@ NavigationWidget* MSFluentWindow::addSubInterface(QWidget* subInterface, const Q
     }
 
     subInterface->setProperty("isStackedTransparent", isTransparent);
+    // Scroll-area content can fill itself with QPalette::Window, covering the
+    // slightly lighter StackedWidget surface next to the title and navigation bar.
+    if (!isTransparent) {
+        subInterface->setAutoFillBackground(false);
+        if (auto* area = qobject_cast<QScrollArea*>(subInterface)) {
+            if (auto* content = area->widget())
+                content->setAutoFillBackground(false);
+        }
+    }
     stackedWidget_->addWidget(subInterface);
 
     const QString routeKey = subInterface->objectName();
