@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QEasingCurve>
 #include <QPainter>
+#include <QSizePolicy>
 
 #include "common/color.h"
 #include "common/config.h"
@@ -179,6 +180,11 @@ PivotItem* SegmentedWidget::insertItem(int index, const QString& routeKey, const
     }
 
     insertWidget(index, routeKey, item, onClick);
+    hBoxLayout_->setAlignment(Qt::Alignment());
+    hBoxLayout_->setSizeConstraint(QLayout::SetDefaultConstraint);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    item->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    hBoxLayout_->setStretchFactor(item, 1);
     return item;
 }
 
