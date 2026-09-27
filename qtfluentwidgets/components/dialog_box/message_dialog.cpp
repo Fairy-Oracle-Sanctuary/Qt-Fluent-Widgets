@@ -1,44 +1,60 @@
 #include "message_dialog.h"
-#include "../../common/auto_wrap.h"
 #include "../../common/style_sheet.h"
+#include "../widgets/button.h"
+
+#include <QVBoxLayout>
 
 namespace qfw {
 
 MessageDialog::MessageDialog(const QString& title, const QString& content, QWidget* parent)
-    : MaskDialogBase(parent), content(content) {
+    : MaskDialogBase(parent) {
+    auto* buttonGroup = new QFrame(widget);
+    buttonGroup->setObjectName(QStringLiteral("buttonGroup"));
+    buttonGroup->setProperty("isMessageBox", true);
+    buttonGroup->setFixedHeight(81);
+
     titleLabel = new QLabel(title, widget);
+    titleLabel->setObjectName(QStringLiteral("titleLabel"));
     contentLabel = new QLabel(content, widget);
-    yesButton = new QPushButton(tr("OK"), widget);
-    cancelButton = new QPushButton(tr("Cancel"), widget);
+    contentLabel->setObjectName(QStringLiteral("contentLabel"));
+    contentLabel->setWordWrap(true);
+    yesButton = new PushButton(tr("OK"), buttonGroup);
+    cancelButton = new PushButton(tr("Cancel"), buttonGroup);
+    cancelButton->setObjectName(QStringLiteral("cancelButton"));
 
-    initWidget();
-}
+    auto* layout = new QVBoxLayout(widget);
+    auto* viewLayout = new QVBoxLayout;
+    auto* buttonLayout = new QHBoxLayout(buttonGroup);
+    layout->setSpacing(0);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addLayout(viewLayout, 1);
+    layout->addWidget(buttonGroup);
+    viewLayout->setContentsMargins(24, 24, 24, 24);
+    viewLayout->setSpacing(12);
+    viewLayout->addWidget(titleLabel);
+    viewLayout->addWidget(contentLabel);
+    viewLayout->addStretch();
+    buttonLayout->setSpacing(12);
+    buttonLayout->setContentsMargins(24, 24, 24, 24);
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(yesButton);
+    buttonLayout->addWidget(cancelButton);
+    yesButton->setMinimumWidth(135);
+    cancelButton->setMinimumWidth(135);
+    yesButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
+    cancelButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
 
-void MessageDialog::initWidget() {
-    windowMask->resize(size());
-    widget->setMaximumWidth(540);
-    titleLabel->move(24, 24);
-    contentLabel->move(24, 56);
-    contentLabel->setText(TextWrap::wrap(content, 71).first);
-
-    setQss();
-    initLayout();
+    qfw::setStyleSheet(this, FluentStyleSheet::Dialog);
+    widget->setFixedWidth(qBound(330, contentLabel->fontMetrics().horizontalAdvance(content) + 48, 480));
+    widget->setMinimumHeight(210);
+    hBoxLayout->removeWidget(widget);
+    hBoxLayout->addWidget(widget, 0, Qt::AlignCenter);
+    setShadowEffect(60, QPoint(0, 10), QColor(0, 0, 0, 50));
+    setMaskColor(QColor(0, 0, 0, 76));
+    yesButton->setFocus();
 
     connect(yesButton, &QPushButton::clicked, this, &MessageDialog::onYesButtonClicked);
     connect(cancelButton, &QPushButton::clicked, this, &MessageDialog::onCancelButtonClicked);
-}
-
-void MessageDialog::initLayout() {
-    contentLabel->adjustSize();
-    widget->setFixedSize(48 + contentLabel->width(),
-                         contentLabel->y() + contentLabel->height() + 92);
-    
-    int btnWidth = (widget->width() - 54) / 2;
-    yesButton->resize(btnWidth, 32);
-    cancelButton->resize(btnWidth, 32);
-    
-    yesButton->move(24, widget->height() - 56);
-    cancelButton->move(widget->width() - 24 - cancelButton->width(), widget->height() - 56);
 }
 
 void MessageDialog::onCancelButtonClicked() {
@@ -50,13 +66,6 @@ void MessageDialog::onYesButtonClicked() {
     setEnabled(false);
     emit yesSignal();
     accept();
-}
-
-void MessageDialog::setQss() {
-    windowMask->setObjectName(QStringLiteral("windowMask"));
-    titleLabel->setObjectName(QStringLiteral("titleLabel"));
-    contentLabel->setObjectName(QStringLiteral("contentLabel"));
-    qfw::setStyleSheet(this, FluentStyleSheet::MessageDialog);
 }
 
 } // namespace qfw

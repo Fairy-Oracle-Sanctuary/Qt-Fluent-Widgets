@@ -7,9 +7,7 @@
 
 namespace qfw {
 
-/**
- * @brief Win10 style message dialog box with a mask
- */
+/** A rounded message dialog with a dimmed parent window. */
 class MessageDialog : public MaskDialogBase {
     Q_OBJECT
 
@@ -29,11 +27,6 @@ private slots:
     void onCancelButtonClicked();
 
 private:
-    void initWidget();
-    void initLayout();
-    void setQss();
-
-    QString content;
     QLabel* titleLabel;
     QLabel* contentLabel;
 };
