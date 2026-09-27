@@ -202,6 +202,14 @@ void NavigationBarPushButton::drawText(QPainter* painter) {
         return;
     }
 
+    // Keep the label at the same opacity as the icon in every navigation state.
+    if ((isPressed_ || !isEnter_) && !(isSelected_ || isAboutSelected_)) {
+        painter->setOpacity(0.6);
+    }
+    if (!isEnabled()) {
+        painter->setOpacity(0.4);
+    }
+
     if (isSelected_ || isAboutSelected_) {
         painter->setPen(autoFallbackThemeColor(lightSelectedColor_, darkSelectedColor_));
     } else {
@@ -210,6 +218,7 @@ void NavigationBarPushButton::drawText(QPainter* painter) {
 
     painter->setFont(font());
     painter->drawText(QRect(0, 32, width(), 26), Qt::AlignCenter, text());
+    painter->setOpacity(1.0);
 }
 
 void NavigationBarPushButton::setSelected(bool selected) {
