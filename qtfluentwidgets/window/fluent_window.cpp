@@ -594,13 +594,12 @@ void MSFluentWindow::showEvent(QShowEvent* e) {
 }
 
 void MSFluentWindow::resizeEvent(QResizeEvent* event) {
-    // For MSFluentWindow we keep the title bar aligned to the window's left edge,
-    // so icon/title can be closer to the left.
+    FluentWindowBase::resizeEvent(event);
+    // FluentWidget::resizeEvent resets the title bar to x=0; apply the MS offset last.
     if (titleBar()) {
         titleBar()->move(24, 0);
-        titleBar()->resize(width() - 24, titleBar()->height());
+        titleBar()->resize(qMax(0, width() - 24), titleBar()->height());
     }
-    FluentWindowBase::resizeEvent(event);
 }
 
 NavigationWidget* MSFluentWindow::addSubInterface(QWidget* subInterface, const QVariant& icon,
