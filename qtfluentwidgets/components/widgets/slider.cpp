@@ -109,9 +109,14 @@ void Slider::postInit() {
 
     connect(handle, &SliderHandle::pressed, this, &Slider::sliderPressed);
     connect(handle, &SliderHandle::released, this, &Slider::sliderReleased);
-    connect(this, &Slider::valueChanged, this, &Slider::adjustHandlePos);
 
     adjustHandlePos();
+}
+
+void Slider::sliderChange(SliderChange change) {
+    QSlider::sliderChange(change);
+    if (change == SliderValueChange || change == SliderRangeChange)
+        adjustHandlePos();
 }
 
 void Slider::setThemeColor(const QColor& light, const QColor& dark) {

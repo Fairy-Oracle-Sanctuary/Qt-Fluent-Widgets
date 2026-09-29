@@ -62,6 +62,7 @@ protected:
     void mouseMoveEvent(QMouseEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
     void resizeEvent(QResizeEvent* e) override;
+    void sliderChange(SliderChange change) override;
 
     virtual void drawHorizonTick(QPainter* painter);
     virtual void drawVerticalTick(QPainter* painter);
