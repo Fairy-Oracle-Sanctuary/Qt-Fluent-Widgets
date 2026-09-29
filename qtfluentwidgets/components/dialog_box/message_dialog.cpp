@@ -36,9 +36,8 @@ MessageDialog::MessageDialog(const QString& title, const QString& content, QWidg
     viewLayout->addStretch();
     buttonLayout->setSpacing(12);
     buttonLayout->setContentsMargins(24, 24, 24, 24);
-    buttonLayout->addStretch();
-    buttonLayout->addWidget(yesButton);
-    buttonLayout->addWidget(cancelButton);
+    buttonLayout->addWidget(yesButton, 1, Qt::AlignVCenter);
+    buttonLayout->addWidget(cancelButton, 1, Qt::AlignVCenter);
     yesButton->setMinimumWidth(135);
     cancelButton->setMinimumWidth(135);
     yesButton->setAttribute(Qt::WA_LayoutUsesWidgetRect);
