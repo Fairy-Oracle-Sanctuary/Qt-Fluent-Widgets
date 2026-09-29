@@ -201,6 +201,9 @@ universal_add_library(qtfluentwidgets STATIC
     window/fluent_window.cpp
     window/fluent_window.h
 
+    window/splash_screen.cpp
+    window/splash_screen.h
+
     components/window/title_bar.cpp
     components/window/title_bar.h
     components/window/frameless_window.h

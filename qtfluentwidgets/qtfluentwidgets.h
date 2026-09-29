@@ -101,4 +101,5 @@
 
 // Fluent Window
 #include "window/fluent_window.h"
+#include "window/splash_screen.h"
 #include "window/stacked_widget.h"
