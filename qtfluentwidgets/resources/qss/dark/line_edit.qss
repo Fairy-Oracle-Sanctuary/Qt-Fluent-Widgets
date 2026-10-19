@@ -38,6 +38,30 @@
     border: 1px solid rgba(255, 255, 255, 0.0698);
 }
 
+[qssClass="LineEdit"][pinEditor=true] {
+    background-color: rgba(255, 255, 255, 0.0605);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5442);
+    border-radius: 5px;
+    padding: 0px;
+    color: white;
+}
+
+[qssClass="LineEdit"][pinEditor=true]:hover {
+    background-color: rgba(255, 255, 255, 0.0837);
+}
+
+[qssClass="LineEdit"][pinEditor=true]:focus {
+    background-color: rgb(31, 31, 31);
+    border: 2px solid --ThemeColorPrimary;
+}
+
+[qssClass="LineEdit"][pinEditor=true]:disabled {
+    color: rgba(255, 255, 255, 92);
+    background-color: rgba(255, 255, 255, 0.0419);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 #lineEditButton {
     background-color: transparent;
     border-radius: 4px;

@@ -58,6 +58,48 @@ void TableItemDelegate::setCheckedColor(const QColor& light, const QColor& dark)
     }
 }
 
+void TableItemDelegate::refresh() {
+    if (auto* view = qobject_cast<QAbstractItemView*>(parent())) {
+        view->doItemsLayout();
+        view->viewport()->update();
+    }
+}
+bool TableItemDelegate::showIndicator() const { return showIndicator_; }
+void TableItemDelegate::setShowIndicator(bool show) {
+    showIndicator_ = show;
+    refresh();
+}
+int TableItemDelegate::borderRadius() const { return borderRadius_; }
+void TableItemDelegate::setBorderRadius(int radius) {
+    borderRadius_ = qMax(0, radius);
+    refresh();
+}
+bool TableItemDelegate::useStackedWidgetStyle() const { return useStackedWidgetStyle_; }
+void TableItemDelegate::setUseStackedWidgetStyle(bool use) {
+    useStackedWidgetStyle_ = use;
+    refresh();
+}
+bool TableItemDelegate::useTransparentRows() const { return useTransparentRows_; }
+void TableItemDelegate::setUseTransparentRows(bool use) {
+    useTransparentRows_ = use;
+    refresh();
+}
+bool TableItemDelegate::useThemeColorSelection() const { return useThemeColorSelection_; }
+void TableItemDelegate::setUseThemeColorSelection(bool use) {
+    useThemeColorSelection_ = use;
+    refresh();
+}
+bool TableItemDelegate::showRowDivider() const { return showRowDivider_; }
+void TableItemDelegate::setShowRowDivider(bool show) {
+    showRowDivider_ = show;
+    refresh();
+}
+int TableItemDelegate::rowMargin() const { return margin_; }
+void TableItemDelegate::setRowMargin(int margin) {
+    margin_ = qMax(0, margin);
+    refresh();
+}
+
 QSize TableItemDelegate::sizeHint(const QStyleOptionViewItem& option,
                                   const QModelIndex& index) const {
     QSize size = QStyledItemDelegate::sizeHint(option, index);
@@ -112,6 +154,8 @@ void TableItemDelegate::initStyleOption(QStyleOptionViewItem* option,
 
     option->palette.setColor(QPalette::Text, textColor);
     option->palette.setColor(QPalette::HighlightedText, textColor);
+    if (useStackedWidgetStyle_ || useTransparentRows_ || useThemeColorSelection_ || showRowDivider_)
+        option->fontMetrics = QFontMetrics(option->font);
 }
 
 void TableItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
@@ -130,15 +174,22 @@ void TableItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
 
     // draw highlight background
     bool isHover = hoverRow_ == index.row();
+    auto* tableView = qobject_cast<QTableView*>(parent());
+    const bool extended =
+        useStackedWidgetStyle_ || useTransparentRows_ || useThemeColorSelection_ || showRowDivider_;
     bool isPressed = pressedRow_ == index.row();
-    bool isAlternate =
-        index.row() % 2 == 0 && qobject_cast<QTableView*>(parent())->alternatingRowColors();
+    bool isAlternate = index.row() % 2 == 0 && tableView && tableView->alternatingRowColors();
+    const bool isSelected =
+        extended && tableView
+            ? tableView->selectionModel() &&
+                  tableView->selectionModel()->rowIntersectsSelection(index.row(), index.parent())
+            : selectedRows_.contains(index.row());
     bool isDark = isDarkTheme();
 
     int c = isDark ? 255 : 0;
     int alpha = 0;
 
-    if (!selectedRows_.contains(index.row())) {
+    if (!isSelected) {
         if (isPressed) {
             alpha = isDark ? 9 : 6;
         } else if (isHover) {
@@ -159,15 +210,31 @@ void TableItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
     QVariant bgData = index.data(Qt::BackgroundRole);
     if (bgData.isValid()) {
         painter->setBrush(bgData.value<QBrush>());
+    } else if (useThemeColorSelection_ && isSelected) {
+        QColor color = themeColor();
+        color.setAlpha(isHover ? 40 : isPressed ? 60 : 30);
+        painter->setBrush(color);
+    } else if ((useTransparentRows_ ? isSelected
+                                    : useStackedWidgetStyle_ && (isAlternate || isSelected)) &&
+               !isHover && !isPressed) {
+        painter->setBrush(QColor(255, 255, 255, isDark ? 8 : 127));
     } else {
         painter->setBrush(QColor(c, c, c, alpha));
     }
 
     drawBackground(painter, opt, index);
 
+    if ((useTransparentRows_ ? isSelected
+                             : useStackedWidgetStyle_ && (isAlternate || isSelected)) &&
+        !isHover && !isPressed && !bgData.isValid()) {
+        painter->setPen(QColor(0, 0, 0, isDark ? 46 : 17));
+        painter->setBrush(Qt::NoBrush);
+        drawBackground(painter, opt, index);
+        painter->setPen(Qt::NoPen);
+    }
+
     // draw indicator
-    auto* tableView = qobject_cast<QTableView*>(parent());
-    if (selectedRows_.contains(index.row()) && index.column() == 0 && tableView &&
+    if (showIndicator_ && isSelected && index.column() == 0 && tableView &&
         tableView->horizontalScrollBar()->value() == 0) {
         drawIndicator(painter, opt, index);
     }
@@ -178,13 +245,51 @@ void TableItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
         drawCheckBox(painter, opt, index);
     }
 
+    if (showRowDivider_) {
+        // Paint within each cell's clip, not an unclipped line from logical column
+        // zero. Dividers stay continuous after hiding/moving columns and scrolling.
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(QColor(c, c, c, isDark ? 47 : 17));
+        painter->drawRect(QRectF(option.rect.left(), option.rect.bottom(), option.rect.width(), 1));
+    }
+
     painter->restore();
     QStyledItemDelegate::paint(painter, opt, index);
 }
 
 void TableItemDelegate::drawBackground(QPainter* painter, const QStyleOptionViewItem& option,
                                        const QModelIndex& index) const {
-    int r = 5;
+    int r = borderRadius_;
+    if (r == 0) {
+        painter->drawRect(option.rect.adjusted(-1, 0, 1, 0));
+        return;
+    }
+    if (useStackedWidgetStyle_ || useTransparentRows_) {
+        // One shared outline per row, clipped into the individual cells. Visible
+        // physical edges, rather than logical columns 0/N, also handle RTL and
+        // single-column tables without seams or squared-off outer corners.
+        if (auto* view = qobject_cast<QTableView*>(parent())) {
+            auto* header = view->horizontalHeader();
+            int first = -1, last = -1;
+            for (int visual = 0; visual < header->count(); ++visual) {
+                const int logical = header->logicalIndex(visual);
+                if (header->isSectionHidden(logical)) continue;
+                if (first < 0) first = logical;
+                last = logical;
+            }
+            if (first >= 0) {
+                const int start = qMin(header->sectionViewportPosition(first),
+                                       header->sectionViewportPosition(last));
+                const int end =
+                    qMax(header->sectionViewportPosition(first) + header->sectionSize(first),
+                         header->sectionViewportPosition(last) + header->sectionSize(last));
+                painter->drawRoundedRect(QRectF(start + 4, option.rect.top(),
+                                                qMax(0, end - start - 8), option.rect.height()),
+                                         r, r);
+                return;
+            }
+        }
+    }
     auto* model = index.model();
     int columnCount = model->columnCount(index.parent());
 
@@ -208,12 +313,7 @@ void TableItemDelegate::drawIndicator(QPainter* painter, const QStyleOptionViewI
     int h = option.rect.height();
     int ph = qRound(pressedRow_ == index.row() ? 0.35 * h : 0.257 * h);
 
-    QColor color;
-    if (isDarkTheme()) {
-        color = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
-    }
+    const QColor color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
     painter->setBrush(color);
     painter->drawRoundedRect(4, ph + y, 3, h - 2 * ph, 1.5, 1.5);
 }
@@ -226,7 +326,7 @@ void TableItemDelegate::drawCheckBox(QPainter* painter, const QStyleOptionViewIt
     bool isDark = isDarkTheme();
 
     qreal r = 4.5;
-    qreal x = option.rect.x() + 15;
+    qreal x = option.direction == Qt::RightToLeft ? option.rect.right() - 33 : option.rect.x() + 15;
     qreal y = option.rect.center().y() - 9.5;
     QRectF rect(x, y, 19, 19);
 
@@ -235,12 +335,7 @@ void TableItemDelegate::drawCheckBox(QPainter* painter, const QStyleOptionViewIt
         painter->setPen(isDark ? QColor(255, 255, 255, 142) : QColor(0, 0, 0, 122));
         painter->drawRoundedRect(rect, r, r);
     } else {
-        QColor color;
-        if (isDark) {
-            color = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-        } else {
-            color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
-        }
+        const QColor color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
         painter->setPen(color);
         painter->setBrush(color);
         painter->drawRoundedRect(rect, r, r);
@@ -336,6 +431,7 @@ void TableBase::setSelectedRows(const QList<QModelIndex>& indexes) {
 }
 
 void TableBase::updateSelectedRows() {
+    if (!tableView_->selectionModel()) return;
     setSelectedRows(tableView_->selectionModel()->selectedIndexes());
 }
 
@@ -368,7 +464,9 @@ void TableBase::mousePressEvent(QMouseEvent* e) {
 void TableBase::mouseReleaseEvent(QMouseEvent* e) {
     updateSelectedRows();
 
-    if (tableView_->indexAt(e->pos()).row() < 0 || e->button() == Qt::RightButton) {
+    if (delegate_->useStackedWidgetStyle() || delegate_->useTransparentRows() ||
+        delegate_->useThemeColorSelection() || delegate_->showRowDivider() ||
+        tableView_->indexAt(e->pos()).row() < 0 || e->button() == Qt::RightButton) {
         setPressedRow(-1);
     }
 }
@@ -391,12 +489,12 @@ void TableWidget::setCheckedColor(const QColor& light, const QColor& dark) {
     TableBase::setCheckedColor(light, dark);
 }
 
-void TableWidget::setCurrentCell(int row, int column, QItemSelectionModel::SelectionFlag command) {
+void TableWidget::setCurrentCell(int row, int column, QItemSelectionModel::SelectionFlags command) {
     setCurrentItem(item(row, column), command);
 }
 
 void TableWidget::setCurrentItem(QTableWidgetItem* item,
-                                 QItemSelectionModel::SelectionFlag command) {
+                                 QItemSelectionModel::SelectionFlags command) {
     if (command == QItemSelectionModel::NoUpdate) {
         QTableWidget::setCurrentItem(item);
     } else {
@@ -415,7 +513,17 @@ void TableWidget::selectAll() {
 }
 
 void TableWidget::selectRow(int row) {
-    QTableWidget::selectRow(row);
+    if (delegate_->useStackedWidgetStyle() || delegate_->useTransparentRows() ||
+        delegate_->useThemeColorSelection() || delegate_->showRowDivider()) {
+        const auto index = model()->index(row, 0, rootIndex());
+        if (index.isValid() && selectionMode() != QAbstractItemView::NoSelection) {
+            const auto command = selectionCommand(index) | QItemSelectionModel::Rows;
+            selectionModel()->setCurrentIndex(index, QItemSelectionModel::NoUpdate);
+            selectionModel()->select(index, command);
+        }
+    } else {
+        QTableWidget::selectRow(row);
+    }
     updateSelectedRows();
 }
 
@@ -476,7 +584,21 @@ void TableView::selectAll() {
 }
 
 void TableView::selectRow(int row) {
-    QTableView::selectRow(row);
+    if (delegate_->useStackedWidgetStyle() || delegate_->useTransparentRows() ||
+        delegate_->useThemeColorSelection() || delegate_->showRowDivider()) {
+        // Native QTableView::selectRow uses columnAt(0); RTL tables whose columns
+        // do not fill the viewport can have empty space there. Select the model
+        // row instead, including before show and with hidden/reordered columns.
+        const auto index = model() ? model()->index(row, 0, rootIndex()) : QModelIndex();
+        if (index.isValid() && selectionModel() &&
+            selectionMode() != QAbstractItemView::NoSelection) {
+            const auto command = selectionCommand(index) | QItemSelectionModel::Rows;
+            selectionModel()->setCurrentIndex(index, QItemSelectionModel::NoUpdate);
+            selectionModel()->select(index, command);
+        }
+    } else {
+        QTableView::selectRow(row);
+    }
     updateSelectedRows();
 }
 

@@ -1,12 +1,23 @@
 #include "view/basic_input_interface.h"
+#include "view/pro_input_examples.h"
+#include "view/pro_picker_examples.h"
 
 #include <QButtonGroup>
 #include <QSize>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
 #include "common/translator.h"
+#include "components/layout/flow_layout.h"
 #include "components/widgets/button.h"
+#include "components/widgets/extended_button.h"
+#include "components/widgets/progress_button.h"
+#include "components/widgets/chip.h"
+#include "components/widgets/sub_clip.h"
+#include "components/widgets/tag.h"
+#include "components/widgets/label.h"
+#include "components/widgets/flyout.h"
 #include "components/widgets/check_box.h"
 #include "components/widgets/combo_box.h"
 #include "components/widgets/menu.h"
@@ -19,6 +30,240 @@ BasicInputInterface::BasicInputInterface(QWidget* parent)
     : GalleryInterface(Translator().basicInput(),
                        QStringLiteral("qtfluentwidgets.components.widgets"), parent) {
     setObjectName(QStringLiteral("basicInputInterface"));
+    ProInputExamples::addBasicInput(this);
+    ProPickerExamples::addBasicInput(this);
+    auto* primaryTools = new QWidget(this);
+    auto* primaryToolsLayout = new QVBoxLayout(primaryTools);
+    primaryToolsLayout->setContentsMargins(0, 0, 0, 0);
+    auto* primaryTool = new PrimaryDropDownToolButton(FluentIcon(FluentIconEnum::Add), primaryTools);
+    primaryTool->setAccessibleName(tr("Add item"));
+    primaryTool->setToolTip(tr("Add item"));
+    auto* primaryMenu = new RoundMenu(QString(), primaryTool);
+    auto* primaryState = new BodyLabel(tr("Use click, Space, Enter or Down to open the menu."), primaryTools);
+    primaryState->setWordWrap(true);
+    for (const QString& value : QStringList{tr("Design"), tr("Development"), tr("Documentation")}) {
+        auto* action = new QAction(value, primaryMenu);
+        primaryMenu->addAction(action);
+        connect(action, &QAction::triggered, primaryState, [primaryState, value, this] {
+            primaryState->setText(tr("Selected item: %1").arg(value));
+        });
+    }
+    primaryTool->setMenu(primaryMenu);
+    primaryToolsLayout->addWidget(primaryTool, 0, Qt::AlignLeft);
+    primaryToolsLayout->addWidget(primaryState);
+    addExampleCard(tr("Primary drop-down tool button"), primaryTools,
+        QStringLiteral("https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets"));
+    auto* customSplit = new PrimarySplitPushButton(tr("Preview"),this);
+    customSplit->setDropIcon(FluentIcon(FluentIconEnum::Info));
+    customSplit->setDropIconSize(QSize(16,16));
+    auto* preview = new Flyout(new FlyoutView(tr("Widget flyout"),tr("A split button can open a Fluent widget flyout.")),this,false);
+    customSplit->setFlyout(preview,[preview](const QPoint& pos) { preview->exec(pos,FlyoutAnimationType::DropDown); });
+    addExampleCard(tr("Split button with a custom drop icon and widget flyout"),customSplit,
+        QStringLiteral("https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets"));
+
+    auto* clipHost = new QWidget(this);
+    auto* clipLayout = new QVBoxLayout(clipHost);
+    clipLayout->setContentsMargins(0, 0, 0, 0);
+    clipLayout->setSpacing(12);
+    auto* clipRow = new QWidget(clipHost);
+    auto* clips = new FlowLayout(clipRow, false, true);
+    clips->setContentsMargins(0, 0, 0, 0);
+    clips->setHorizontalSpacing(8);
+    clips->setVerticalSpacing(8);
+    auto* clipState = new BodyLabel(tr("Close a token to remove it; restore brings it back."), clipHost);
+    clipState->setWordWrap(true);
+    QList<SubClip*> tokens;
+    for (const auto& text : QStringList{tr("Design"), tr("Development"), tr("Documentation")}) {
+        auto* token = new SubClip(text, clipRow);
+        clips->addWidget(token);
+        tokens.append(token);
+        connect(token, &SubClip::closed, clipState, [token, clipState, this](const QString& value) {
+            token->hide();
+            clipState->setText(tr("Removed token: %1").arg(value));
+        });
+    }
+    auto* disabledToken = new SubClip(tr("Disabled token"), clipRow);
+    disabledToken->setEnabled(false);
+    clips->addWidget(disabledToken);
+    auto* restore = new PushButton(tr("Restore tokens"), clipHost);
+    connect(restore, &QPushButton::clicked, clipHost, [tokens, clipState, this] {
+        for (auto* token : tokens) token->show();
+        clipState->setText(tr("Close a token to remove it; restore brings it back."));
+    });
+    clipLayout->addWidget(clipRow);
+    clipLayout->addWidget(clipState);
+    clipLayout->addWidget(restore, 0, Qt::AlignLeft);
+    addExampleCard(tr("Compact removable selection tokens"), clipHost,
+                   QStringLiteral("https://github.com/Fairy-Oracle-Sanctuary/PySide6-Fluent-Widgets-Pro"));
+
+    const QString extendedSource = QStringLiteral(
+        "https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets/blob/main/"
+        "app/view/basic_input_interface.cpp");
+    const auto makeButtonRow = [this]() {
+        auto* host = new QWidget(this);
+        host->setMaximumWidth(760);
+        auto* layout = new FlowLayout(host);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setHorizontalSpacing(12);
+        layout->setVerticalSpacing(12);
+        return host;
+    };
+    const auto addButton = [](QWidget* host, QAbstractButton* button) {
+        button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        static_cast<FlowLayout*>(host->layout())->addWidget(button);
+    };
+
+    auto* filledRow = makeButtonRow();
+    auto* filled = new FilledPushButton(FluentIcon(FluentIconEnum::Add), tr("Filled button"), filledRow);
+    auto* filledTool = new FilledToolButton(FluentIcon(FluentIconEnum::Add), filledRow);
+    filledTool->setToolTip(tr("Filled tool button"));
+    auto* textButton = new TextPushButton(FluentIcon(FluentIconEnum::Add), tr("Text button"), filledRow);
+    auto* textTool = new TextToolButton(FluentIcon(FluentIconEnum::Add), filledRow);
+    textTool->setToolTip(tr("Text tool button"));
+    auto* disabledFilled = new FilledPushButton(tr("Disabled"), filledRow);
+    disabledFilled->setEnabled(false);
+    auto* scheme = new ComboBox(filledRow);
+    scheme->addItems({tr("Information"), tr("Success"), tr("Attention"), tr("Warning"), tr("Error")});
+    scheme->setCurrentIndex(2);
+    scheme->setFixedWidth(150);
+    scheme->setToolTip(tr("Color scheme"));
+    addButton(filledRow, filled);
+    addButton(filledRow, filledTool);
+    addButton(filledRow, textButton);
+    addButton(filledRow, textTool);
+    addButton(filledRow, disabledFilled);
+    static_cast<FlowLayout*>(filledRow->layout())->addWidget(scheme);
+    connect(scheme, &ComboBox::currentIndexChanged, this,
+            [filled, filledTool, textButton, textTool](int index) {
+                const QStringList schemes = {QStringLiteral("information"), QStringLiteral("success"),
+                    QStringLiteral("attention"), QStringLiteral("warning"), QStringLiteral("error")};
+                if (index >= 0 && index < schemes.size()) {
+                    filled->setColorScheme(schemes.at(index));
+                    filledTool->setColorScheme(schemes.at(index));
+                    textButton->setColorScheme(schemes.at(index));
+                    textTool->setColorScheme(schemes.at(index));
+                }
+            });
+    addExampleCard(tr("Filled and text buttons with five color schemes"), filledRow, extendedSource, 1);
+
+    auto* roundRow = makeButtonRow();
+    auto* outlined = new OutlinedPushButton(FluentIcon(FluentIconEnum::Add), tr("Outlined button"), roundRow);
+    auto* outlinedTool = new OutlinedToolButton(FluentIcon(FluentIconEnum::Add), roundRow);
+    outlinedTool->setToolTip(tr("Outlined tool button"));
+    addButton(roundRow, outlined);
+    addButton(roundRow, outlinedTool);
+    addButton(roundRow, new RoundPushButton(FluentIcon(FluentIconEnum::Add), tr("Round button"), roundRow));
+    auto* roundTool = new RoundToolButton(FluentIcon(FluentIconEnum::Add), roundRow);
+    roundTool->setToolTip(tr("Round tool button"));
+    addButton(roundRow, roundTool);
+    auto* borderless = new RoundToolButton(FluentIcon(FluentIconEnum::Add), roundRow);
+    borderless->setHasBorder(false);
+    borderless->setToolTip(tr("Round tool button without a resting border"));
+    addButton(roundRow, borderless);
+    auto* link = new HyperlinkToolButton(FluentIcon(FluentIconEnum::Link),
+        QStringLiteral("https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets"), roundRow);
+    link->setToolTip(tr("View source on GitHub"));
+    addButton(roundRow, link);
+    addExampleCard(tr("Outlined, round and hyperlink buttons"), roundRow, extendedSource, 1);
+
+    // The glow is drawn outside the button: reserve its maximum 45px extent.
+    auto* luminaHost = new QWidget(this);
+    auto* luminaLayout = new QVBoxLayout(luminaHost);
+    luminaLayout->setContentsMargins(48, 48, 48, 48);
+    luminaLayout->addWidget(new LuminaPushButton(tr("Lumina button"), luminaHost), 0, Qt::AlignLeft);
+    addExampleCard(tr("Lumina button with an animated glow"), luminaHost, extendedSource);
+
+    auto* progressHost = new QWidget(this);
+    progressHost->setMaximumWidth(500);
+    auto* progressLayout = new QVBoxLayout(progressHost);
+    progressLayout->setContentsMargins(0, 0, 0, 0);
+    progressLayout->setSpacing(12);
+    auto* indeterminate = new IndeterminateProgressPushButton(tr("Download"), progressHost);
+    indeterminate->setFixedWidth(180);
+    auto* spinnerControl = new PushButton(tr("Stop animation"), progressHost);
+    connect(spinnerControl, &QAbstractButton::clicked, this, [this, indeterminate, spinnerControl] {
+        if (indeterminate->isSpinning()) {
+            indeterminate->stop();
+            spinnerControl->setText(tr("Start animation"));
+        } else {
+            indeterminate->start();
+            spinnerControl->setText(tr("Stop animation"));
+        }
+    });
+    auto* spinnerRow = new QHBoxLayout;
+    spinnerRow->addWidget(indeterminate);
+    spinnerRow->addWidget(spinnerControl);
+    spinnerRow->addStretch();
+    progressLayout->addLayout(spinnerRow);
+    auto* progress = new ProgressPushButton(tr("Download"), progressHost);
+    progress->setFixedWidth(180);
+    progress->setAutoProgressEnabled(true);
+    progress->setToolTip(tr("Click to start; click again to stop"));
+    auto* progressStatus = new BodyLabel(tr("Ready"), progressHost);
+    auto* progressRow = new QHBoxLayout;
+    progressRow->addWidget(progress);
+    progressRow->addWidget(progressStatus);
+    progressRow->addStretch();
+    progressLayout->addLayout(progressRow);
+    auto* progressTimer = new QTimer(progress);
+    progressTimer->setInterval(50);
+    connect(progressTimer, &QTimer::timeout, progress, [progress] {
+        progress->setValue(progress->value() + 1);
+        if (progress->value() == 100) { progress->setProgressing(false); }
+    });
+    connect(progress, &ProgressPushButton::progressChanged, this,
+            [this, progress, progressTimer, progressStatus](bool active) {
+        if (active) {
+            progress->setValue(0);
+            progressStatus->setText(tr("Downloading: %1%").arg(0));
+            progressTimer->start();
+        } else {
+            progressTimer->stop();
+            progressStatus->setText(progress->value() == 100 ? tr("Completed")
+                : tr("Stopped at %1%").arg(progress->value()));
+        }
+    });
+    connect(progress, &ProgressPushButton::valueChanged, this, [this, progressStatus](int value) {
+        progressStatus->setText(tr("Downloading: %1%").arg(value));
+    });
+    connect(progress, &ProgressPushButton::stopRequested, progress, [progress] {
+        progress->setProgressing(false);
+    });
+    addExampleCard(tr("Determinate and indeterminate progress buttons"), progressHost, extendedSource);
+
+    auto* chipRow = makeButtonRow();
+    auto* chip = new Chip(FluentIcon(FluentIconEnum::Tag), tr("Selectable chip"), chipRow);
+    auto* selectedChip = new Chip(tr("Selected chip"), chipRow);
+    selectedChip->setChecked(true);
+    auto* disabledChip = new Chip(tr("Disabled"), chipRow);
+    disabledChip->setEnabled(false);
+    auto* restoreChips = new PushButton(tr("Restore chips"), chipRow);
+    for (Chip* token : {chip, selectedChip}) {
+        connect(token, &Chip::closed, token, &QWidget::hide);
+    }
+    connect(restoreChips, &QAbstractButton::clicked, this, [chip, selectedChip] {
+        chip->setChecked(false);
+        selectedChip->setChecked(true);
+        chip->show();
+        selectedChip->show();
+    });
+    addButton(chipRow, chip);
+    addButton(chipRow, selectedChip);
+    addButton(chipRow, disabledChip);
+    addButton(chipRow, restoreChips);
+    addExampleCard(tr("Selectable chips with independent close buttons"), chipRow, extendedSource, 1);
+
+    auto* tagRow = makeButtonRow();
+    const QStringList tagTypes = {QStringLiteral("information"), QStringLiteral("success"),
+        QStringLiteral("warning"), QStringLiteral("error"), QStringLiteral("progress")};
+    const QStringList tagLabels = {tr("Information"), tr("Success"), tr("Warning"), tr("Error"), tr("In progress")};
+    for (int i = 0; i < tagTypes.size(); ++i) {
+        auto* tag = new Tag(FluentIcon(FluentIconEnum::Tag), tagLabels.at(i), tagRow);
+        tag->setType(tagTypes.at(i));
+        tag->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        static_cast<FlowLayout*>(tagRow->layout())->addWidget(tag);
+    }
+    addExampleCard(tr("Decorative status tags with five types"), tagRow, extendedSource, 1);
 
     // simple push button
     addExampleCard(tr("A simple button with text content"),

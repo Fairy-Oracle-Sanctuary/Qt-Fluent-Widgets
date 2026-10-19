@@ -11,6 +11,8 @@
 #include <QScreen>
 #include <QWindow>
 #include <memory>
+#include <QMap>
+#include <stdexcept>
 
 #include "common/auto_wrap.h"
 #include "common/config.h"
@@ -382,8 +384,9 @@ bool Flyout::eventFilter(QObject* watched, QEvent* event) {
 
 void Flyout::exec(const QPoint& pos, FlyoutAnimationType aniType) {
     delete aniManager_;
+    aniManager_ = nullptr;
     aniManager_ = FlyoutAnimationManager::make(aniType, this);
-
+    if (aniManager_) prepareShowBackground(aniManager_->adjustPosition(pos));
     show();
 
     // Position the flyout - use QWindow for Wayland compatibility
@@ -502,7 +505,23 @@ QPoint FlyoutAnimationManager::adjustPosition(const QPoint& pos) const {
     return QPoint(x, y);
 }
 
+namespace {
+QMap<FlyoutAnimationType, FlyoutAnimationManager::Factory>& flyoutFactories() {
+    static QMap<FlyoutAnimationType, FlyoutAnimationManager::Factory> factories;
+    return factories;
+}
+}
+void FlyoutAnimationManager::registerFactory(FlyoutAnimationType type, Factory factory) {
+    if (factory) flyoutFactories()[type]=std::move(factory);
+    else flyoutFactories().remove(type);
+}
 FlyoutAnimationManager* FlyoutAnimationManager::make(FlyoutAnimationType type, Flyout* flyout) {
+    if (const auto factory=flyoutFactories().value(type)) {
+        auto* manager=factory(flyout);
+        if (!manager) throw std::runtime_error("Flyout manager factory returned null");
+        manager->setParent(flyout);
+        return manager;
+    }
     switch (type) {
         case FlyoutAnimationType::PullUp:
             return new PullUpFlyoutAnimationManager(flyout);

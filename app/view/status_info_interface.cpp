@@ -1,4 +1,6 @@
 #include "view/status_info_interface.h"
+#include "view/pro_container_examples.h"
+#include "view/pro_progress_examples.h"
 
 #include <QHBoxLayout>
 #include <QLabel>
@@ -82,6 +84,8 @@ StatusInfoInterface::StatusInfoInterface(QWidget* parent)
           }(),
           "qtfluentwidgets.components.widgets", parent) {
     setObjectName("statusInfoInterface");
+    ProContainerExamples::addStatus(this);
+    ProProgressExamples::addStatus(this);
 
     // State tool tip
     auto* stateButton = new PushButton(tr("Show StateToolTip"), this);

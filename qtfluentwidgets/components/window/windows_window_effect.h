@@ -13,6 +13,7 @@ public:
 
     void addWindowAnimation(HWND hWnd);
     void addShadowEffect(HWND hWnd);
+    void addMenuShadowEffect(HWND hWnd);
 
     void enableBlurBehindWindow(HWND hWnd);
 

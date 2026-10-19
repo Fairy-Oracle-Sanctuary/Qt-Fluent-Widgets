@@ -13,6 +13,13 @@ namespace qfw {
 
 class TableItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
+    Q_PROPERTY(bool showIndicator READ showIndicator WRITE setShowIndicator)
+    Q_PROPERTY(int borderRadius READ borderRadius WRITE setBorderRadius)
+    Q_PROPERTY(bool useStackedWidgetStyle READ useStackedWidgetStyle WRITE setUseStackedWidgetStyle)
+    Q_PROPERTY(bool useTransparentRows READ useTransparentRows WRITE setUseTransparentRows)
+    Q_PROPERTY(
+        bool useThemeColorSelection READ useThemeColorSelection WRITE setUseThemeColorSelection)
+    Q_PROPERTY(bool showRowDivider READ showRowDivider WRITE setShowRowDivider)
 
 public:
     explicit TableItemDelegate(QTableView* parent = nullptr);
@@ -23,6 +30,20 @@ public:
     void setSelectedRows(const QList<QModelIndex>& indexes);
 
     void setCheckedColor(const QColor& light, const QColor& dark);
+    bool showIndicator() const;
+    void setShowIndicator(bool show);
+    int borderRadius() const;
+    void setBorderRadius(int radius);
+    bool useStackedWidgetStyle() const;
+    void setUseStackedWidgetStyle(bool use);
+    bool useTransparentRows() const;
+    void setUseTransparentRows(bool use);
+    bool useThemeColorSelection() const;
+    void setUseThemeColorSelection(bool use);
+    bool showRowDivider() const;
+    void setShowRowDivider(bool show);
+    int rowMargin() const;
+    void setRowMargin(int margin);
 
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
@@ -55,6 +76,15 @@ protected:
     QColor lightCheckedColor_;
     QColor darkCheckedColor_;
     ItemViewToolTipDelegate* tooltipDelegate_ = nullptr;
+    bool showIndicator_ = true;
+    int borderRadius_ = 5;
+    bool useStackedWidgetStyle_ = false;
+    bool useTransparentRows_ = false;
+    bool useThemeColorSelection_ = false;
+    bool showRowDivider_ = false;
+
+private:
+    void refresh();
 
     friend class TableBase;
     friend class ListBase;
@@ -102,10 +132,11 @@ public:
     void setBorderRadius(int radius);
     void setCheckedColor(const QColor& light, const QColor& dark);
 
-    void setCurrentCell(int row, int column,
-                        QItemSelectionModel::SelectionFlag command = QItemSelectionModel::NoUpdate);
-    void setCurrentItem(QTableWidgetItem* item,
-                        QItemSelectionModel::SelectionFlag command = QItemSelectionModel::NoUpdate);
+    void setCurrentCell(
+        int row, int column,
+        QItemSelectionModel::SelectionFlags command = QItemSelectionModel::NoUpdate);
+    void setCurrentItem(QTableWidgetItem* item, QItemSelectionModel::SelectionFlags command =
+                                                    QItemSelectionModel::NoUpdate);
 
     bool isSelectRightClickedRow() const;
     void setSelectRightClickedRow(bool isSelect);

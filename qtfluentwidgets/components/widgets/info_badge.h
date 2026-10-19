@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QList>
 #include <QPointer>
+#include <functional>
 #include <QSize>
 #include <QSizePolicy>
 
@@ -136,9 +137,11 @@ public:
     explicit InfoBadgeManager(QWidget* target, InfoBadge* badge);
 
     static InfoBadgeManager* make(InfoBadgePosition position, QWidget* target, InfoBadge* badge);
+    using Factory = std::function<InfoBadgeManager*(QWidget*, InfoBadge*)>;
+    static void registerFactory(InfoBadgePosition position, Factory factory);
     static void updateForTarget(QWidget* target);
 
-    QPoint position() const;
+    virtual QPoint position() const;
 
 protected:
     bool eventFilter(QObject* watched, QEvent* e) override;

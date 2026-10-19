@@ -13,7 +13,6 @@
 #include "view/gallery_interface.h"
 #include "view/home_interface.h"
 #include "view/icon_interface.h"
-#include "view/issue_13_interface.h"
 #include "view/layout_interface.h"
 #include "view/material_interface.h"
 #include "view/menu_interface.h"
@@ -22,6 +21,10 @@
 #include "view/setting_interface.h"
 #include "view/status_info_interface.h"
 #include "view/text_interface.h"
+#include "view/chat_interface.h"
+#ifdef QFW_HAS_CHART
+#include "view/chart_interface.h"
+#endif
 #include "view/view_interface.h"
 
 namespace qfw {
@@ -81,11 +84,6 @@ void MainWindow::initNavigation() {
     layoutPage->setObjectName(QStringLiteral("layoutInterface"));
     addSubInterface(layoutPage, FluentIconEnum::Layout, t.layout(), NavigationItemPosition::Scroll);
 
-    auto* issue13Page = new Issue13Interface(this);
-    issue13Page->setObjectName(QStringLiteral("issue13Interface"));
-    addSubInterface(issue13Page, FluentIconEnum::DeveloperTools, tr("Issue #13"),
-                    NavigationItemPosition::Scroll);
-
     auto* materialPage = new MaterialInterface(this);
     materialPage->setObjectName(QStringLiteral("materialInterface"));
     addSubInterface(materialPage, FluentIconEnum::Palette, t.material(),
@@ -111,6 +109,12 @@ void MainWindow::initNavigation() {
                     NavigationItemPosition::Scroll);
 
     auto* textPage = new TextInterface(this);
+    auto* chatPage = new ChatInterface(this);
+#ifdef QFW_HAS_CHART
+    auto* chartPage = new ChartInterface(this);
+    addSubInterface(chartPage, FluentIconEnum::PieSingle, tr("Charts"), NavigationItemPosition::Scroll);
+#endif
+    addSubInterface(chatPage, FluentIconEnum::Chat, tr("Chat"), NavigationItemPosition::Scroll);
     textPage->setObjectName(QStringLiteral("textInterface"));
     addSubInterface(textPage, QVariant::fromValue<const FluentIconBase*>(&textIcon), t.text(),
                     NavigationItemPosition::Scroll);

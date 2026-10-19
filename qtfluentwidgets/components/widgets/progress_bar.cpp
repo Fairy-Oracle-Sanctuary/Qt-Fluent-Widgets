@@ -1,11 +1,13 @@
 #include "components/widgets/progress_bar.h"
 
 #include <QHideEvent>
+#include <QLocale>
 #include <QPaintEvent>
 #include <QPainter>
-#include <QLocale>
 #include <QShowEvent>
 #include <QtMath>
+#include <algorithm>
+#include <cmath>
 
 #include "common/color.h"
 #include "common/style_sheet.h"
@@ -30,6 +32,7 @@ ProgressBar::ProgressBar(QWidget* parent, bool useAni) : QProgressBar(parent), _
 float ProgressBar::getVal() const { return _val; }
 
 void ProgressBar::setVal(float v) {
+    if (!std::isfinite(v)) return;
     if (qFuzzyCompare(1.0f + _val, 1.0f + v)) {
         return;
     }
@@ -39,16 +42,21 @@ void ProgressBar::setVal(float v) {
 
 bool ProgressBar::isUseAni() const { return _useAni; }
 
-void ProgressBar::setUseAni(bool isUse) { _useAni = isUse; }
+void ProgressBar::setUseAni(bool isUse) {
+    _useAni = isUse;
+    if (!isUse) {
+        ani->stop();
+        _val = value();
+        update();
+    }
+}
 
 QColor ProgressBar::lightBarColor() const {
     return _lightBarColor.isValid() ? _lightBarColor : themeColor();
 }
 
 QColor ProgressBar::darkBarColor() const {
-    return _darkBarColor.isValid()
-               ? _darkBarColor
-               : themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
+    return _darkBarColor.isValid() ? _darkBarColor : themeColor();
 }
 
 void ProgressBar::setCustomBarColor(const QColor& light, const QColor& dark) {
@@ -112,43 +120,35 @@ QString ProgressBar::valText() const {
         return QString();
     }
 
-    int total = maximum() - minimum();
+    const qint64 total = qint64(maximum()) - minimum();
     QString res = format();
     QLocale loc = locale();
     loc.setNumberOptions(loc.numberOptions() | QLocale::OmitGroupSeparator);
 
     res.replace("%m", loc.toString(total));
-    res.replace("%v", loc.toString(static_cast<int>(_val)));
+    res.replace("%v",
+                loc.toString(qint64(std::clamp(qreal(_val), qreal(minimum()), qreal(maximum())))));
 
     if (total == 0) {
         return res.replace("%p", loc.toString(100));
     }
 
-    int progress = qRound((_val - minimum()) * 100.0 / total);
+    const int progress = qRound(std::clamp((qreal(_val) - minimum()) * 100.0 / total, 0.0, 100.0));
     return res.replace("%p", loc.toString(progress));
 }
 
-void ProgressBar::setValue(int value) {
-    if (!_useAni || !isVisible()) {
-        ani->stop();
-        _val = value;
-        QProgressBar::setValue(value);
-        update();
-        return;
-    }
-
-    ani->stop();
-    ani->setStartValue(_val);
-    ani->setEndValue(static_cast<float>(value));
-    ani->setDuration(150);
-    ani->start();
-    QProgressBar::setValue(value);
-}
+void ProgressBar::setValue(int value) { QProgressBar::setValue(value); }
 
 void ProgressBar::_onValueChanged(int value) {
-    if (!_useAni) {
+    ani->stop();
+    if (!_useAni || !isVisible()) {
         _val = value;
         update();
+    } else {
+        ani->setStartValue(_val);
+        ani->setEndValue(static_cast<float>(value));
+        ani->setDuration(150);
+        ani->start();
     }
 }
 
@@ -232,9 +232,7 @@ QColor IndeterminateProgressBar::lightBarColor() const {
 }
 
 QColor IndeterminateProgressBar::darkBarColor() const {
-    return _darkBarColor.isValid()
-               ? _darkBarColor
-               : themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
+    return _darkBarColor.isValid() ? _darkBarColor : themeColor();
 }
 
 void IndeterminateProgressBar::setCustomBarColor(const QColor& light, const QColor& dark) {
@@ -300,9 +298,7 @@ void IndeterminateProgressBar::setPaused(bool isPaused) {
     }
 }
 
-bool IndeterminateProgressBar::isPaused() const {
-    return userPaused_;
-}
+bool IndeterminateProgressBar::isPaused() const { return userPaused_; }
 
 void IndeterminateProgressBar::error() {
     _isError = true;

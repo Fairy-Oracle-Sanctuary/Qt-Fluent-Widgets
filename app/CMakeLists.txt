@@ -25,6 +25,8 @@ function(universal_add_executable target)
 endfunction()
 
 universal_add_executable(qtfluentwidgets_app
+    view/chat_interface.cpp
+    view/chat_interface.h
     main.cpp
     common/app_config.cpp
     common/app_config.h
@@ -48,6 +50,16 @@ universal_add_executable(qtfluentwidgets_app
     view/top_main_window.h
     view/gallery_interface.cpp
     view/gallery_interface.h
+    view/pro_container_examples.cpp
+    view/pro_container_examples.h
+    view/pro_input_examples.cpp
+    view/pro_input_examples.h
+    view/pro_navigation_examples.cpp
+    view/pro_navigation_examples.h
+    view/pro_progress_examples.cpp
+    view/pro_progress_examples.h
+    view/pro_picker_examples.cpp
+    view/pro_picker_examples.h
     view/icon_interface.cpp
     view/icon_interface.h
     view/basic_input_interface.cpp
@@ -59,8 +71,6 @@ universal_add_executable(qtfluentwidgets_app
     view/home_interface.cpp
     view/layout_interface.cpp
     view/layout_interface.h
-    view/issue_13_interface.cpp
-    view/issue_13_interface.h
     view/material_interface.cpp
     view/material_interface.h
     view/menu_interface.cpp
@@ -120,6 +130,12 @@ target_link_libraries(qtfluentwidgets_app PRIVATE
     Qt${QT_VERSION_MAJOR}::Svg
 )
 
+if(QFW_BUILD_CHART)
+    target_sources(qtfluentwidgets_app PRIVATE view/chart_interface.h view/chart_interface.cpp)
+    target_link_libraries(qtfluentwidgets_app PRIVATE qtfluentwidgets_chart)
+    target_compile_definitions(qtfluentwidgets_app PRIVATE QFW_HAS_CHART)
+endif()
+
 target_compile_definitions(qtfluentwidgets_app PRIVATE
     $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
     $<$<CONFIG:Release>:QT_NO_INFO_OUTPUT>
@@ -141,6 +157,16 @@ set(TS_FILES
 
 # Get all source files for lupdate
 set(LUPDATE_SOURCES
+    view/pro_picker_examples.cpp
+    view/pro_picker_examples.h
+    view/pro_progress_examples.cpp
+    view/pro_progress_examples.h
+    view/pro_navigation_examples.cpp
+    view/pro_navigation_examples.h
+    view/pro_input_examples.cpp
+    view/pro_input_examples.h
+    view/pro_container_examples.cpp
+    view/pro_container_examples.h
     main.cpp
     common/app_config.cpp
     common/app_config.h
@@ -176,8 +202,6 @@ set(LUPDATE_SOURCES
     view/home_interface.h
     view/layout_interface.cpp
     view/layout_interface.h
-    view/issue_13_interface.cpp
-    view/issue_13_interface.h
     view/material_interface.cpp
     view/material_interface.h
     view/menu_interface.cpp

@@ -14,8 +14,8 @@
 #include <QVBoxLayout>
 #include <QVariant>
 
-#include "common/qtcompat.h"
 #include "button.h"
+#include "common/qtcompat.h"
 #include "scroll_area.h"
 
 namespace qfw {
@@ -70,7 +70,7 @@ public:
     void setSelected(bool isSelected);
     bool isSelected() const { return isSelected_; }
 
-    void setShadowEnabled(bool isEnabled);
+    virtual void setShadowEnabled(bool isEnabled);
     bool isShadowEnabled() const { return isShadowEnabled_; }
 
     void setCloseButtonDisplayMode(TabCloseButtonDisplayMode mode);
@@ -115,7 +115,7 @@ protected:
     void forwardMouseEvent(QMouseEvent* event);
     bool canShowShadow() const;
 
-private:
+protected:
     int borderRadius_ = 5;
     bool isSelected_ = false;
     bool isShadowEnabled_ = true;
@@ -171,7 +171,7 @@ public:
     TabItem* tab(const QString& routeKey) const;
 
     QRect tabRegion() const;
-    QRect tabRect(int index) const;
+    virtual QRect tabRect(int index) const;
 
     QVariant tabData(int index) const;
     void setTabData(int index, const QVariant& data);
@@ -188,14 +188,16 @@ public:
     void setTabIcon(int index, FluentIconEnum icon);
     void setTabText(int index, const QString& text);
 
-    bool isTabVisible(int index) const;
-    void setTabVisible(int index, bool visible);
+    virtual bool isTabVisible(int index) const;
+    virtual void setTabVisible(int index, bool visible);
 
     void setTabTextColor(int index, const QColor& color);
     void setTabToolTip(int index, const QString& toolTip);
     QString tabToolTip(int index) const;
 
     void setTabSelectedBackgroundColor(const QColor& light, const QColor& dark);
+    QColor lightSelectedBackgroundColor() const { return lightSelectedBackgroundColor_; }
+    QColor darkSelectedBackgroundColor() const { return darkSelectedBackgroundColor_; }
 
     void setTabShadowEnabled(bool enabled);
     bool isTabShadowEnabled() const { return isTabShadowEnabled_; }
@@ -206,7 +208,7 @@ public:
     void setScrollable(bool scrollable);
     bool isScrollable() const { return isScrollable_; }
 
-    void setTabMaximumWidth(int width);
+    virtual void setTabMaximumWidth(int width);
     int tabMaximumWidth() const { return tabMaxWidth_; }
 
     void setTabMinimumWidth(int width);
@@ -224,8 +226,10 @@ signals:
     void tabCloseRequested(int index);
     void tabAddRequested();
     void tabMoved(int from, int to);
+    void tabSelectedBackgroundColorChanged(const QColor& light, const QColor& dark);
 
 protected:
+    virtual TabItem* createTabItem(const QString& text, FluentIconEnum icon);
     void init();
     void initLayout();
     void onItemPressed();
@@ -238,7 +242,7 @@ protected:
 
     void swapItem(int index);
 
-private:
+protected:
     QList<TabItem*> items_;
     QMap<QString, TabItem*> itemMap_;
 
@@ -273,13 +277,15 @@ class TabWidget : public QWidget {
 public:
     explicit TabWidget(QWidget* parent = nullptr);
 
-    int addTab(QWidget* widget, const QString& label, FluentIconEnum icon = FluentIconEnum::Up,
-               const QString& routeKey = QString());
-    int insertTab(int index, QWidget* widget, const QString& label,
-                  FluentIconEnum icon = FluentIconEnum::Up, const QString& routeKey = QString());
+    virtual int addTab(QWidget* widget, const QString& label,
+                       FluentIconEnum icon = FluentIconEnum::Up,
+                       const QString& routeKey = QString());
+    virtual int insertTab(int index, QWidget* widget, const QString& label,
+                          FluentIconEnum icon = FluentIconEnum::Up,
+                          const QString& routeKey = QString());
 
-    void removeTab(int index);
-    void clear();
+    virtual void removeTab(int index);
+    virtual void clear();
 
     QWidget* widget(int index) const;
     QWidget* currentWidget() const;
@@ -292,10 +298,10 @@ public:
     void setMovable(bool movable);
 
     bool isTabEnabled(int index) const;
-    void setTabEnabled(int index, bool enabled);
+    virtual void setTabEnabled(int index, bool enabled);
 
     bool isTabVisible(int index) const;
-    void setTabVisible(int index, bool visible);
+    virtual void setTabVisible(int index, bool visible);
 
     QString tabText(int index) const;
     QIcon tabIcon(int index) const;
@@ -309,7 +315,7 @@ public:
     void setTabToolTip(int index, const QString& tip);
 
     void setTabTextColor(int index, const QColor& color);
-    void setTabSelectedBackgroundColor(const QColor& light, const QColor& dark);
+    virtual void setTabSelectedBackgroundColor(const QColor& light, const QColor& dark);
     void setTabShadowEnabled(bool enabled);
     void setScrollable(bool scrollable);
     bool isScrollable() const;
@@ -324,7 +330,7 @@ public:
 
     int count() const;
 
-    void setCurrentIndex(int index);
+    virtual void setCurrentIndex(int index);
     void setCurrentWidget(QWidget* widget);
 
     void setCloseButtonDisplayMode(TabCloseButtonDisplayMode mode);
@@ -336,11 +342,12 @@ signals:
     void tabAddRequested();
     void tabBarDoubleClicked(int index);
 
-private:
+protected:
+    TabWidget(TabBar* tabBar, QStackedWidget* stack, QWidget* parent);
     void init();
     void connectTabBarSignalToSlot();
-    void onCurrentTabChanged(int index);
-    void onTabMoved(int fromIndex, int toIndex);
+    virtual void onCurrentTabChanged(int index);
+    virtual void onTabMoved(int fromIndex, int toIndex);
 
     TabBar* tabBar_ = nullptr;
     QStackedWidget* stackedWidget_ = nullptr;

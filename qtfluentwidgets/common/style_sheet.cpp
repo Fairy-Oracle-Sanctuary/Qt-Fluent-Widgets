@@ -506,7 +506,8 @@ static QString applyThemeColorTokens(const QString& qss) {
     result.replace(QStringLiteral("--FontFamilies"),
                    QStringLiteral("'Segoe UI','Microsoft YaHei','PingFang SC'"));
 
-    result.replace(QStringLiteral("--ThemeColorPrimary"), base.name());
+    result.replace(QStringLiteral("--ThemeColorPrimary"),
+                   themedColor(base, dark, QStringLiteral("ThemeColorPrimary")).name());
     result.replace(QStringLiteral("--ThemeColorDark1"),
                    themedColor(base, dark, QStringLiteral("ThemeColorDark1")).name());
     result.replace(QStringLiteral("--ThemeColorDark2"),
@@ -569,6 +570,9 @@ static QString fixTypeSelectors(const QString& qss) {
         QStringLiteral("DoubleSpinBox"),
         QStringLiteral("CompactSpinBox"),
         QStringLiteral("CompactDoubleSpinBox"),
+        QStringLiteral("CompactDateEdit"),
+        QStringLiteral("CompactTimeEdit"),
+        QStringLiteral("CompactDateTimeEdit"),
         QStringLiteral("SpinButton"),
         QStringLiteral("DateEdit"),
         QStringLiteral("DateTimeEdit"),
@@ -586,6 +590,7 @@ static QString fixTypeSelectors(const QString& qss) {
         QStringLiteral("CalendarViewBase"),
         QStringLiteral("ScrollViewBase"),
         QStringLiteral("CycleListWidget"),
+        QStringLiteral("SubClip"),
         QStringLiteral("PickerPanel"),
         QStringLiteral("SeparatorWidget"),
         QStringLiteral("ItemMaskWidget"),
@@ -818,10 +823,9 @@ StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
     QObject::connect(&QConfig::instance(), &QConfig::themeChanged, this, [this](Theme theme) {
         const bool lazy = nextLazyUpdate_;
         if (qssDebugEnabled()) {
-            qInfo().noquote()
-                << "[qfw][theme] themeChanged signal received, theme="
-                << static_cast<int>(theme) << "lazy=" << lazy
-                << "items_.size()=" << items_.size();
+            qInfo().noquote() << "[qfw][theme] themeChanged signal received, theme="
+                              << static_cast<int>(theme) << "lazy=" << lazy
+                              << "items_.size()=" << items_.size();
         }
         nextLazyUpdate_ = false;
         updateStyleSheet(lazy);
@@ -833,8 +837,8 @@ StyleSheetManager::StyleSheetManager(QObject* parent) : QObject(parent) {
             const bool lazy = nextLazyUpdate_;
             if (qssDebugEnabled()) {
                 qInfo().noquote()
-                    << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_="
-                    << lazy << "items_.size()=" << items_.size();
+                    << "[qfw][theme] themeColorChanged signal received, nextLazyUpdate_=" << lazy
+                    << "items_.size()=" << items_.size();
             }
             nextLazyUpdate_ = false;
             updateStyleSheet(lazy);
@@ -905,9 +909,7 @@ QSharedPointer<StyleSheetCompose> StyleSheetManager::source(QWidget* widget) con
     return (it == items_.constEnd()) ? QSharedPointer<StyleSheetCompose>() : it.value().source;
 }
 
-void StyleSheetManager::setNextLazyUpdate(bool lazy) {
-    nextLazyUpdate_ = lazy;
-}
+void StyleSheetManager::setNextLazyUpdate(bool lazy) { nextLazyUpdate_ = lazy; }
 
 void StyleSheetManager::updateStyleSheet(bool lazy) {
     QWidgetList disabledForUpdate;
@@ -968,7 +970,14 @@ void setThemeColor(const QColor& color, bool save, bool lazy) {
 
 void setThemeColor(const QColor& color, bool lazy) { setThemeColor(color, false, lazy); }
 
-QColor themeColor() { return QConfig::instance().themeColor(); }
+QColor themeColor() {
+    // Configuration stores the original accent; painting uses Python's theme-adjusted primary.
+    // QSS colors and QWidget backing stores use 8-bit RGB. Normalize here so
+    // the same visual color is not represented as a different HSV QColor.
+    return QColor::fromRgba(themedColor(QConfig::instance().themeColor(), isDarkTheme(),
+                                        QStringLiteral("ThemeColorPrimary"))
+                                .rgba());
+}
 
 void updateDynamicStyle(QWidget* widget) {
     if (!widget) {

@@ -12,6 +12,7 @@
 #include <QParallelAnimationGroup>
 #include <QPlainTextEdit>
 #include <QPointer>
+#include <functional>
 #include <QPropertyAnimation>
 #include <QProxyStyle>
 #include <QStyledItemDelegate>
@@ -42,6 +43,15 @@ private:
     int iconSize_;
 };
 
+class DWMMenu : public QMenu {
+    Q_OBJECT
+public:
+    explicit DWMMenu(QWidget* parent = nullptr);
+    explicit DWMMenu(const QString& title, QWidget* parent = nullptr);
+protected:
+    bool event(QEvent* event) override;
+};
+
 enum class MenuAnimationType {
     None = 0,
     DropDown = 1,
@@ -63,6 +73,7 @@ signals:
 
 protected:
     void enterEvent(enterEvent_QEnterEvent* e) override;
+    void paintEvent(QPaintEvent* event) override;
 
 private:
     QPointer<RoundMenu> menu_;
@@ -157,9 +168,11 @@ public:
 
     void setViewportMargins(int left, int top, int right, int bottom);
     void setViewportMargins(const QMargins& margins);
+    void setVerticalScrollBarPolicy(Qt::ScrollBarPolicy policy);
+    void setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy policy);
     QMargins menuViewportMargins() const { return viewportMargins_; }
 
-    void setItemHeight(int height);
+    virtual void setItemHeight(int height);
 
     void setMaxVisibleItems(int num);
     int maxVisibleItems() const;
@@ -171,7 +184,7 @@ public:
                            MenuAnimationType aniType = MenuAnimationType::None);
 
     void insertItem(int row, QListWidgetItem* item);
-    void addItem(QListWidgetItem* item);
+    virtual void addItem(QListWidgetItem* item);
     QListWidgetItem* takeItem(int row);
 
 private:
@@ -186,6 +199,7 @@ class RoundMenu : public QMenu {
 
 public:
     explicit RoundMenu(const QString& title = QString(), QWidget* parent = nullptr);
+    ~RoundMenu() override;
 
     QPointer<MenuActionListWidget> view() const { return view_; }
     void adjustSize();
@@ -199,7 +213,7 @@ public:
     void setShadowEffect(int blurRadius = 30, const QPoint& offset = QPoint(0, 8),
                          const QColor& color = QColor(0, 0, 0, 30));
 
-    void clear();
+    virtual void clear();
 
     void setIcon(const QIcon& icon);
     QIcon icon() const;
@@ -229,9 +243,13 @@ public:
 
 signals:
     void closedSignal();
+    // Emitted before member storage is destroyed, unlike QObject::destroyed.
+    void aboutToBeDestroyed();
 
 protected:
     void hideEvent(QHideEvent* e) override;
+    void replaceMenuView(MenuActionListWidget* view);
+    virtual void prepareShowBackground(const QPoint& finalPosition) {}
     void closeEvent(QCloseEvent* e) override;
     void mousePressEvent(QMouseEvent* e) override;
     void mouseMoveEvent(QMouseEvent* e) override;
@@ -248,6 +266,7 @@ private:
     friend class CheckableMenu;
     friend class ComboBoxBase;
     friend class ComboBoxMenu;
+    friend class MenuBar;
 
     void initWidgets();
 
@@ -351,8 +370,12 @@ class MenuAnimationManager : public QObject {
 
 public:
     explicit MenuAnimationManager(RoundMenu* menu);
+    using Factory = std::function<MenuAnimationManager*(RoundMenu*)>;
+    static void registerFactory(MenuAnimationType type, Factory factory);
+    static MenuAnimationManager* make(MenuAnimationType type, RoundMenu* menu);
 
     virtual void exec(const QPoint& pos) = 0;
+    QPoint finalPosition() const;
     virtual QSize availableViewSize(const QPoint& pos) const;
 
 protected:

@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/gallery">
+        <file>chart/examples.json</file>
         <file>images/controls/Acrylic.png</file>
         <file>images/controls/AnimatedIcon.png</file>
         <file>images/controls/AnimatedVisualPlayer.png</file>

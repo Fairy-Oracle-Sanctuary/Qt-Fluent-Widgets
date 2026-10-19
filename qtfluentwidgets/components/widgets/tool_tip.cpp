@@ -16,8 +16,13 @@ namespace qfw {
 
 // ToolTip implementation
 
-ToolTip::ToolTip(const QString& text, QWidget* parent) : QFrame(parent), text_(text) {
-    initUi();
+ToolTip::ToolTip(const QString& text, QWidget* parent)
+    : ToolTip(text, parent, [](ToolTip* tip) { return new QFrame(tip); }) {}
+
+ToolTip::ToolTip(const QString& text, QWidget* parent,
+                 const std::function<QFrame*(ToolTip*)>& containerFactory)
+    : QFrame(parent), text_(text) {
+    initUi(containerFactory);
     setQss();
 }
 
@@ -100,10 +105,10 @@ void ToolTip::hideEvent(QHideEvent* e) {
 
 QFrame* ToolTip::createContainer() { return new QFrame(this); }
 
-void ToolTip::initUi() {
+void ToolTip::initUi(const std::function<QFrame*(ToolTip*)>& containerFactory) {
     setProperty("qssClass", "ToolTip");
 
-    container_ = createContainer();
+    container_ = containerFactory(this);
     timer_ = new QTimer(this);
 
     layout_ = new QHBoxLayout(this);

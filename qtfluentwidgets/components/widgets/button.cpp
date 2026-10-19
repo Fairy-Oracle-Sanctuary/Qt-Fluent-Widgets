@@ -5,6 +5,7 @@
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QMenu>
+#include <QKeyEvent>
 #include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
@@ -720,33 +721,10 @@ void RadioButton::drawIndicator(QPainter* painter) {
 
     const bool dark = isDarkTheme();
 
-    auto themeColorDark1 = []() {
-        const QColor base = themeColor();
-        QColor_HsvF_type h = 0, s = 0, v = 0, a = 0;
-        base.getHsvF(&h, &s, &v, &a);
-
-        // Keep consistent with common/style_sheet.cpp themedColor(..., darkTheme=true,
-        // "ThemeColorDark1")
-        s *= 0.84f;
-        v = 1.0f;
-        v *= 0.9f;
-
-        return QColor::fromHsvF(h, std::min(s, static_cast<QColor_HsvF_type>(1.0f)),
-                                std::min(v, static_cast<QColor_HsvF_type>(1.0f)), a);
-    };
-
     if (isChecked()) {
         QColor borderColor;
         if (isEnabled()) {
-            // Python uses autoFallbackThemeColor, which falls back to themeColor() when no custom
-            // indicator colors are provided. For C++ migration, the expected visual in dark theme
-            // is ThemeColorDark1 (same token as PrimaryPushButton background).
-            const QColor custom = dark ? darkIndicatorColor_ : lightIndicatorColor_;
-            if (dark && !custom.isValid()) {
-                borderColor = themeColorDark1();
-            } else {
-                borderColor = fallbackThemeColor(custom);
-            }
+            borderColor = autoFallbackThemeColor(lightIndicatorColor_, darkIndicatorColor_);
         } else {
             borderColor = dark ? QColor(255, 255, 255, 40) : QColor(0, 0, 0, 55);
         }
@@ -1043,6 +1021,7 @@ SplitDropButton::SplitDropButton(QWidget* parent) : ToolButton(parent) {
 }
 
 void SplitDropButton::paintEvent(QPaintEvent* event) {
+    if (property("customDropIcon").toBool()) { ToolButton::paintEvent(event); return; }
     QToolButton::paintEvent(event);
 
     QPainter painter(this);
@@ -1079,6 +1058,7 @@ PrimarySplitDropButton::PrimarySplitDropButton(QWidget* parent) : PrimaryToolBut
 }
 
 void PrimarySplitDropButton::paintEvent(QPaintEvent* event) {
+    if (property("customDropIcon").toBool()) { PrimaryToolButton::paintEvent(event); return; }
     QToolButton::paintEvent(event);
 
     QPainter painter(this);
@@ -1129,7 +1109,7 @@ void SplitWidgetBase::setWidget(QWidget* widget) {
 }
 
 void SplitWidgetBase::setDropButton(ToolButton* button) {
-    if (!button || !hBoxLayout_) {
+    if (!button || button == dropButton_ || !hBoxLayout_) {
         return;
     }
 
@@ -1148,11 +1128,44 @@ void SplitWidgetBase::setDropButton(ToolButton* button) {
 
 ToolButton* SplitWidgetBase::dropButton() const { return dropButton_; }
 
-void SplitWidgetBase::setFlyout(QMenu* menu) { flyout_ = menu; }
+void SplitWidgetBase::setDropIcon(const QVariant& icon) {
+    if (!dropButton_) return;
+    dropButton_->setIcon(icon);
+    dropButton_->setProperty("customDropIcon", true);
+    if (auto* animation = dropButton_->findChild<TranslateYAnimation*>()) {
+        dropButton_->removeEventFilter(animation);
+    }
+    dropButton_->update();
+}
+void SplitWidgetBase::setDropIcon(const QIcon& icon) { setDropIcon(QVariant(icon)); }
+void SplitWidgetBase::setDropIcon(const FluentIconBase& icon) { setDropIcon(QVariant(icon.qicon())); }
+void SplitWidgetBase::setDropIconSize(const QSize& size) { if (dropButton_) dropButton_->setIconSize(size); }
+void SplitWidgetBase::setFlyout(QMenu* menu) {
+    flyout_ = menu; customFlyout_.clear(); flyoutExecutor_ = {};
+}
+void SplitWidgetBase::setFlyout(QWidget* widget, std::function<void(const QPoint&)> executor) {
+    flyout_.clear(); customFlyout_ = widget; flyoutExecutor_ = std::move(executor);
+}
+QWidget* SplitWidgetBase::flyoutWidget() const { return customFlyout_ ? customFlyout_.data() : flyout_.data(); }
 
 QMenu* SplitWidgetBase::flyout() const { return flyout_; }
 
 void SplitWidgetBase::showFlyout() {
+    if (customFlyout_ && flyoutExecutor_) {
+        auto callback = flyoutExecutor_;
+        auto* widget = customFlyout_.data();
+        widget->adjustSize();
+        QPoint pos = mapToGlobal(QPoint((width() - widget->width()) / 2, height()));
+        if (auto* screen = window() ? window()->screen() : QGuiApplication::primaryScreen()) {
+            const QRect area = screen->availableGeometry();
+            pos.setX(qBound(area.left(), pos.x(), qMax(area.left(), area.right()-widget->width()+1)));
+            if (pos.y()+widget->height() > area.bottom()+1)
+                pos.setY(mapToGlobal(QPoint(0,0)).y()-widget->height());
+            pos.setY(qMax(area.top(),pos.y()));
+        }
+        callback(pos);
+        return;
+    }
     if (!flyout_) {
         return;
     }
@@ -1441,19 +1454,26 @@ void PillButtonBase::paintPill(QPainter* painter, const QRect& rect, bool checke
             bgColor = dark ? QColor(52, 52, 52) : QColor(205, 205, 205);
             borderColor = bgColor;
         } else if (pressed) {
-            bgColor = dark ? themed(themeColor(), true, QStringLiteral("ThemeColorDark2"))
-                           : themed(themeColor(), false, QStringLiteral("ThemeColorLight3"));
+            bgColor = dark ? themed(QConfig::instance().themeColor(), true,
+                                    QStringLiteral("ThemeColorDark2"))
+                           : themed(QConfig::instance().themeColor(), false,
+                                    QStringLiteral("ThemeColorLight3"));
             borderColor = bgColor;
         } else if (hover) {
-            bgColor = dark ? themed(themeColor(), true, QStringLiteral("ThemeColorDark1"))
-                           : themed(themeColor(), false, QStringLiteral("ThemeColorLight2"));
-            borderColor = dark ? themed(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                               : themed(themeColor(), false, QStringLiteral("ThemeColorLight1"));
+            bgColor = dark ? themed(QConfig::instance().themeColor(), true,
+                                    QStringLiteral("ThemeColorDark1"))
+                           : themed(QConfig::instance().themeColor(), false,
+                                    QStringLiteral("ThemeColorLight2"));
+            borderColor = dark ? themed(QConfig::instance().themeColor(), true,
+                                        QStringLiteral("ThemeColorLight1"))
+                               : themed(QConfig::instance().themeColor(), false,
+                                        QStringLiteral("ThemeColorLight1"));
         } else {
-            bgColor = dark ? themed(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                           : themeColor();
-            borderColor = dark ? themed(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                               : themed(themeColor(), false, QStringLiteral("ThemeColorLight1"));
+            bgColor = themeColor();
+            borderColor = dark ? themed(QConfig::instance().themeColor(), true,
+                                        QStringLiteral("ThemeColorLight1"))
+                               : themed(QConfig::instance().themeColor(), false,
+                                        QStringLiteral("ThemeColorLight1"));
         }
 
         r = rect;
@@ -1938,6 +1958,61 @@ void DropDownToolButton::paintEvent(QPaintEvent* event) {
     const qreal yOffset = arrowAni_ ? arrowAni_->getY() : 0.0;
     const QRectF arrowRect(width() - 22, height() / 2.0 - 5 + yOffset, 10, 10);
     drawDropDownIcon(&painter, arrowRect);
+}
+
+PrimaryDropDownToolButton::PrimaryDropDownToolButton(QWidget* parent) : PrimaryToolButton(parent) {
+    initDropDown();
+}
+PrimaryDropDownToolButton::PrimaryDropDownToolButton(const QIcon& icon, QWidget* parent)
+    : PrimaryToolButton(icon, parent) { initDropDown(); }
+PrimaryDropDownToolButton::PrimaryDropDownToolButton(const FluentIconBase& icon, QWidget* parent)
+    : PrimaryToolButton(icon, parent) { initDropDown(); }
+void PrimaryDropDownToolButton::initDropDown() {
+    setProperty("qssClass", "PrimaryDropDownToolButton");
+    arrowAni_ = new TranslateYAnimation(this);
+    connect(this, &QToolButton::clicked, this, &PrimaryDropDownToolButton::showMenu);
+}
+void PrimaryDropDownToolButton::setMenu(QMenu* menu) { menu_ = menu; }
+QMenu* PrimaryDropDownToolButton::menu() const { return menu_; }
+QSize PrimaryDropDownToolButton::sizeHint() const {
+    return QSize(iconSize().width() + 44, iconSize().height() + 16);
+}
+QSize PrimaryDropDownToolButton::minimumSizeHint() const { return sizeHint(); }
+void PrimaryDropDownToolButton::showMenu() {
+    if (!isEnabled() || !menu_) return;
+    if (execRoundMenuAtButton(menu_, this, width(), height(), 0)) return;
+    menu_->setMinimumWidth(width());
+    const QPoint down = mapToGlobal(QPoint(0, height()));
+    const QPoint up = mapToGlobal(QPoint(0, 0));
+    auto* screen = window() ? window()->screen() : QGuiApplication::primaryScreen();
+    const QRect bounds = screen ? screen->availableGeometry() : QRect();
+    const bool below = !bounds.isValid() || bounds.bottom() - down.y() >= up.y() - bounds.top();
+    menu_->popup(below ? down : QPoint(up.x(), up.y() - menu_->sizeHint().height()));
+}
+void PrimaryDropDownToolButton::mouseReleaseEvent(QMouseEvent* event) {
+    PrimaryToolButton::mouseReleaseEvent(event);
+}
+void PrimaryDropDownToolButton::keyPressEvent(QKeyEvent* event) {
+    if (isEnabled() && (event->key() == Qt::Key_Down || event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter)) {
+        if (!event->isAutoRepeat()) showMenu();
+        event->accept();
+    } else {
+        PrimaryToolButton::keyPressEvent(event);
+    }
+}
+void PrimaryDropDownToolButton::drawIcon(QPainter* painter, const QRectF& rect, QIcon::State state) {
+    QRectF moved = rect;
+    moved.moveLeft(layoutDirection() == Qt::RightToLeft ? width() - 12 - rect.width() : 12);
+    PrimaryToolButton::drawIcon(painter, moved, state);
+}
+void PrimaryDropDownToolButton::paintEvent(QPaintEvent* event) {
+    PrimaryToolButton::paintEvent(event);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    if (isHover) painter.setOpacity(0.8);
+    else if (isPressed) painter.setOpacity(0.7);
+    const qreal x = layoutDirection() == Qt::RightToLeft ? 12 : width() - 22;
+    drawPrimaryDropDownIcon(&painter, QRectF(x, height()/2.0 - 5 + arrowAni_->getY(), 10, 10));
 }
 
 TransparentDropDownToolButton::TransparentDropDownToolButton(QWidget* parent)

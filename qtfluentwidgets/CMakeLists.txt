@@ -33,6 +33,24 @@ function(universal_add_library target)
 endfunction()
 
 universal_add_library(qtfluentwidgets STATIC
+    components/widgets/chat_widget.h
+    components/widgets/chat_widget.cpp
+    components/widgets/chat_content.h
+    components/widgets/chat_content.cpp
+    components/widgets/code_edit.h
+    components/widgets/code_edit.cpp
+    components/material/acrylic_menu.h
+    components/material/acrylic_menu.cpp
+    components/material/acrylic_line_edit.h
+    components/material/acrylic_line_edit.cpp
+    components/material/acrylic_combo_box.h
+    components/material/acrylic_combo_box.cpp
+    components/material/acrylic_flyout.h
+    components/material/acrylic_flyout.cpp
+    components/material/acrylic_widget.h
+    components/material/acrylic_widget.cpp
+    components/material/acrylic_tool_tip.h
+    components/material/acrylic_tool_tip.cpp
     common/config.cpp
     common/config.h
     common/font.cpp
@@ -60,6 +78,48 @@ universal_add_library(qtfluentwidgets STATIC
 
     components/widgets/button.cpp
     components/widgets/button.h
+    components/widgets/drop_down_color_picker.cpp
+    components/widgets/drop_down_color_picker.h
+    components/widgets/screen_color_picker.cpp
+    components/widgets/screen_color_picker.h
+    components/widgets/extended_button.cpp
+    components/widgets/extended_button.h
+    components/widgets/progress_button.cpp
+    components/widgets/progress_button.h
+    components/widgets/chip.cpp
+    components/widgets/chip.h
+    components/widgets/sub_clip.cpp
+    components/widgets/sub_clip.h
+    components/widgets/tag.cpp
+    components/widgets/tag.h
+    components/widgets/skeleton.cpp
+    components/widgets/skeleton.h
+    components/widgets/watermark.cpp
+    components/widgets/watermark.h
+    components/widgets/drawer.cpp
+    components/widgets/drawer.h
+    components/widgets/dashboard_card.cpp
+    components/widgets/dashboard_card.h
+    components/widgets/tool_box.cpp
+    components/widgets/tool_box.h
+    components/widgets/rating_widget.cpp
+    components/widgets/rating_widget.h
+    components/widgets/extended_slider.cpp
+    components/widgets/extended_slider.h
+    components/widgets/extended_line_edit.cpp
+    components/widgets/extended_line_edit.h
+    components/widgets/subtitle_button.cpp
+    components/widgets/subtitle_button.h
+    components/widgets/date_time_edit.cpp
+    components/widgets/date_time_edit.h
+    components/widgets/drop_widget.cpp
+    components/widgets/drop_widget.h
+    components/widgets/exclusive_filter.cpp
+    components/widgets/exclusive_filter.h
+    components/widgets/pager.cpp
+    components/widgets/pager.h
+    components/widgets/tree_combo_box.cpp
+    components/widgets/tree_combo_box.h
     components/widgets/tool_tip.cpp
     components/widgets/tool_tip.h
     components/widgets/flyout.cpp
@@ -105,20 +165,62 @@ universal_add_library(qtfluentwidgets STATIC
     components/widgets/separator.h
     components/widgets/icon_widget.cpp
     components/widgets/icon_widget.h
+    components/widgets/image_comparison.cpp
+    components/widgets/image_comparison.h
+    components/widgets/image_magnifier.cpp
+    components/widgets/image_magnifier.h
+    components/widgets/image_cropper.cpp
+    components/widgets/image_cropper.h
+    components/widgets/audio_waveform.cpp
+    components/widgets/audio_waveform.h
+    components/widgets/flyout_dialog.cpp
+    components/widgets/flyout_dialog.h
+    components/widgets/avatar_picker.cpp
+    components/widgets/avatar_picker.h
     components/widgets/table_view.cpp
     components/widgets/table_view.h
+    components/widgets/extended_table_view.cpp
+    components/widgets/extended_table_view.h
     components/widgets/list_view.cpp
     components/widgets/list_view.h
+    components/widgets/round_list_view.cpp
+    components/widgets/round_list_view.h
+    components/widgets/round_tab_bar.cpp
+    components/widgets/round_tab_bar.h
+    components/widgets/round_tab_widget.cpp
+    components/widgets/round_tab_widget.h
+    components/widgets/menu_bar.cpp
+    components/widgets/menu_bar.h
     components/widgets/progress_bar.cpp
     components/widgets/progress_bar.h
     components/widgets/progress_ring.cpp
     components/widgets/progress_ring.h
+    components/widgets/extended_progress.cpp
+    components/widgets/extended_progress.h
+    components/widgets/color_picker.cpp
+    components/widgets/color_picker.h
+    components/widgets/shortcut_picker.cpp
+    components/widgets/shortcut_picker.h
     components/widgets/slider.cpp
     components/widgets/slider.h
     components/widgets/switch_button.cpp
     components/widgets/switch_button.h
     components/widgets/combo_box.cpp
     components/widgets/combo_box.h
+    components/widgets/extended_combo_box.cpp
+    components/widgets/extended_combo_box.h
+    components/widgets/splitter.cpp
+    components/widgets/splitter.h
+    components/widgets/time_line.cpp
+    components/widgets/time_line.h
+    components/widgets/toast.cpp
+    components/widgets/toast.h
+    components/widgets/progress_toast.cpp
+    components/widgets/progress_toast.h
+    components/widgets/progress_info_bar.cpp
+    components/widgets/progress_info_bar.h
+    components/widgets/round_progress_toast.cpp
+    components/widgets/round_progress_toast.h
     components/widgets/state_tool_tip.cpp
     components/widgets/state_tool_tip.h
     components/widgets/tree_view.cpp
@@ -148,6 +250,8 @@ universal_add_library(qtfluentwidgets STATIC
     components/layout/expand_layout.h
     components/layout/flow_layout.cpp
     components/layout/flow_layout.h
+    components/layout/waterfall_layout.cpp
+    components/layout/waterfall_layout.h
 
     components/date_time/picker_base.cpp
     components/date_time/picker_base.h
@@ -159,6 +263,10 @@ universal_add_library(qtfluentwidgets STATIC
     components/date_time/calendar_view.h
     components/date_time/calendar_picker.cpp
     components/date_time/calendar_picker.h
+    components/date_time/calendar_time_picker.cpp
+    components/date_time/calendar_time_picker.h
+    components/date_time/range_calendar_picker.cpp
+    components/date_time/range_calendar_picker.h
     components/date_time/fast_calendar_view.cpp
     components/date_time/fast_calendar_view.h
     components/date_time/fast_calendar_picker.cpp
@@ -179,6 +287,8 @@ universal_add_library(qtfluentwidgets STATIC
 
     components/dialog_box/mask_dialog_base.cpp
     components/dialog_box/mask_dialog_base.h
+    components/dialog_box/waiting_dialog.cpp
+    components/dialog_box/waiting_dialog.h
     components/dialog_box/message_box_base.cpp
     components/dialog_box/message_box_base.h
     components/dialog_box/message_dialog.cpp
@@ -200,6 +310,8 @@ universal_add_library(qtfluentwidgets STATIC
 
     window/fluent_window.cpp
     window/fluent_window.h
+    window/filled_fluent_window.cpp
+    window/filled_fluent_window.h
 
     window/splash_screen.cpp
     window/splash_screen.h
@@ -210,6 +322,9 @@ universal_add_library(qtfluentwidgets STATIC
     components/window/mac_frameless_window.h
     components/window/linux_frameless_window.h
 
+    common/chat_math.h
+    common/chat_math.cpp
+    resources/chat_math.qrc
     resources/resource.qrc
 )
 
@@ -278,3 +393,16 @@ endif()
 target_include_directories(qtfluentwidgets PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+option(QFW_BUILD_CHART "Build the optional ECharts/WebEngine component and Gallery" ON)
+if(QFW_BUILD_CHART)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS WebEngineWidgets QuickWidgets)
+    add_library(qtfluentwidgets_chart STATIC
+        components/widgets/frameless_web_engine_view.h components/widgets/frameless_web_engine_view.cpp
+        components/widgets/chart_widget.h components/widgets/chart_widget.cpp resources/chart.qrc)
+    target_link_libraries(qtfluentwidgets_chart PUBLIC qtfluentwidgets Qt${QT_VERSION_MAJOR}::WebEngineWidgets
+        PRIVATE Qt${QT_VERSION_MAJOR}::QuickWidgets)
+    if(MSVC)
+        target_compile_options(qtfluentwidgets_chart PRIVATE /utf-8 /FS)
+    endif()
+endif()

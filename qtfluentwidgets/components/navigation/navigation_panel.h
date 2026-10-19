@@ -78,6 +78,7 @@ public:
     void setCollapsible(bool on);
 
     void setExpandWidth(int width);
+    void setFilledSelectionEnabled(bool enabled);
     void setMinimumExpandWidth(int width);
 
     bool isMenuModeEnabledWhenNarrow() const { return isMenuModeEnabledWhenNarrow_; }
@@ -208,6 +209,7 @@ private:
 
     QPropertyAnimation* expandAni_ = nullptr;
     int expandWidth_ = 322;
+    bool filledSelection_ = false;
     int minimumExpandWidth_ = 1008;
 
     bool isMenuModeEnabledWhenNarrow_ = true;

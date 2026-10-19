@@ -27,12 +27,7 @@ void ListItemDelegate::drawIndicator(QPainter* painter, const QStyleOptionViewIt
     int y = option.rect.y();
     int h = option.rect.height();
     int ph = qRound((pressedRow_ == index.row()) ? 0.35 * h : 0.257 * h);
-    QColor color;
-    if (isDarkTheme()) {
-        color = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
-    }
+    const QColor color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
     painter->setBrush(color);
     painter->drawRoundedRect(0, ph + y, 3, h - 2 * ph, 1.5, 1.5);
 }

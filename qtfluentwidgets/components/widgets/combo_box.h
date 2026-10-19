@@ -159,6 +159,8 @@ private:
     void onItemClicked(int index) override;
 
     LineEditButton* dropButton_ = nullptr;
+protected:
+    void adjustTextMargins() override;
 };
 
 }  // namespace qfw

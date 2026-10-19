@@ -14,6 +14,9 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QVariant>
+#include <QPointer>
+#include <functional>
+#include <type_traits>
 
 #include "common/icon.h"
 #include "common/qtcompat.h"
@@ -117,6 +120,8 @@ protected:
     void drawIcon(QPainter* painter, const QRectF& rect, QIcon::State state = QIcon::Off) override;
 };
 
+using TogglePushButton = ToggleButton;
+
 class TransparentTogglePushButton : public ToggleButton {
     Q_OBJECT
 
@@ -179,7 +184,11 @@ protected:
 
 private:
     void drawText(QPainter* painter);
+
+protected:
     void drawIndicator(QPainter* painter);
+
+private:
     void drawCircle(QPainter* painter, const QPoint& center, int radius, int thickness,
                     const QColor& borderColor, const QColor& filledColor);
     QColor textColor() const;
@@ -376,9 +385,20 @@ public:
     void setWidget(QWidget* widget);
     void setDropButton(ToolButton* button);
     ToolButton* dropButton() const;
+    void setDropIcon(const QVariant& icon);
+    void setDropIcon(const QIcon& icon);
+    void setDropIcon(const FluentIconBase& icon);
+    void setDropIconSize(const QSize& size);
 
     void setFlyout(QMenu* menu);
     QMenu* flyout() const;
+    void setFlyout(QWidget* widget, std::function<void(const QPoint&)> executor);
+    template <typename Widget, typename std::enable_if<!std::is_base_of<QMenu,Widget>::value,int>::type = 0>
+    auto setFlyout(Widget* widget) -> decltype(widget->exec(QPoint()),void()) {
+        QPointer<Widget> guard(widget);
+        setFlyout(static_cast<QWidget*>(widget),[guard](const QPoint& pos) { if (guard) guard->exec(pos); });
+    }
+    QWidget* flyoutWidget() const;
 
 signals:
     void dropDownClicked();
@@ -387,7 +407,9 @@ protected slots:
     void showFlyout();
 
 protected:
-    QMenu* flyout_ = nullptr;
+    QPointer<QMenu> flyout_;
+    QPointer<QWidget> customFlyout_;
+    std::function<void(const QPoint&)> flyoutExecutor_;
     ToolButton* dropButton_ = nullptr;
     QHBoxLayout* hBoxLayout_ = nullptr;
 };
@@ -533,6 +555,28 @@ private:
     void drawDropDownIcon(QPainter* painter, const QRectF& rect);
 
     QMenu* menu_ = nullptr;
+    TranslateYAnimation* arrowAni_ = nullptr;
+};
+
+class PrimaryDropDownToolButton : public PrimaryToolButton, public PrimaryDropDownButtonBase {
+    Q_OBJECT
+public:
+    explicit PrimaryDropDownToolButton(QWidget* parent = nullptr);
+    explicit PrimaryDropDownToolButton(const QIcon& icon, QWidget* parent = nullptr);
+    explicit PrimaryDropDownToolButton(const FluentIconBase& icon, QWidget* parent = nullptr);
+    void setMenu(QMenu* menu);
+    QMenu* menu() const;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
+protected:
+    void paintEvent(QPaintEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void drawIcon(QPainter* painter, const QRectF& rect, QIcon::State state = QIcon::Off) override;
+private:
+    void initDropDown();
+    void showMenu();
+    QPointer<QMenu> menu_;
     TranslateYAnimation* arrowAni_ = nullptr;
 };
 

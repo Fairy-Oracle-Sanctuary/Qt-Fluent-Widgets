@@ -104,6 +104,22 @@ CompactTimeEdit[transparent=false]:focus {
     background: rgb(31, 31, 31);
 }
 
+SpinBox[spinRtl=true][symbolVisible=true],
+DoubleSpinBox[spinRtl=true][symbolVisible=true],
+DateEdit[spinRtl=true][symbolVisible=true],
+DateTimeEdit[spinRtl=true][symbolVisible=true],
+TimeEdit[spinRtl=true][symbolVisible=true] {
+    padding: 0px 3px 0 80px;
+}
+
+CompactSpinBox[spinRtl=true][symbolVisible=true],
+CompactDoubleSpinBox[spinRtl=true][symbolVisible=true],
+CompactDateEdit[spinRtl=true][symbolVisible=true],
+CompactDateTimeEdit[spinRtl=true][symbolVisible=true],
+CompactTimeEdit[spinRtl=true][symbolVisible=true] {
+    padding: 0px 3px 0 26px;
+}
+
 SpinButton {
     background-color: transparent;
     border: none;

@@ -3,6 +3,47 @@ RoundMenu {
     border: none;
 }
 
+QMenu[qssClass="DWMMenu"], QMenu[qssClass="DWMMenu"] QMenu {
+    background-color: rgb(249, 249, 249);
+    color: black;
+    border: 1px solid rgb(224, 224, 224);
+    padding: 4px;
+    font: 14px --FontFamilies;
+}
+QMenu[qssClass="DWMMenu"]::item, QMenu[qssClass="DWMMenu"] QMenu::item {
+    padding: 6px 38px;
+    margin: 0px 2px;
+    border-radius: 5px;
+}
+QMenu[qssClass="DWMMenu"]::item:selected, QMenu[qssClass="DWMMenu"] QMenu::item:selected {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+QMenu[qssClass="DWMMenu"]::item:disabled, QMenu[qssClass="DWMMenu"] QMenu::item:disabled {
+    color: rgba(0, 0, 0, 0.44);
+}
+QMenu[qssClass="DWMMenu"]::separator, QMenu[qssClass="DWMMenu"] QMenu::separator {
+    height: 1px;
+    margin: 4px 6px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+QMenu[qssClass="DWMMenu"]::indicator, QMenu[qssClass="DWMMenu"] QMenu::indicator {
+    width: 14px;
+    height: 14px;
+}
+QMenu[qssClass="DWMMenu"]::indicator:checked, QMenu[qssClass="DWMMenu"] QMenu::indicator:checked {
+    image: url(:/qfluentwidgets/images/icons/Accept_black.svg);
+}
+QMenu[qssClass="DWMMenu"]::icon, QMenu[qssClass="DWMMenu"]::indicator,
+QMenu[qssClass="DWMMenu"] QMenu::icon, QMenu[qssClass="DWMMenu"] QMenu::indicator {
+    position: relative;
+    left: 12px;
+}
+QMenu[qssClass="DWMMenu"]::right-arrow, QMenu[qssClass="DWMMenu"] QMenu::right-arrow {
+    width: 9px;
+    height: 9px;
+    image: url(:/qfluentwidgets/images/icons/ChevronRight_black.svg);
+}
+
 MenuActionListWidget {
     outline: none;
     font: 14px --FontFamilies;
@@ -13,6 +54,7 @@ MenuActionListWidget {
     border-radius: 9px;
     background-color: rgb(249, 249, 249);
 }
+#menuPanel[acrylic=true] { background-color: transparent; }
 
 MenuActionListWidget::viewport {
     background-color: rgb(249, 249, 249);

@@ -1,11 +1,14 @@
 #include "spin_box.h"
 
+#include <QAbstractAnimation>
 #include <QApplication>
+#include <QDateTimeEdit>
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QStyle>
+#include <functional>
 
 #include "common/color.h"
 #include "common/font.h"
@@ -13,6 +16,24 @@
 #include "common/style_sheet.h"
 
 namespace qfw {
+namespace {
+class SpinLifecycleFilter : public QObject {
+public:
+    SpinLifecycleFilter(QWidget* owner, std::function<void(QEvent*)> callback)
+        : QObject(owner), callback_(std::move(callback)) {
+        owner->installEventFilter(this);
+    }
+
+protected:
+    bool eventFilter(QObject*, QEvent* event) override {
+        callback_(event);
+        return false;
+    }
+
+private:
+    std::function<void(QEvent*)> callback_;
+};
+}  // namespace
 
 SpinIcon::SpinIcon(SpinIconType type) : type_(type) {}
 
@@ -33,6 +54,7 @@ void SpinIcon::render(SpinIconType type, QPainter* painter, const QRectF& rect, 
 SpinButton::SpinButton(SpinIconType icon, QWidget* parent) : QToolButton(parent), iconType_(icon) {
     setFixedSize(31, 23);
     setIconSize(QSize(10, 10));
+    setAccessibleName(icon == SpinIconType::UP ? tr("Increase") : tr("Decrease"));
     setProperty("qssClass", "SpinButton");
     qfw::setStyleSheet(this, FluentStyleSheet::SpinBox);
 }
@@ -64,12 +86,15 @@ void SpinButton::paintEvent(QPaintEvent* e) {
 CompactSpinButton::CompactSpinButton(QWidget* parent) : QToolButton(parent) {
     setFixedSize(26, 33);
     setCursor(Qt::IBeamCursor);
+    setFocusPolicy(Qt::NoFocus);
+    setAccessibleName(tr("Adjust value"));
 }
 
 void CompactSpinButton::paintEvent(QPaintEvent* e) {
     Q_UNUSED(e);
     QPainter painter(this);
     painter.setRenderHints(QPainter::Antialiasing);
+    if (!isEnabled()) painter.setOpacity(0.36);
 
     double x = (width() - 10) / 2.0;
     double s = 9.0;
@@ -90,6 +115,12 @@ SpinFlyoutView::SpinFlyoutView(QWidget* parent) : FlyoutViewBase(parent) {
     downButton->setFixedSize(36, 36);
     upButton->setIconSize(QSize(13, 13));
     downButton->setIconSize(QSize(13, 13));
+    upButton->setFocusPolicy(Qt::NoFocus);
+    downButton->setFocusPolicy(Qt::NoFocus);
+    upButton->setAccessibleName(tr("Increase"));
+    downButton->setAccessibleName(tr("Decrease"));
+    upButton->setToolTip(tr("Increase"));
+    downButton->setToolTip(tr("Decrease"));
 
     vBoxLayout_->setContentsMargins(6, 6, 6, 6);
     vBoxLayout_->setSpacing(0);
@@ -114,6 +145,8 @@ void SpinFlyoutView::paintEvent(QPaintEvent* e) {
 }
 
 InlineSpinBoxBase::InlineSpinBoxBase(QWidget* widget) : widget_(widget) {
+    widget_->setProperty("symbolVisible", true);
+    widget_->setProperty("spinRtl", widget_->layoutDirection() == Qt::RightToLeft);
     upButton = new SpinButton(SpinIconType::UP, widget_);
     downButton = new SpinButton(SpinIconType::DOWN, widget_);
 
@@ -122,6 +155,20 @@ InlineSpinBoxBase::InlineSpinBoxBase(QWidget* widget) : widget_(widget) {
 
     QObject::connect(upButton, &QToolButton::clicked, [this]() { stepUp(); });
     QObject::connect(downButton, &QToolButton::clicked, [this]() { stepDown(); });
+    lifecycleFilter_ = new SpinLifecycleFilter(widget_, [this](QEvent* event) {
+        if (event->type() == QEvent::LayoutDirectionChange) {
+            widget_->setProperty("spinRtl", widget_->layoutDirection() == Qt::RightToLeft);
+            setSymbolVisible(symbolsVisible_);
+            updateButtonPosition();
+        } else if (event->type() == QEvent::ReadOnlyChange) {
+            setSymbolVisible(symbolsVisible_);
+        }
+    });
+}
+
+InlineSpinBoxBase::~InlineSpinBoxBase() {
+    widget_->removeEventFilter(lifecycleFilter_);
+    delete lifecycleFilter_;
 }
 
 void InlineSpinBoxBase::updateButtonPosition() {
@@ -134,11 +181,15 @@ void InlineSpinBoxBase::updateButtonPosition() {
     const int spacing = 5;
     const int y = 4;
 
-    downButton->setGeometry(w - btnW - rightMargin, y, btnW, btnH);
-    upButton->setGeometry(w - btnW * 2 - rightMargin - spacing, y, btnW, btnH);
+    const bool rtl = widget_->layoutDirection() == Qt::RightToLeft;
+    downButton->setGeometry(rtl ? rightMargin : w - btnW - rightMargin, y, btnW, btnH);
+    upButton->setGeometry(rtl ? rightMargin + btnW + spacing : w - btnW * 2 - rightMargin - spacing,
+                          y, btnW, btnH);
 }
 
 void InlineSpinBoxBase::setSymbolVisible(bool isVisible) {
+    symbolsVisible_ = isVisible;
+    isVisible = isVisible && !qobject_cast<QAbstractSpinBox*>(widget_)->isReadOnly();
     widget_->setProperty("symbolVisible", isVisible);
     widget_->style()->unpolish(widget_);
     widget_->style()->polish(widget_);
@@ -159,7 +210,10 @@ void InlineSpinBoxBase::setError(bool isError) {
     widget_->update();
 }
 
-void InlineSpinBoxBase::setReadOnly(bool isReadOnly) { setSymbolVisible(!isReadOnly); }
+void InlineSpinBoxBase::setReadOnly(bool isReadOnly) {
+    Q_UNUSED(isReadOnly);
+    setSymbolVisible(symbolsVisible_);
+}
 
 void InlineSpinBoxBase::setCustomFocusedBorderColor(const QColor& light, const QColor& dark) {
     lightFocusedBorderColor_ = light;
@@ -195,16 +249,65 @@ void InlineSpinBoxBase::drawBorderBottom(QWidget* widget, QPainter* painter) {
 }
 
 CompactSpinBoxBase::CompactSpinBoxBase(QWidget* widget) : widget_(widget) {
+    widget_->setProperty("symbolVisible", true);
+    widget_->setProperty("spinRtl", widget_->layoutDirection() == Qt::RightToLeft);
     compactSpinButton = new CompactSpinButton(widget_);
     spinFlyoutView = new SpinFlyoutView(widget_);
     spinFlyout = new Flyout(spinFlyoutView, widget_, false);
 
-    compactSpinButton->setFocusProxy(widget_);
+    QObject::connect(compactSpinButton, &QToolButton::clicked, widget_, [this]() { showFlyout(); });
+    QObject::connect(spinFlyoutView->upButton, &QToolButton::clicked, widget_, [this]() {
+        auto* spin = qobject_cast<QAbstractSpinBox*>(widget_);
+        if (spin->isEnabled() && !spin->isReadOnly()) stepUp();
+    });
+    QObject::connect(spinFlyoutView->downButton, &QToolButton::clicked, widget_, [this]() {
+        auto* spin = qobject_cast<QAbstractSpinBox*>(widget_);
+        if (spin->isEnabled() && !spin->isReadOnly()) stepDown();
+    });
 
-    QObject::connect(compactSpinButton, &CompactSpinButton::clicked, [this]() { showFlyout(); });
-    QObject::connect(spinFlyoutView->upButton, &QToolButton::clicked, [this]() { stepUp(); });
-    QObject::connect(spinFlyoutView->downButton, &QToolButton::clicked, [this]() { stepDown(); });
+    lifecycleFilter_ = new SpinLifecycleFilter(widget_, [this](QEvent* event) {
+        if (disposing_) return;
+        switch (event->type()) {
+            case QEvent::Hide:
+            case QEvent::Move:
+            case QEvent::Resize:
+                hideFlyout();
+                break;
+            case QEvent::EnabledChange:
+            case QEvent::ReadOnlyChange:
+                setSymbolVisible(symbolsVisible_);
+                spinFlyoutView->setEnabled(widget_->isEnabled() &&
+                                           !qobject_cast<QAbstractSpinBox*>(widget_)->isReadOnly());
+                if (!widget_->isEnabled() || qobject_cast<QAbstractSpinBox*>(widget_)->isReadOnly())
+                    hideFlyout();
+                break;
+            case QEvent::LayoutDirectionChange:
+                widget_->setProperty("spinRtl", widget_->layoutDirection() == Qt::RightToLeft);
+                setSymbolVisible(symbolsVisible_);
+                updateButtonPosition();
+                hideFlyout();
+                break;
+            default:
+                break;
+        }
+    });
 
+    spinFlyout->hide();
+}
+
+CompactSpinBoxBase::~CompactSpinBoxBase() {
+    disposing_ = true;
+    widget_->removeEventFilter(lifecycleFilter_);
+    delete lifecycleFilter_;
+    // Flyout can reparent itself on Wayland. Keep ownership with the editor in either case.
+    delete spinFlyout;
+}
+
+CompactSpinButton* CompactSpinBoxBase::compactButton() const { return compactSpinButton; }
+SpinFlyoutView* CompactSpinBoxBase::flyoutView() const { return spinFlyoutView; }
+Flyout* CompactSpinBoxBase::flyout() const { return spinFlyout; }
+void CompactSpinBoxBase::hideFlyout() {
+    for (auto* animation : spinFlyout->findChildren<QAbstractAnimation*>()) animation->stop();
     spinFlyout->hide();
 }
 
@@ -215,14 +318,19 @@ void CompactSpinBoxBase::updateButtonPosition() {
     const int btnW = 26;
     const int btnH = 33;
 
-    compactSpinButton->setGeometry(w - btnW, (h - btnH) / 2, btnW, btnH);
+    compactSpinButton->setGeometry(widget_->layoutDirection() == Qt::RightToLeft ? 0 : w - btnW,
+                                   (h - btnH) / 2, btnW, btnH);
 }
 
 void CompactSpinBoxBase::setSymbolVisible(bool isVisible) {
-    widget_->setProperty("symbolVisible", isVisible);
+    symbolsVisible_ = isVisible;
+    const bool visible = isVisible && !qobject_cast<QAbstractSpinBox*>(widget_)->isReadOnly();
+    if (!visible) hideFlyout();
+    widget_->setProperty("symbolVisible", visible);
     widget_->style()->unpolish(widget_);
     widget_->style()->polish(widget_);
-    compactSpinButton->setVisible(isVisible);
+    compactSpinButton->setVisible(visible);
+    widget_->updateGeometry();
 }
 
 void CompactSpinBoxBase::setAccelerated(bool on) {
@@ -238,7 +346,10 @@ void CompactSpinBoxBase::setError(bool isError) {
     widget_->update();
 }
 
-void CompactSpinBoxBase::setReadOnly(bool isReadOnly) { setSymbolVisible(!isReadOnly); }
+void CompactSpinBoxBase::setReadOnly(bool isReadOnly) {
+    Q_UNUSED(isReadOnly);
+    setSymbolVisible(symbolsVisible_);
+}
 
 void CompactSpinBoxBase::setCustomFocusedBorderColor(const QColor& light, const QColor& dark) {
     lightFocusedBorderColor_ = light;
@@ -274,17 +385,27 @@ void CompactSpinBoxBase::drawBorderBottom(QWidget* widget, QPainter* painter) {
 }
 
 void CompactSpinBoxBase::focusInEvent(QWidget* widget, QFocusEvent* e) {
-    Q_UNUSED(e);
-    showFlyout();
+    Q_UNUSED(widget);
+    // Popup focus restoration must not reopen a dismissed flyout.
+    if (e->reason() != Qt::PopupFocusReason && e->reason() != Qt::ActiveWindowFocusReason)
+        showFlyout();
 }
 
 void CompactSpinBoxBase::showFlyout() {
-    if (spinFlyout->isVisible()) return;
+    if (disposing_ || spinFlyout->isVisible() || !symbolsVisible_ || !widget_->isVisible() ||
+        !widget_->isEnabled() || qobject_cast<QAbstractSpinBox*>(widget_)->isReadOnly())
+        return;
 
     int y = compactSpinButton->height() / 2 - 46;
     QPoint pos = compactSpinButton->mapToGlobal(QPoint(-12, y));
 
+    // Qt 5 can reset the date/time section when activating a popup. Keep the
+    // field the user selected, rather than silently stepping the first field.
+    auto* dateTime = qobject_cast<QDateTimeEdit*>(widget_);
+    const int section = dateTime ? dateTime->currentSectionIndex() : -1;
+
     spinFlyout->exec(pos, FlyoutAnimationType::FadeIn);
+    if (dateTime && section >= 0) dateTime->setCurrentSectionIndex(section);
 }
 
 // SpinBox implementation
@@ -309,9 +430,17 @@ void SpinBox::setReadOnly(bool isReadOnly) {
 }
 
 void SpinBox::setSymbolVisible(bool isVisible) { InlineSpinBoxBase::setSymbolVisible(isVisible); }
+void SpinBox::setAccelerated(bool on) {
+    QSpinBox::setAccelerated(on);
+    InlineSpinBoxBase::setAccelerated(on);
+}
 
-void SpinBox::stepUp() { QSpinBox::stepUp(); }
-void SpinBox::stepDown() { QSpinBox::stepDown(); }
+void SpinBox::stepUp() {
+    if (isEnabled() && !isReadOnly()) QSpinBox::stepUp();
+}
+void SpinBox::stepDown() {
+    if (isEnabled() && !isReadOnly()) QSpinBox::stepDown();
+}
 
 void SpinBox::resizeEvent(QResizeEvent* e) {
     QSpinBox::resizeEvent(e);
@@ -348,14 +477,22 @@ void CompactSpinBox::setReadOnly(bool isReadOnly) {
 void CompactSpinBox::setSymbolVisible(bool isVisible) {
     CompactSpinBoxBase::setSymbolVisible(isVisible);
 }
+void CompactSpinBox::setAccelerated(bool on) {
+    QSpinBox::setAccelerated(on);
+    CompactSpinBoxBase::setAccelerated(on);
+}
 
 void CompactSpinBox::focusInEvent(QFocusEvent* e) {
     QSpinBox::focusInEvent(e);
     CompactSpinBoxBase::focusInEvent(this, e);
 }
 
-void CompactSpinBox::stepUp() { QSpinBox::stepUp(); }
-void CompactSpinBox::stepDown() { QSpinBox::stepDown(); }
+void CompactSpinBox::stepUp() {
+    if (isEnabled() && !isReadOnly()) QSpinBox::stepUp();
+}
+void CompactSpinBox::stepDown() {
+    if (isEnabled() && !isReadOnly()) QSpinBox::stepDown();
+}
 
 void CompactSpinBox::resizeEvent(QResizeEvent* e) {
     QSpinBox::resizeEvent(e);
@@ -393,9 +530,17 @@ void DoubleSpinBox::setReadOnly(bool isReadOnly) {
 void DoubleSpinBox::setSymbolVisible(bool isVisible) {
     InlineSpinBoxBase::setSymbolVisible(isVisible);
 }
+void DoubleSpinBox::setAccelerated(bool on) {
+    QDoubleSpinBox::setAccelerated(on);
+    InlineSpinBoxBase::setAccelerated(on);
+}
 
-void DoubleSpinBox::stepUp() { QDoubleSpinBox::stepUp(); }
-void DoubleSpinBox::stepDown() { QDoubleSpinBox::stepDown(); }
+void DoubleSpinBox::stepUp() {
+    if (isEnabled() && !isReadOnly()) QDoubleSpinBox::stepUp();
+}
+void DoubleSpinBox::stepDown() {
+    if (isEnabled() && !isReadOnly()) QDoubleSpinBox::stepDown();
+}
 
 void DoubleSpinBox::resizeEvent(QResizeEvent* e) {
     QDoubleSpinBox::resizeEvent(e);
@@ -434,14 +579,22 @@ void CompactDoubleSpinBox::setReadOnly(bool isReadOnly) {
 void CompactDoubleSpinBox::setSymbolVisible(bool isVisible) {
     CompactSpinBoxBase::setSymbolVisible(isVisible);
 }
+void CompactDoubleSpinBox::setAccelerated(bool on) {
+    QDoubleSpinBox::setAccelerated(on);
+    CompactSpinBoxBase::setAccelerated(on);
+}
 
 void CompactDoubleSpinBox::focusInEvent(QFocusEvent* e) {
     QDoubleSpinBox::focusInEvent(e);
     CompactSpinBoxBase::focusInEvent(this, e);
 }
 
-void CompactDoubleSpinBox::stepUp() { QDoubleSpinBox::stepUp(); }
-void CompactDoubleSpinBox::stepDown() { QDoubleSpinBox::stepDown(); }
+void CompactDoubleSpinBox::stepUp() {
+    if (isEnabled() && !isReadOnly()) QDoubleSpinBox::stepUp();
+}
+void CompactDoubleSpinBox::stepDown() {
+    if (isEnabled() && !isReadOnly()) QDoubleSpinBox::stepDown();
+}
 
 void CompactDoubleSpinBox::resizeEvent(QResizeEvent* e) {
     QDoubleSpinBox::resizeEvent(e);

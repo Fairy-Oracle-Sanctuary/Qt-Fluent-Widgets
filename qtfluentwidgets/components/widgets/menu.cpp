@@ -15,11 +15,17 @@
 #include <QRegion>
 #include <QScreen>
 #include <QStyleFactory>
+#include <QMap>
+#include <stdexcept>
 
 #include "common/color.h"
 #include "common/font.h"
+#include "common/icon.h"
 #include "common/screen.h"
 #include "common/style_sheet.h"
+#ifdef Q_OS_WIN
+#include "components/window/windows_window_effect.h"
+#endif
 
 namespace qfw {
 
@@ -39,6 +45,39 @@ int CustomMenuStyle::pixelMetric(PixelMetric metric, const QStyleOption* option,
 // ============================================================================
 // SubMenuItemWidget
 // ============================================================================
+DWMMenu::DWMMenu(QWidget* parent) : DWMMenu(QString(), parent) {}
+DWMMenu::DWMMenu(const QString& title, QWidget* parent) : QMenu(title, parent) {
+    setProperty("qssClass", QStringLiteral("DWMMenu"));
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Popup | Qt::NoDropShadowWindowHint);
+    setAttribute(Qt::WA_StyledBackground);
+    auto* menuStyle = new CustomMenuStyle;
+    menuStyle->setParent(this);
+    setStyle(menuStyle);
+    qfw::setStyleSheet(this, FluentStyleSheet::Menu);
+}
+bool DWMMenu::event(QEvent* event) {
+    if (event->type() == QEvent::Polish || event->type() == QEvent::StyleChange) {
+        const bool handled = QMenu::event(event);
+        // Qt 6 stylesheet polishing can request a layered transparent menu.
+        // DWM non-client shadows require an opaque native window instead.
+        setAttribute(Qt::WA_TranslucentBackground, false);
+        setAttribute(Qt::WA_NoSystemBackground, false);
+        return handled;
+    }
+    if (event->type() == QEvent::WinIdChange) {
+#ifdef Q_OS_WIN
+        // The cached ID is already assigned during WinIdChange, before the
+        // widget is marked created. effectiveWinId() can still be null here.
+        // internalWinId() also avoids recreating a handle on destruction.
+        const WId id = internalWinId();
+        if (id) {
+            WindowsWindowEffect().addMenuShadowEffect(reinterpret_cast<HWND>(id));
+        }
+#endif
+    }
+    return QMenu::event(event);
+}
+
 SubMenuItemWidget::SubMenuItemWidget(RoundMenu* menu, QListWidgetItem* item, QWidget* parent)
     : QWidget(parent), menu_(menu), item_(item) {
     setMouseTracking(true);
@@ -47,6 +86,13 @@ SubMenuItemWidget::SubMenuItemWidget(RoundMenu* menu, QListWidgetItem* item, QWi
 void SubMenuItemWidget::enterEvent(enterEvent_QEnterEvent* e) {
     QWidget::enterEvent(e);
     emit showMenuSig(item_);
+}
+
+void SubMenuItemWidget::paintEvent(QPaintEvent*) {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    FluentIcon(FluentIconEnum::ChevronRight).render(
+        &painter, QRect(width() - 10, (height() - 9) / 2, 9, 9));
 }
 
 // ============================================================================
@@ -97,7 +143,7 @@ void ShortcutMenuItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
                                      const QModelIndex& index) const {
     MenuItemDelegate::paint(painter, option, index);
 
-    if (isSeparator(index) || !painter) {
+    if (isSeparator(index) || index.data(Qt::UserRole + 1).toBool() || !painter) {
         return;
     }
 
@@ -120,9 +166,8 @@ void ShortcutMenuItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
     const QString shortcut = action->shortcut().toString(QKeySequence::NativeText);
     const int sw = fm.horizontalAdvance(shortcut);
 
-    painter->translate(option.rect.width() - sw - 20, 0);
-
-    const QRectF rect(0, option.rect.y(), sw, option.rect.height());
+    const QRect logicalRect(option.rect.right() - sw - 19, option.rect.y(), sw, option.rect.height());
+    const QRect rect = QStyle::visualRect(option.direction, option.rect, logicalRect);
     painter->drawText(rect, Qt::AlignLeft | Qt::AlignVCenter, shortcut);
 
     painter->restore();
@@ -144,10 +189,7 @@ void IndicatorMenuItemDelegate::paint(QPainter* painter, const QStyleOptionViewI
                             QPainter::TextAntialiasing);
 
     painter->setPen(Qt::NoPen);
-    // Use ThemeColorLight1 in dark mode for better visibility
-    QColor indicatorColor =
-        isDarkTheme() ? themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                      : themeColor();
+    const QColor indicatorColor = themeColor();
     painter->setBrush(indicatorColor);
     painter->drawRoundedRect(6, 11 + option.rect.y(), 3, 15, 1.5, 1.5);
 
@@ -161,7 +203,7 @@ void CheckableMenuItemDelegate::paint(QPainter* painter, const QStyleOptionViewI
                                       const QModelIndex& index) const {
     ShortcutMenuItemDelegate::paint(painter, option, index);
 
-    if (isSeparator(index) || !painter) {
+    if (isSeparator(index) || index.data(Qt::UserRole + 1).toBool() || !painter) {
         return;
     }
 
@@ -256,8 +298,17 @@ MenuActionListWidget::MenuActionListWidget(QWidget* parent) : QListWidget(parent
 
     scrollDelegate_ = new SmoothScrollDelegate(this);
 
-    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
+
+void MenuActionListWidget::setVerticalScrollBarPolicy(Qt::ScrollBarPolicy policy) {
+    if (scrollDelegate_) scrollDelegate_->setVerticalScrollBarPolicy(policy);
+    else QListWidget::setVerticalScrollBarPolicy(policy);
+}
+void MenuActionListWidget::setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy policy) {
+    if (scrollDelegate_) scrollDelegate_->setHorizontalScrollBarPolicy(policy);
+    else QListWidget::setHorizontalScrollBarPolicy(policy);
 }
 
 void MenuActionListWidget::setViewportMargins(int left, int top, int right, int bottom) {
@@ -377,6 +428,8 @@ RoundMenu::RoundMenu(const QString& title, QWidget* parent) : QMenu(parent) {
     initWidgets();
 }
 
+RoundMenu::~RoundMenu() { emit aboutToBeDestroyed(); }
+
 QSize RoundMenu::sizeHint() const {
     if (!view_ || !layout()) {
         return QMenu::sizeHint();
@@ -432,6 +485,24 @@ void RoundMenu::setMaxVisibleItems(int num) {
     adjustSize();
 }
 
+void RoundMenu::replaceMenuView(MenuActionListWidget* replacement) {
+    auto* old=view_.data();
+    replacement->setParent(panel_);
+    replacement->setObjectName(old->objectName());
+    auto* delegate=old->itemDelegate(); delegate->setParent(replacement);
+    replacement->setItemDelegate(delegate);
+    while(old->count()) replacement->addItem(old->QListWidget::takeItem(0));
+    panelLayout_->removeWidget(old); panelLayout_->addWidget(replacement,1);
+    view_=replacement;
+    delete old;
+    panel_->setProperty("acrylic",true);
+    connect(view_,&QListWidget::itemClicked,this,&RoundMenu::onItemClicked);
+    connect(view_,&QListWidget::itemActivated,this,&RoundMenu::onItemClicked);
+    connect(view_,&QListWidget::itemEntered,this,&RoundMenu::onItemEntered);
+    qfw::setStyleSheet(this,FluentStyleSheet::Menu);
+    view_->adjustSizeForMenu(); adjustSize();
+}
+
 void RoundMenu::setItemHeight(int height) {
     if (height == itemHeight_) {
         return;
@@ -440,6 +511,7 @@ void RoundMenu::setItemHeight(int height) {
     if (view_) {
         view_->setItemHeight(height);
     }
+    adjustSize();
 }
 
 void RoundMenu::setShadowEffect(int blurRadius, const QPoint& offset, const QColor& color) {
@@ -752,6 +824,7 @@ QPair<QListWidgetItem*, QWidget*> RoundMenu::createSubMenuItem(RoundMenu* menu) 
     menu->setParentMenu(this, item);
     item->setSizeHint(QSize(w, itemHeight_));
     item->setData(Qt::UserRole, QVariant::fromValue<quintptr>(reinterpret_cast<quintptr>(menu)));
+    item->setData(Qt::UserRole + 1, true); // This row contains a menu, not a QAction.
 
     auto* wgt = new SubMenuItemWidget(menu, item, this);
     connect(wgt, &SubMenuItemWidget::showMenuSig, this, &RoundMenu::showSubMenu);
@@ -816,6 +889,8 @@ void RoundMenu::removeMenu(RoundMenu* menu) {
     if (item) {
         removeItem(item);
     }
+
+    menu->setParentMenu(nullptr, nullptr);
 
     adjustSize();
 }
@@ -1041,27 +1116,13 @@ void RoundMenu::execAt(const QPoint& pos, bool ani, MenuAnimationType aniType) {
         aniType = MenuAnimationType::None;
     }
 
-    switch (aniType) {
-        case MenuAnimationType::None:
-            aniManager_ = new DummyMenuAnimationManager(this);
-            break;
-        case MenuAnimationType::DropDown:
-            aniManager_ = new DropDownMenuAnimationManager(this);
-            break;
-        case MenuAnimationType::PullUp:
-            aniManager_ = new PullUpMenuAnimationManager(this);
-            break;
-        case MenuAnimationType::FadeInDropDown:
-            aniManager_ = new FadeInDropDownMenuAnimationManager(this);
-            break;
-        case MenuAnimationType::FadeInPullUp:
-            aniManager_ = new FadeInPullUpMenuAnimationManager(this);
-            break;
-    }
+    aniManager_ = MenuAnimationManager::make(aniType,this);
 
     auto* m = qobject_cast<MenuAnimationManager*>(aniManager_);
     if (m) {
         m->exec(pos);
+        if (layout()) layout()->activate();
+        prepareShowBackground(m->finalPosition());
     }
 
     show();
@@ -1074,6 +1135,32 @@ void RoundMenu::execAt(const QPoint& pos, bool ani, MenuAnimationType aniType) {
 // ============================================================================
 // MenuAnimationManager
 // ============================================================================
+namespace {
+QMap<MenuAnimationType, MenuAnimationManager::Factory>& menuFactories() {
+    static QMap<MenuAnimationType, MenuAnimationManager::Factory> factories;
+    return factories;
+}
+}
+void MenuAnimationManager::registerFactory(MenuAnimationType type, Factory factory) {
+    if (factory) menuFactories()[type]=std::move(factory);
+    else menuFactories().remove(type);
+}
+MenuAnimationManager* MenuAnimationManager::make(MenuAnimationType type, RoundMenu* menu) {
+    if (auto factory=menuFactories().value(type)) {
+        auto* manager=factory(menu);
+        if (!manager) throw std::runtime_error("Menu manager factory returned null");
+        manager->setParent(menu);
+        return manager;
+    }
+    switch(type) {
+    case MenuAnimationType::None: return new DummyMenuAnimationManager(menu);
+    case MenuAnimationType::DropDown: return new DropDownMenuAnimationManager(menu);
+    case MenuAnimationType::PullUp: return new PullUpMenuAnimationManager(menu);
+    case MenuAnimationType::FadeInDropDown: return new FadeInDropDownMenuAnimationManager(menu);
+    case MenuAnimationType::FadeInPullUp: return new FadeInPullUpMenuAnimationManager(menu);
+    }
+    return new DummyMenuAnimationManager(menu);
+}
 MenuAnimationManager::MenuAnimationManager(RoundMenu* menu) : QObject(menu), menu_(menu) {
     posAni_ = new QPropertyAnimation(menu, QByteArrayLiteral("pos"), menu);
     posAni_->setDuration(250);
@@ -1085,6 +1172,11 @@ MenuAnimationManager::MenuAnimationManager(RoundMenu* menu) : QObject(menu), men
 }
 
 void MenuAnimationManager::onValueChanged() {}
+
+QPoint MenuAnimationManager::finalPosition() const {
+    return posAni_ && posAni_->endValue().isValid() ? posAni_->endValue().toPoint()
+                                                 : (menu_ ? menu_->pos() : QPoint());
+}
 
 QSize MenuAnimationManager::availableViewSize(const QPoint& pos) const {
     Q_UNUSED(pos);
@@ -1427,10 +1519,10 @@ void TextEditMenu::updateActions() {
     const bool hasSel = c.hasSelection();
 
     if (undoAct_) {
-        undoAct_->setEnabled(edit_->document() && edit_->document()->isUndoAvailable());
+        undoAct_->setEnabled(!ro && edit_->document() && edit_->document()->isUndoAvailable());
     }
     if (redoAct_) {
-        redoAct_->setEnabled(edit_->document() && edit_->document()->isRedoAvailable());
+        redoAct_->setEnabled(!ro && edit_->document() && edit_->document()->isRedoAvailable());
     }
 
     if (cutAct_) {

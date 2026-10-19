@@ -217,11 +217,34 @@ void NavigationPanel::setCollapsible(bool on) {
 }
 
 void NavigationPanel::setExpandWidth(int width) {
-    if (width <= 42) {
+    if (width <= (filledSelection_ ? 48 : 42)) {
         return;
     }
 
     expandWidth_ = width;
+    if (filledSelection_) {
+        for (auto* item : findChildren<NavigationWidget*>())
+            item->setExpandedItemWidth(width - 24);
+        if (displayMode_ == NavigationDisplayMode::Expand) setFixedWidth(width);
+    }
+}
+
+void NavigationPanel::setFilledSelectionEnabled(bool enabled) {
+    filledSelection_ = enabled;
+    if (!enabled) return;
+    setProperty("filledNavigation", true);
+    const QString border = QStringLiteral("QFrame[filledNavigation=true][menu=false]{"
+        "background:transparent;border:1px solid transparent;"
+        "border-top-right-radius:7px;border-bottom-right-radius:7px;}");
+    qfw::setCustomStyleSheet(this, border, border);
+    setIndicatorAnimationEnabled(false);
+    vBoxLayout_->setContentsMargins(12, 0, 12, 12);
+    for (auto* layout : {topLayout_.data(), bottomLayout_.data(), scrollLayout_.data()}) {
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(6);
+    }
+    setExpandWidth(216);
+    for (auto* item : findChildren<NavigationWidget*>()) item->setFilledSelectionEnabled(true);
 }
 
 void NavigationPanel::setMinimumExpandWidth(int width) { minimumExpandWidth_ = width; }
@@ -333,6 +356,14 @@ void NavigationPanel::registerWidget(const QString& routeKey, const QString& par
 
     widget->setProperty("routeKey", routeKey);
     widget->setProperty("parentRouteKey", parentRouteKey);
+    if (filledSelection_) {
+        auto children = widget->findChildren<NavigationWidget*>();
+        children.prepend(widget);
+        for (auto* child : children) {
+            child->setExpandedItemWidth(expandWidth_ - 24);
+            child->setFilledSelectionEnabled(true);
+        }
+    }
 
     NavigationItem item;
     item.routeKey = routeKey;
@@ -709,7 +740,7 @@ bool NavigationPanel::eventFilter(QObject* obj, QEvent* e) {
         }
     } else if (e->type() == QEvent::Resize) {
         const int w = static_cast<QResizeEvent*>(e)->size().width();
-        if (w < minimumExpandWidth_ && displayMode_ == NavigationDisplayMode::Expand) {
+        if (isCollapsible_ && w < minimumExpandWidth_ && displayMode_ == NavigationDisplayMode::Expand) {
             collapse();
         } else if (w >= minimumExpandWidth_ && displayMode_ == NavigationDisplayMode::Compact &&
                    !isMenuButtonVisible_) {

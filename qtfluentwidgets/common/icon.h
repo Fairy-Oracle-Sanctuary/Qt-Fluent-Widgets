@@ -398,7 +398,8 @@ enum class FluentIconEnum {
     Cart,
     Circle,
     Crop,
-    Drop
+    Drop,
+    Eyedropper
 };
 
 class FluentIcon : public FluentIconBase {

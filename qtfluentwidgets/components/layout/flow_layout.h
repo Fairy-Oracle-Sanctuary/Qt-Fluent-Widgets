@@ -8,6 +8,7 @@
 #include <QPropertyAnimation>
 #include <QRect>
 #include <QTimer>
+#include <QVector>
 
 namespace qfw {
 
@@ -47,9 +48,13 @@ public:
 
     void setHorizontalSpacing(int spacing);
     int horizontalSpacing() const;
+    bool isAnimationEnabled() const { return needAni_; }
+    bool isTight() const { return isTight_; }
 
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
+    // Measurement and placement share a strategy; animation remains in FlowLayout.
+    virtual int calculate(const QRect& rect, QVector<QPair<int, QRect>>* placements) const;
 
 private slots:
     void onDebounceTimeout();
@@ -71,6 +76,24 @@ private:
     bool isTight_ = false;
     QWidget* wParent_ = nullptr;
     bool isInstalledEventFilter_ = false;
+};
+
+class AdaptiveFlowLayout : public FlowLayout {
+    Q_OBJECT
+    Q_PROPERTY(int widgetMinimumWidth READ widgetMinimumWidth WRITE setWidgetMinimumWidth)
+    Q_PROPERTY(int widgetMaximumWidth READ widgetMaximumWidth WRITE setWidgetMaximumWidth)
+public:
+    explicit AdaptiveFlowLayout(QWidget* parent = nullptr, bool needAni = false, bool isTight = false);
+    void setWidgetMinimumWidth(int width);
+    int widgetMinimumWidth() const { return minimumWidth_; }
+    // -1 means no maximum, corresponding to Python's None.
+    void setWidgetMaximumWidth(int width);
+    int widgetMaximumWidth() const { return maximumWidth_; }
+protected:
+    int calculate(const QRect& rect, QVector<QPair<int, QRect>>* placements) const override;
+private:
+    int minimumWidth_ = 200;
+    int maximumWidth_ = -1;
 };
 
 }  // namespace qfw

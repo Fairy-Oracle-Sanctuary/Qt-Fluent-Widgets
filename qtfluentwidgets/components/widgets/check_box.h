@@ -4,8 +4,8 @@
 #include <QColor>
 #include <QIcon>
 
-#include "common/qtcompat.h"
 #include "common/icon.h"
+#include "common/qtcompat.h"
 
 namespace qfw {
 
@@ -44,6 +44,8 @@ protected:
     void enterEvent(enterEvent_QEnterEvent* e) override;
     void leaveEvent(QEvent* e) override;
     void paintEvent(QPaintEvent* e) override;
+    void drawIndicator(QPainter* painter, const QRect& rect);
+    QColor textColor() const;
 
 private:
     enum class State {

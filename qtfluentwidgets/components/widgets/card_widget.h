@@ -161,6 +161,10 @@ public:
 
     QString content() const;
     void setContent(const QString& text);
+    void setContentWordWrap(bool enable);
+    bool isContentWordWrap() const;
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
 
     QIcon icon() const;
     void setIcon(const QIcon& icon);
@@ -173,6 +177,9 @@ public:
     bool isSeparatorVisible() const;
 
     void addWidget(QWidget* widget, int stretch = 0);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void initWidget();
@@ -194,17 +201,17 @@ public:
     explicit GroupHeaderCardWidget(const QString& title, QWidget* parent = nullptr);
 
     CardGroupWidget* addGroup(const QIcon& icon, const QString& title, const QString& content,
-                              QWidget* widget, int stretch = 0);
+                              QWidget* widget, int stretch = 0, bool wordWrap = false);
     CardGroupWidget* addGroup(const FluentIconBase& icon, const QString& title,
-                              const QString& content, QWidget* widget, int stretch = 0);
+                              const QString& content, QWidget* widget, int stretch = 0, bool wordWrap = false);
     CardGroupWidget* addGroup(const QString& iconPath, const QString& title, const QString& content,
-                              QWidget* widget, int stretch = 0);
+                              QWidget* widget, int stretch = 0, bool wordWrap = false);
 
     int groupCount() const;
 
 protected:
     void postInit() override;
-    QSize sizeHint() const override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void updateMinimumHeight();

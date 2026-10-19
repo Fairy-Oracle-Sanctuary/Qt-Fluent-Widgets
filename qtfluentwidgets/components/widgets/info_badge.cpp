@@ -3,6 +3,8 @@
 #include <QEvent>
 #include <QPainter>
 #include <QWidget>
+#include <QMap>
+#include <stdexcept>
 
 #include "common/color.h"
 #include "common/font.h"
@@ -117,8 +119,7 @@ QColor InfoBadge::backgroundColor() const {
         case InfoLevel::Success:
             return dark ? QColor(108, 203, 95) : QColor(15, 123, 15);
         case InfoLevel::Attention:
-            return dark ? themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                        : themeColor();
+            return themeColor();
         case InfoLevel::Warning:
             return dark ? QColor(255, 244, 206) : QColor(157, 93, 0);
         case InfoLevel::Error:
@@ -285,13 +286,25 @@ InfoBadgeManager::InfoBadgeManager(QWidget* target, InfoBadge* badge)
     }
 }
 
+namespace {
+QMap<InfoBadgePosition, InfoBadgeManager::Factory>& badgeFactories() {
+    static QMap<InfoBadgePosition, InfoBadgeManager::Factory> factories;
+    return factories;
+}
+}
+void InfoBadgeManager::registerFactory(InfoBadgePosition position, Factory factory) {
+    if (factory) badgeFactories()[position]=std::move(factory);
+    else badgeFactories().remove(position);
+}
 InfoBadgeManager* InfoBadgeManager::make(InfoBadgePosition position, QWidget* target,
                                          InfoBadge* badge) {
     if (!target || !badge) {
         return nullptr;
     }
 
-    auto* m = new InfoBadgeManager(target, badge);
+    const auto factory=badgeFactories().value(position);
+    auto* m = factory ? factory(target,badge) : new InfoBadgeManager(target, badge);
+    if (!m) throw std::runtime_error("Badge manager factory returned null");
     m->setParent(badge);
     m->position_ = position;
     instances().append(m);
@@ -368,8 +381,7 @@ QPoint InfoBadgeManager::position() const {
 
 bool InfoBadgeManager::eventFilter(QObject* watched, QEvent* e) {
     if (watched == target_ && badge_ && e) {
-        if (e->type() == QEvent::Resize || e->type() == QEvent::Move ||
-            e->type() == QEvent::Show) {
+        if (e->type() == QEvent::Resize || e->type() == QEvent::Move || e->type() == QEvent::Show) {
             badge_->move(position());
         }
     }

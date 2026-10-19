@@ -26,6 +26,12 @@ add_subdirectory(qtfluentwidgets)
 
 add_subdirectory(app)
 
+option(QFW_BUILD_TESTS "Build headless widget regression tests" OFF)
+if(QFW_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 # Enable whole-program optimization for optimized builds when the selected
 # compiler and generator support it. Unsupported toolchains keep the default
 # behavior instead of failing configuration.

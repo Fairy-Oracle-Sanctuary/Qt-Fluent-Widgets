@@ -88,13 +88,12 @@ CheckBox::State CheckBox::state() const {
 
 QColor CheckBox::borderColor() const {
     const bool dark = isDarkTheme();
-    const QColor base = themeColor();
+    const QColor base = QConfig::instance().themeColor();
 
     const QColor light1 = qfw::themedColor(base, false, QStringLiteral("ThemeColorLight1"));
     const QColor light2 = qfw::themedColor(base, false, QStringLiteral("ThemeColorLight2"));
     const QColor dark1 = qfw::themedColor(base, true, QStringLiteral("ThemeColorDark1"));
     const QColor dark2 = qfw::themedColor(base, true, QStringLiteral("ThemeColorDark2"));
-    const QColor darkLight1 = qfw::themedColor(base, true, QStringLiteral("ThemeColorLight1"));
 
     if (dark) {
         switch (state()) {
@@ -104,7 +103,7 @@ QColor CheckBox::borderColor() const {
             case State::Pressed:
                 return QColor(255, 255, 255, 40);
             case State::Checked:
-                return validColor(darkCheckedColor_, darkLight1);
+                return fallbackThemeColor(darkCheckedColor_);
             case State::CheckedHover:
                 return validColor(darkCheckedColor_, dark1);
             case State::CheckedPressed:
@@ -140,13 +139,12 @@ QColor CheckBox::borderColor() const {
 
 QColor CheckBox::backgroundColor() const {
     const bool dark = isDarkTheme();
-    const QColor base = themeColor();
+    const QColor base = QConfig::instance().themeColor();
 
     const QColor light1 = qfw::themedColor(base, false, QStringLiteral("ThemeColorLight1"));
     const QColor light2 = qfw::themedColor(base, false, QStringLiteral("ThemeColorLight2"));
     const QColor dark1 = qfw::themedColor(base, true, QStringLiteral("ThemeColorDark1"));
     const QColor dark2 = qfw::themedColor(base, true, QStringLiteral("ThemeColorDark2"));
-    const QColor darkLight1 = qfw::themedColor(base, true, QStringLiteral("ThemeColorLight1"));
 
     if (dark) {
         switch (state()) {
@@ -157,7 +155,7 @@ QColor CheckBox::backgroundColor() const {
             case State::Pressed:
                 return QColor(255, 255, 255, 18);
             case State::Checked:
-                return validColor(darkCheckedColor_, darkLight1);
+                return fallbackThemeColor(darkCheckedColor_);
             case State::CheckedHover:
                 return validColor(darkCheckedColor_, dark1);
             case State::CheckedPressed:
@@ -214,18 +212,26 @@ void CheckBox::paintEvent(QPaintEvent* e) {
 
     const QRect indicatorRect = style()->subElementRect(QStyle::SE_CheckBoxIndicator, &opt, this);
 
-    painter.setPen(borderColor());
-    painter.setBrush(backgroundColor());
-    painter.drawRoundedRect(indicatorRect, 4.5, 4.5);
+    drawIndicator(&painter, indicatorRect);
+}
+
+QColor CheckBox::textColor() const { return isDarkTheme() ? darkTextColor_ : lightTextColor_; }
+
+void CheckBox::drawIndicator(QPainter* painter, const QRect& indicatorRect) {
+    painter->save();
+    painter->setPen(borderColor());
+    painter->setBrush(backgroundColor());
+    painter->drawRoundedRect(indicatorRect, 4.5, 4.5);
 
     if (!isEnabled()) {
-        painter.setOpacity(0.8);
+        painter->setOpacity(0.8);
     }
 
     if (checkState() == Qt::Checked || checkState() == Qt::PartiallyChecked) {
         CheckBoxIcon icon = stateIcon(checkState());
-        icon.render(&painter, indicatorRect);
+        icon.render(painter, indicatorRect);
     }
+    painter->restore();
 }
 
 }  // namespace qfw

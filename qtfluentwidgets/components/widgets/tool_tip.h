@@ -11,6 +11,7 @@
 #include <QAbstractItemView>
 #include <QStyleOptionViewItem>
 #include <QHelpEvent>
+#include <functional>
 
 class QHBoxLayout;
 
@@ -47,13 +48,16 @@ public:
     void adjustPos(QWidget* widget, ToolTipPosition position);
 
 protected:
+    ToolTip(const QString& text, QWidget* parent,
+            const std::function<QFrame*(ToolTip*)>& containerFactory);
+    QFrame* container() const { return container_; }
     void showEvent(QShowEvent* e) override;
     void hideEvent(QHideEvent* e) override;
 
     virtual QFrame* createContainer();
 
 private:
-    void initUi();
+    void initUi(const std::function<QFrame*(ToolTip*)>& containerFactory);
     void setQss();
 
     QString text_;

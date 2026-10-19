@@ -56,15 +56,7 @@ void ItemMaskWidget::paintEvent(QPaintEvent* e) {
     // draw background
     painter.setPen(Qt::NoPen);
 
-    // Use themeColorLight1 in dark theme as default background
-    QColor bgColor;
-    if (isDarkTheme()) {
-        bgColor = darkBackgroundColor_.isValid()
-                      ? darkBackgroundColor_
-                      : themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        bgColor = lightBackgroundColor_.isValid() ? lightBackgroundColor_ : themeColor();
-    }
+    const QColor bgColor = autoFallbackThemeColor(lightBackgroundColor_, darkBackgroundColor_);
     painter.setBrush(bgColor);
     painter.drawRoundedRect(rect().adjusted(4, 0, -3, 0), 5, 5);
 
@@ -191,6 +183,12 @@ void PickerColumnButton::setValue(const QVariant& v) {
 
     setStyle(QApplication::style());
 }
+
+QString PickerColumnButton::initialValue() const {
+    return initialValue_.isValid() && !initialValue_.isNull()
+        ? (formatter_ ? formatter_->encode(initialValue_) : initialValue_.toString()) : QString();
+}
+void PickerColumnButton::setInitialValue(const QVariant& value) { initialValue_ = value; }
 
 QStringList PickerColumnButton::items() const {
     QStringList out;
@@ -320,6 +318,16 @@ void PickerBase::setColumnValue(int index, const QVariant& value) {
     columns_[index]->setValue(value);
 }
 
+QStringList PickerBase::initialValue() const {
+    QStringList result;
+    for (auto* column : columns_)
+        if (column && column->isVisible()) result.append(column->initialValue());
+    return result;
+}
+void PickerBase::setColumnInitialValue(int index, const QVariant& value) {
+    if (isValidColumnIndex(index)) columns_[index]->setInitialValue(value);
+}
+
 void PickerBase::setColumnFormatter(int index, PickerColumnFormatter* formatter) {
     if (!isValidColumnIndex(index)) {
         return;
@@ -385,7 +393,15 @@ void PickerBase::setButtonProperty(const char* name, bool value) {
     }
 }
 
-QStringList PickerBase::panelInitialValue() const { return this->value(); }
+QStringList PickerBase::panelInitialValue() const {
+    QStringList result;
+    for (auto* column : columns_) {
+        if (!column || !column->isVisible()) continue;
+        const QString current = column->value();
+        result.append(current.isEmpty() ? column->initialValue() : current);
+    }
+    return result;
+}
 
 void PickerBase::setScrollButtonRepeatEnabled(bool enabled) {
     scrollButtonRepeatEnabled_ = enabled;
@@ -450,8 +466,10 @@ void PickerBase::onColumnValueChanged(int index, const QString& value) {
 }
 
 void PickerBase::onConfirmed(const QStringList& value) {
-    for (int i = 0; i < value.size(); ++i) {
-        setColumnValue(i, value[i]);
+    int visibleIndex=0;
+    for (int i=0;i<columns_.size() && visibleIndex<value.size();++i) {
+        if (!columns_[i] || !columns_[i]->isVisible()) continue;
+        setColumnValue(i,decodeValue(i,value[visibleIndex++]));
     }
 }
 

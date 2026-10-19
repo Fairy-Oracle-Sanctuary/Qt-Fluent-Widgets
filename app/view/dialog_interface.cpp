@@ -1,4 +1,5 @@
 #include "view/dialog_interface.h"
+#include "view/pro_container_examples.h"
 
 #include <QColor>
 #include <QDebug>
@@ -21,6 +22,7 @@ DialogInterface::DialogInterface(QWidget* parent)
     : GalleryInterface(Translator().dialogs(),
                        QStringLiteral("qtfluentwidgets.components.dialog_box"), parent) {
     setObjectName(QStringLiteral("dialogInterface"));
+    ProContainerExamples::addDialogs(this);
 
     // Frameless message box
     auto* button = new PushButton(tr("Show dialog"), this);

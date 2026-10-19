@@ -42,6 +42,8 @@ public:
 
     virtual void setCompacted(bool compacted);
     virtual void setSelected(bool selected);
+    void setExpandedItemWidth(int width);
+    void setFilledSelectionEnabled(bool enabled) { filledSelection_ = enabled; update(); }
 
     QColor textColor() const;
 
@@ -76,6 +78,8 @@ protected:
     bool isEnter_ = false;
     bool isAboutSelected_ = false;
     bool isSelectable_ = false;
+    int expandedItemWidth_ = EXPAND_WIDTH;
+    bool filledSelection_ = false;
 
     NavigationTreeWidget* treeParent_ = nullptr;
     int nodeDepth_ = 0;

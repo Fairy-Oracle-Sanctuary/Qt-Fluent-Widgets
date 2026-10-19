@@ -1,6 +1,8 @@
 <RCC>
     <qresource prefix="/qfluentwidgets">
         <file>images/logo.png</file>
+        <file>images/icons/Eyedropper_black.svg</file>
+        <file>images/icons/Eyedropper_white.svg</file>
 
         <file>images/color_dialog/Clear_black.svg</file>
         <file>images/color_dialog/Clear_white.svg</file>

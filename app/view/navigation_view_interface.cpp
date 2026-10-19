@@ -17,6 +17,7 @@
 #include "components/widgets/label.h"
 #include "components/widgets/spin_box.h"
 #include "components/widgets/tab_view.h"
+#include "view/pro_navigation_examples.h"
 
 namespace qfw {
 
@@ -274,6 +275,7 @@ void TabInterface::removeTab(int index) {
 NavigationViewInterface::NavigationViewInterface(QWidget* parent)
     : GalleryInterface(tr("Navigation"), "qtfluentwidgets.components.navigation", parent) {
     setObjectName("navigationViewInterface");
+    ProNavigationExamples::addNavigation(this);
 
     // Breadcrumb bar
     auto* breadcrumb = new BreadcrumbBar(this);

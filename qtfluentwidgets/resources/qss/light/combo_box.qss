@@ -27,6 +27,14 @@ ComboBox:disabled, ModelComboBox:disabled {
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
+SubClip {
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+SubClip:hover { background-color: rgba(0, 0, 0, 0.08); }
+SubClip[isPressed=true] { background-color: rgba(0, 0, 0, 0.03); }
+SubClip #clipTextLabel { color: black; font: 13px --FontFamilies; }
+
 ComboBox[isPlaceholderText=true], ModelComboBox[isPlaceholderText=true] {
     color: rgba(0, 0, 0, 0.6063);
 }

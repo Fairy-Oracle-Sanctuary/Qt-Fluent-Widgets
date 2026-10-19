@@ -303,6 +303,14 @@ void HomeInterface::loadSamples() {
 
     // text
     auto* textView = new SampleCardView(tr("Text samples"), view_);
+#ifdef QFW_HAS_CHART
+    textView->addSampleCard(QStringLiteral(":/gallery/images/controls/WebView.png"),
+                           QStringLiteral("ChartWidget"), tr("Interactive charts with theme switching and real-time updates."),
+                           QStringLiteral("chartInterface"), 0);
+#endif
+    textView->addSampleCard(QStringLiteral(":/gallery/images/controls/RichEditBox.png"),
+                           QStringLiteral("ChatWidget"), tr("Native chat with streaming, images and custom toolbars."),
+                           QStringLiteral("chatInterface"), 0);
     textView->addSampleCard(QStringLiteral(":/gallery/images/controls/TextBox.png"),
                             QStringLiteral("LineEdit"), tr("A single-line plain text field."),
                             QStringLiteral("textInterface"), 0);

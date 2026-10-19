@@ -9,6 +9,7 @@
 #include "components/widgets/list_view.h"
 #include "components/widgets/table_view.h"
 #include "components/widgets/tree_view.h"
+#include "view/pro_container_examples.h"
 
 namespace qfw {
 
@@ -168,6 +169,7 @@ ViewInterface::ViewInterface(QWidget* parent)
           }(),
           "qtfluentwidgets.components.widgets", parent) {
     setObjectName("viewInterface");
+    ProContainerExamples::addView(this);
 
     // List view
     addExampleCard(tr("A simple ListView"), new ListFrame(this),

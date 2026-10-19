@@ -42,7 +42,7 @@ public:
 protected:
     void paintEvent(QPaintEvent* e) override;
 
-private:
+protected:
     void drawText(QListWidgetItem* item, QPainter* painter, int y);
 
     QList<CycleListWidget*>* listWidgets_;
@@ -84,6 +84,8 @@ public:
 
     QString value() const;
     void setValue(const QVariant& v);
+    QString initialValue() const;
+    void setInitialValue(const QVariant& value);
 
     QStringList items() const;
     void setItems(const QVariantList& items);
@@ -97,6 +99,7 @@ public:
 protected:
     QString name_;
     QVariant value_;
+    QVariant initialValue_;
     QVariantList items_;
     Qt::Alignment align_ = Qt::AlignLeft;
     PickerColumnFormatter* formatter_ = nullptr;
@@ -154,6 +157,7 @@ private slots:
 private:
     void initWidget();
 
+protected:
     int itemHeight_ = 37;
     QList<CycleListWidget*> listWidgets_;
 
@@ -195,6 +199,8 @@ public:
     QStringList value() const;
 
     void setColumnValue(int index, const QVariant& value);
+    QStringList initialValue() const;
+    void setColumnInitialValue(int index, const QVariant& value);
     void setColumnFormatter(int index, PickerColumnFormatter* formatter);
     void setColumnItems(int index, const QVariantList& items);
 

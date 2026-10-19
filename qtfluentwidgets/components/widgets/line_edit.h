@@ -57,7 +57,7 @@ public:
     explicit CompleterMenu(LineEdit* lineEdit);
 
     bool setCompletion(QAbstractItemModel* model, int column = 0);
-    void setItems(const QStringList& items);
+    virtual void setItems(const QStringList& items);
     void setMaxVisibleItems(int num);
 
     void popup();
@@ -69,10 +69,11 @@ signals:
 protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
-private slots:
-    void onItemClicked(QListWidgetItem* item);
+protected slots:
+    virtual void onItemClicked(QListWidgetItem* item);
 
-private:
+protected:
+    virtual int completionRowOffset() const { return 0; }
     void onCompletionItemSelected(const QString& text, int row);
 
     LineEdit* lineEdit_ = nullptr;
@@ -89,13 +90,13 @@ public:
     bool isError() const;
     void setError(bool isError);
 
-    void setCustomFocusedBorderColor(const QColor& light, const QColor& dark);
-    QColor focusedBorderColor() const;
+    virtual void setCustomFocusedBorderColor(const QColor& light, const QColor& dark);
+    virtual QColor focusedBorderColor() const;
 
     void setClearButtonEnabled(bool enable);
     bool isClearButtonEnabled() const;
 
-    void setCompleter(QCompleter* completer);
+    virtual void setCompleter(QCompleter* completer);
     QCompleter* completer() const;
 
     void addAction(QAction* action,
@@ -110,6 +111,8 @@ protected:
 
     QHBoxLayout* buttonLayout() const;
     LineEditButton* clearButton() const;
+    virtual void adjustTextMargins();
+    void setCompleterMenu(CompleterMenu* menu);
 
 private slots:
     void onTextChanged(const QString& text);
@@ -117,9 +120,6 @@ private slots:
     void showCompleterMenu();
 
 private:
-    void adjustTextMargins();
-    void setCompleterMenu(CompleterMenu* menu);
-
     QColor lightFocusedBorderColor_;
     QColor darkFocusedBorderColor_;
 
@@ -141,6 +141,25 @@ private:
 protected:
     bool isClearButtonEnabled_ = false;
     bool isError_ = false;
+};
+
+class EditLayer : public QWidget {
+    Q_OBJECT
+public:
+    explicit EditLayer(QWidget* parent);
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+    void paintEvent(QPaintEvent* event) override;
+};
+
+class TextEdit : public QTextEdit {
+    Q_OBJECT
+public:
+    explicit TextEdit(QWidget* parent = nullptr);
+protected:
+    void contextMenuEvent(QContextMenuEvent* event) override;
+private:
+    SmoothScrollDelegate* scrollDelegate_ = nullptr;
 };
 
 class PlainTextEdit : public QPlainTextEdit {
@@ -177,12 +196,19 @@ public:
 
     void setPasswordVisible(bool visible);
     bool isPasswordVisible() const;
+    void setViewPasswordButtonVisible(bool visible);
+    void setClearButtonEnabled(bool enabled);
+    QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+
+protected:
+    bool eventFilter(QObject* object, QEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void hideEvent(QHideEvent* event) override;
 
 private:
     void updateViewButtonIcon();
 
     LineEditButton* viewButton_ = nullptr;
-    bool passwordVisible_ = false;
 };
 
 class SearchLineEdit : public LineEdit {

@@ -157,6 +157,7 @@ void setTheme(Theme theme, bool save, bool lazy);
 void toggleTheme(bool save = false, bool lazy = false);
 void setThemeColor(const QColor& color, bool save, bool lazy);
 
+/** Theme-adjusted primary accent. QConfig::themeColor() retains the original stored color. */
 QColor themeColor();
 
 void registerQssClassType(const QString& typeName);

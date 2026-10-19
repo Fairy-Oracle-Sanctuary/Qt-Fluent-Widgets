@@ -18,11 +18,13 @@ public:
 
     void setSmoothMode(SmoothMode mode, Qt::Orientation orientation);
     void enableTransparentBackground();
+    void setWidget(QWidget* widget);
     void setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy policy);
     void setVerticalScrollBarPolicy(Qt::ScrollBarPolicy policy);
 
 private:
     SmoothScrollDelegate* scrollDelegate_ = nullptr;
+    bool transparentBackground_ = false;
 };
 
 class SingleDirectionScrollArea : public QScrollArea {

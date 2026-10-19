@@ -55,6 +55,22 @@ MenuInterface::MenuInterface(QWidget* parent)
     setObjectName(QStringLiteral("menuInterface"));
 
     createActions();
+    auto* nativeButton = new PushButton(tr("Show DWM menu"), this);
+    auto* nativeMenu = new DWMMenu(tr("DWM menu"), nativeButton);
+    nativeMenu->addAction(FluentIcon(FluentIconEnum::Add).qicon(), tr("Add item"));
+    auto* checkedAction = nativeMenu->addAction(tr("Checked action"));
+    checkedAction->setCheckable(true);
+    checkedAction->setChecked(true);
+    nativeMenu->addSeparator();
+    auto* submenu = new DWMMenu(tr("More actions"), nativeMenu);
+    nativeMenu->addMenu(submenu);
+    submenu->addAction(tr("Add item"));
+    nativeMenu->addAction(tr("Disabled action"))->setEnabled(false);
+    connect(nativeButton, &PushButton::clicked, nativeMenu, [nativeMenu, nativeButton] {
+        nativeMenu->popup(nativeButton->mapToGlobal(QPoint(0, nativeButton->height())));
+    });
+    addExampleCard(tr("QMenu with native DWM shadow"), nativeButton,
+        QStringLiteral("https://github.com/Fairy-Oracle-Sanctuary/Qt-Fluent-Widgets"));
 
     // Context menu button
     button1_ = new PushButton(tr("Show menu"), this);

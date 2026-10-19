@@ -19,6 +19,7 @@
 #include <QVBoxLayout>
 #include <QVariant>
 #include <QWidget>
+#include <functional>
 
 #include "common/icon.h"
 
@@ -47,7 +48,7 @@ public:
 
 protected:
     QColor backgroundColor() const;
-    QColor borderColor() const;
+    virtual QColor borderColor() const;
 
     void paintEvent(QPaintEvent* e) override;
 };
@@ -81,12 +82,12 @@ signals:
 
 protected:
     void showEvent(QShowEvent* e) override;
+    virtual void adjustImage();
 
 private:
     void initWidgets();
     void initLayout();
     void adjustText();
-    void adjustImage();
     void addImageToLayout();
 
     QString title_;
@@ -115,7 +116,7 @@ class Flyout : public QWidget {
 public:
     explicit Flyout(FlyoutViewBase* view, QWidget* parent = nullptr, bool deleteOnClose = true);
 
-    void exec(const QPoint& pos, FlyoutAnimationType aniType = FlyoutAnimationType::PullUp);
+    virtual void exec(const QPoint& pos, FlyoutAnimationType aniType = FlyoutAnimationType::PullUp);
 
     static Flyout* make(FlyoutViewBase* view, const QVariant& target = QVariant(),
                         QWidget* parent = nullptr,
@@ -134,6 +135,7 @@ signals:
     void closed();
 
 protected:
+    virtual void prepareShowBackground(const QPoint& adjustedPosition) {}
     void closeEvent(QCloseEvent* e) override;
     void showEvent(QShowEvent* e) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
@@ -156,6 +158,7 @@ class FlyoutAnimationManager : public QObject {
     Q_OBJECT
 
 public:
+    friend class Flyout;
     explicit FlyoutAnimationManager(Flyout* flyout);
     ~FlyoutAnimationManager() override = default;
 
@@ -163,6 +166,8 @@ public:
     virtual QPoint position(QWidget* target) const = 0;
 
     static FlyoutAnimationManager* make(FlyoutAnimationType type, Flyout* flyout);
+    using Factory = std::function<FlyoutAnimationManager*(Flyout*)>;
+    static void registerFactory(FlyoutAnimationType type, Factory factory);
 
 protected:
     QPoint adjustPosition(const QPoint& pos) const;

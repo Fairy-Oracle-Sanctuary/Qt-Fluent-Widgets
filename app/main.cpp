@@ -9,6 +9,7 @@
 #endif
 
 #include "common/app_config.h"
+#include "common/dpi.h"
 #include "qtfluentwidgets.h"
 #include "view/main_window.h"
 #include "view/top_main_window.h"
@@ -18,12 +19,9 @@ int main(int argc, char* argv[]) {
     qfw::appConfig().load();
 
     // Enable dpi scale before QApplication creation
-    QString dpiScale = qfw::appConfig().getDpiScale();
-    if (dpiScale != QStringLiteral("Auto")) {
-        qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
-        qputenv("QT_SCALE_FACTOR", dpiScale.toUtf8());
-    }
+    qfw::configureGalleryDpi(qfw::appConfig().getDpiScale());
 
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QApplication app(argc, argv);
 
     // Set application icon
@@ -55,7 +53,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (loadChinese) {
-        if (libTranslator->load(":/qfluentwidgets/i18n/qtfluentwidgets.zh_CN.qm")) {
+        if (libTranslator->load(":/qfluentwidgets/i18n/qfluentwidgets.zh_CN.qm")) {
             app.installTranslator(libTranslator);
         } else {
             delete libTranslator;
@@ -91,6 +89,7 @@ int main(int argc, char* argv[]) {
 
     auto* window = new qfw::TopMainWindow();
     window->show();
+    window->setMicaEffectEnabled(window->isMicaEffectEnabled());
 
     return app.exec();
 }

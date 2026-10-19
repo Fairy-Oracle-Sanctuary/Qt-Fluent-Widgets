@@ -63,9 +63,6 @@ class CompactSpinButton : public QToolButton {
 public:
     explicit CompactSpinButton(QWidget* parent = nullptr);
 
-signals:
-    void clicked();
-
 protected:
     void paintEvent(QPaintEvent* e) override;
 };
@@ -119,6 +116,7 @@ protected:
 class InlineSpinBoxBase : public SpinBoxBase {
 public:
     explicit InlineSpinBoxBase(QWidget* widget);
+    ~InlineSpinBoxBase() override;
 
     void setSymbolVisible(bool isVisible) override;
     void setAccelerated(bool on);
@@ -142,6 +140,8 @@ protected:
     bool isError_ = false;
     QColor lightFocusedBorderColor_;
     QColor darkFocusedBorderColor_;
+    bool symbolsVisible_ = true;
+    QObject* lifecycleFilter_ = nullptr;
 };
 
 /**
@@ -150,6 +150,7 @@ protected:
 class CompactSpinBoxBase : public SpinBoxBase {
 public:
     explicit CompactSpinBoxBase(QWidget* widget);
+    ~CompactSpinBoxBase() override;
 
     void setSymbolVisible(bool isVisible) override;
     void setAccelerated(bool on);
@@ -159,6 +160,11 @@ public:
     void setReadOnly(bool isReadOnly) override;
     void setCustomFocusedBorderColor(const QColor& light, const QColor& dark) override;
     QColor focusedBorderColor() const override;
+
+    CompactSpinButton* compactButton() const;
+    SpinFlyoutView* flyoutView() const;
+    Flyout* flyout() const;
+    void hideFlyout();
 
 protected:
     void drawBorderBottom(QWidget* widget, QPainter* painter) override;
@@ -178,6 +184,9 @@ private:
     CompactSpinButton* compactSpinButton;
     SpinFlyoutView* spinFlyoutView;
     Flyout* spinFlyout;
+    QObject* lifecycleFilter_ = nullptr;
+    bool symbolsVisible_ = true;
+    bool disposing_ = false;
 };
 
 /**
@@ -191,6 +200,7 @@ public:
 
     void setReadOnly(bool isReadOnly) override;
     void setSymbolVisible(bool isVisible) override;
+    void setAccelerated(bool on);
 
 protected:
     void stepUp() override;
@@ -210,6 +220,7 @@ public:
 
     void setReadOnly(bool isReadOnly) override;
     void setSymbolVisible(bool isVisible) override;
+    void setAccelerated(bool on);
 
 protected:
     void focusInEvent(QFocusEvent* e) override;
@@ -230,6 +241,7 @@ public:
 
     void setReadOnly(bool isReadOnly) override;
     void setSymbolVisible(bool isVisible) override;
+    void setAccelerated(bool on);
 
 protected:
     void stepUp() override;
@@ -249,6 +261,7 @@ public:
 
     void setReadOnly(bool isReadOnly) override;
     void setSymbolVisible(bool isVisible) override;
+    void setAccelerated(bool on);
 
 protected:
     void focusInEvent(QFocusEvent* e) override;

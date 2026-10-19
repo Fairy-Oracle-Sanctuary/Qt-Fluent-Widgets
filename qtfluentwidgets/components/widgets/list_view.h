@@ -16,7 +16,7 @@ public:
 protected:
     void drawBackground(QPainter* painter, const QStyleOptionViewItem& option,
                         const QModelIndex& index) const;
-    void drawIndicator(QPainter* painter, const QStyleOptionViewItem& option,
+    virtual void drawIndicator(QPainter* painter, const QStyleOptionViewItem& option,
                        const QModelIndex& index) const;
 
     void paint(QPainter* painter, const QStyleOptionViewItem& option,

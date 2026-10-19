@@ -8,6 +8,7 @@
 #include <QResizeEvent>
 #include <QScreen>
 #include <QShowEvent>
+#include <stdexcept>
 
 #include "common/auto_wrap.h"
 #include "common/style_sheet.h"
@@ -241,6 +242,25 @@ void InfoBar::addWidget(QWidget* widget, int stretch) {
     widgetLayout_->addWidget(widget, stretch, Qt::AlignLeft | align);
 }
 
+void InfoBar::replaceIconWidget(QWidget* widget) {
+    if (!widget || widget == iconWidget_) return;
+    widget->setParent(this);
+    delete hBoxLayout_->replaceWidget(iconWidget_, widget);
+    iconWidget_->hide();
+    iconWidget_->deleteLater();
+    iconWidget_ = widget;
+}
+
+void InfoBar::setText(const QString& title, const QString& content) {
+    title_ = title;
+    content_ = content;
+    titleLabel_->setVisible(!title.isEmpty());
+    contentLabel_->setVisible(!content.isEmpty());
+    adjustText();
+    if (isVisible() && position_ != InfoBarPosition::None)
+        InfoBarManager::make(position_)->refresh(this);
+}
+
 void InfoBar::setCustomBackgroundColor(const QColor& light, const QColor& dark) {
     lightBackgroundColor_ = light;
     darkBackgroundColor_ = dark;
@@ -257,9 +277,9 @@ bool InfoBar::eventFilter(QObject* obj, QEvent* event) {
 }
 
 void InfoBar::closeEvent(QCloseEvent* event) {
-    emit closedSignal();
     deleteLater();
     event->ignore();
+    emit closedSignal();
 }
 
 void InfoBar::showEvent(QShowEvent* event) {
@@ -336,26 +356,49 @@ InfoBar* InfoBar::error(const QString& title, const QString& content, Qt::Orient
 // InfoBarManager
 // ============================================================================
 
-QMap<InfoBarPosition, InfoBarManager*>& InfoBarManager::managers() {
-    static QMap<InfoBarPosition, InfoBarManager*> managers;
-    if (managers.isEmpty()) {
-        managers[InfoBarPosition::Top] = TopInfoBarManager::create();
-        managers[InfoBarPosition::TopRight] = TopRightInfoBarManager::create();
-        managers[InfoBarPosition::BottomRight] = BottomRightInfoBarManager::create();
-        managers[InfoBarPosition::TopLeft] = TopLeftInfoBarManager::create();
-        managers[InfoBarPosition::BottomLeft] = BottomLeftInfoBarManager::create();
-        managers[InfoBarPosition::Bottom] = BottomInfoBarManager::create();
-    }
+QMap<InfoBarPosition, QPointer<InfoBarManager>>& InfoBarManager::managers() {
+    static QMap<InfoBarPosition, QPointer<InfoBarManager>> managers;
     return managers;
+}
+namespace {
+QMap<InfoBarPosition, InfoBarManager::Factory>& infoBarFactories() {
+    static QMap<InfoBarPosition, InfoBarManager::Factory> factories;
+    return factories;
+}
 }
 
 InfoBarManager::InfoBarManager(QObject* parent) : QObject(parent) {}
 
 InfoBarManager* InfoBarManager::make(InfoBarPosition position) {
-    if (!managers().contains(position)) {
-        return nullptr;
+    if (position==InfoBarPosition::None) return nullptr;
+    auto& manager=managers()[position];
+    if (!manager) {
+        const auto factory=infoBarFactories().value(position);
+        if (factory) manager=factory();
+        else switch(position) {
+        case InfoBarPosition::Top: manager=TopInfoBarManager::create(); break;
+        case InfoBarPosition::Bottom: manager=BottomInfoBarManager::create(); break;
+        case InfoBarPosition::TopLeft: manager=TopLeftInfoBarManager::create(); break;
+        case InfoBarPosition::TopRight: manager=TopRightInfoBarManager::create(); break;
+        case InfoBarPosition::BottomLeft: manager=BottomLeftInfoBarManager::create(); break;
+        case InfoBarPosition::BottomRight: manager=BottomRightInfoBarManager::create(); break;
+        default: return nullptr;
+        }
+        if (!manager) throw std::runtime_error("InfoBar manager factory returned null");
+        if (!manager->parent()) manager->setParent(qApp);
     }
-    return managers()[position];
+    return manager;
+}
+void InfoBarManager::registerFactory(InfoBarPosition position, Factory factory) {
+    if (position==InfoBarPosition::None) throw std::invalid_argument("None has no InfoBar manager");
+    auto& manager=managers()[position];
+    if (manager) {
+        for (const auto& bars : manager->infoBars_)
+            if (!bars.isEmpty()) throw std::logic_error("Cannot replace an active InfoBar manager");
+        delete manager.data();
+    }
+    if (factory) infoBarFactories()[position]=std::move(factory);
+    else infoBarFactories().remove(position);
 }
 
 void InfoBarManager::add(InfoBar* infoBar) {
@@ -368,6 +411,18 @@ void InfoBarManager::add(InfoBar* infoBar) {
         p->installEventFilter(this);
         infoBars_[p] = QList<InfoBar*>();
         aniGroups_[p] = new QParallelAnimationGroup(this);
+        connect(p, &QObject::destroyed, this, [this, p] {
+            const auto bars = infoBars_.take(p);
+            for (auto* bar : bars) {
+                if (auto* slide = slides_.take(bar)) {
+                    slideAnis_.removeOne(slide);
+                    slide->stop();
+                    slide->deleteLater();
+                }
+                if (auto* drop = drops_.take(bar)) dropAnis_.removeOne(drop);
+            }
+            if (auto* group = aniGroups_.take(p)) group->deleteLater();
+        });
     }
 
     if (infoBars_[p].contains(infoBar)) {
@@ -380,17 +435,27 @@ void InfoBarManager::add(InfoBar* infoBar) {
         aniGroups_[p]->addAnimation(dropAni);
         dropAnis_.append(dropAni);
         infoBar->setProperty("dropAni", QVariant::fromValue(dropAni));
+        drops_[infoBar] = dropAni;
     }
 
     // Add slide animation
     infoBars_[p].append(infoBar);
     createSlideAni(infoBar);
 
-    connect(infoBar, &InfoBar::closedSignal, this, [this, infoBar]() { remove(infoBar); });
+    if (!infoBar->property("infoBarManagerConnected").toBool()) {
+        infoBar->setProperty("infoBarManagerConnected", true);
+        connect(infoBar, &InfoBar::closedSignal, this, [this, infoBar]() { remove(infoBar); });
+        connect(infoBar, &QObject::destroyed, this, [this, p, infoBar] { detach(p, infoBar); });
+    }
 }
 
 void InfoBarManager::remove(InfoBar* infoBar) {
-    QWidget* p = infoBar->parentWidget();
+    detach(infoBar->parentWidget(), infoBar);
+    infoBar->setProperty("dropAni", QVariant());
+    infoBar->setProperty("slideAni", QVariant());
+}
+
+void InfoBarManager::detach(QWidget* p, InfoBar* infoBar) {
     if (!p || !infoBars_.contains(p)) {
         return;
     }
@@ -402,16 +467,20 @@ void InfoBarManager::remove(InfoBar* infoBar) {
     infoBars_[p].removeOne(infoBar);
 
     // Remove drop animation
-    QPropertyAnimation* dropAni = infoBar->property("dropAni").value<QPropertyAnimation*>();
+    QPropertyAnimation* dropAni = drops_.take(infoBar);
     if (dropAni) {
         aniGroups_[p]->removeAnimation(dropAni);
         dropAnis_.removeOne(dropAni);
+        dropAni->stop();
+        dropAni->deleteLater();
     }
 
     // Remove slide animation
-    QPropertyAnimation* slideAni = infoBar->property("slideAni").value<QPropertyAnimation*>();
+    QPropertyAnimation* slideAni = slides_.take(infoBar);
     if (slideAni) {
         slideAnis_.removeOne(slideAni);
+        slideAni->stop();
+        slideAni->deleteLater();
     }
 
     // Update remaining info bars positions
@@ -419,14 +488,25 @@ void InfoBarManager::remove(InfoBar* infoBar) {
     aniGroups_[p]->start();
 }
 
+void InfoBarManager::refresh(InfoBar* infoBar) {
+    auto* p = infoBar->parentWidget();
+    if (!p || !infoBars_.value(p).contains(infoBar)) return;
+    aniGroups_[p]->stop();
+    for (auto* bar : infoBars_[p]) {
+        if (auto* slide = slides_.value(bar)) slide->stop();
+        bar->move(pos(bar));
+    }
+}
+
 void InfoBarManager::createSlideAni(InfoBar* infoBar) {
-    QPropertyAnimation* slideAni = new QPropertyAnimation(infoBar, "pos");
+    QPropertyAnimation* slideAni = new QPropertyAnimation(infoBar, "pos", this);
     slideAni->setEasingCurve(QEasingCurve::OutQuad);
     slideAni->setDuration(200);
     slideAni->setStartValue(slideStartPos(infoBar));
     slideAni->setEndValue(pos(infoBar));
 
     slideAnis_.append(slideAni);
+    slides_[infoBar] = slideAni;
     infoBar->setProperty("slideAni", QVariant::fromValue(slideAni));
     slideAni->start();
 }
@@ -642,7 +722,13 @@ DesktopInfoBarView::DesktopInfoBarView(QWidget* parent) : QWidget(parent) {
 }
 
 DesktopInfoBarView* DesktopInfoBarView::instance() {
-    static DesktopInfoBarView* view = new DesktopInfoBarView();
+    static QPointer<DesktopInfoBarView> view;
+    if (!view) view = new DesktopInfoBarView();
+    return view;
+}
+QWidget* InfoBar::desktopView() {
+    auto* view=DesktopInfoBarView::instance();
+    view->show();
     return view;
 }
 

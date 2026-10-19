@@ -13,6 +13,7 @@
 #include <QTimer>
 
 #include "common/color.h"
+#include "common/config.h"
 #include "common/font.h"
 #include "common/icon.h"
 #include "common/style_sheet.h"
@@ -240,7 +241,7 @@ void CompleterMenu::popup() {
 
 void CompleterMenu::onItemClicked(QListWidgetItem* item) {
     close();
-    onCompletionItemSelected(item->text(), view()->row(item));
+    onCompletionItemSelected(item->text(), view()->row(item)-completionRowOffset());
 }
 
 bool CompleterMenu::eventFilter(QObject* obj, QEvent* event) {
@@ -265,7 +266,8 @@ bool CompleterMenu::eventFilter(QObject* obj, QEvent* event) {
             if (count > 0) {
                 int row = view()->currentRow();
                 row = keyEvent->key() == Qt::Key_Up ? row - 1 : row + 1;
-                view()->setCurrentRow(qBound(0, row < 0 ? 0 : row, count - 1));
+                const int first=completionRowOffset(),last=count-1-first;
+                if(last>=first) view()->setCurrentRow(qBound(first,row,last));
             }
             break;
         }
@@ -276,7 +278,8 @@ bool CompleterMenu::eventFilter(QObject* obj, QEvent* event) {
         case Qt::Key_Return:
             if (view()->currentRow() >= 0) {
                 if (QListWidgetItem* currentItem = view()->currentItem()) {
-                    onCompletionItemSelected(currentItem->text(), view()->currentRow());
+                    if(currentItem->flags() & Qt::ItemIsEnabled)
+                        onCompletionItemSelected(currentItem->text(), view()->currentRow()-completionRowOffset());
                 }
             }
             close();
@@ -356,17 +359,7 @@ QColor LineEdit::focusedBorderColor() const {
         return qfw::getFluentSystemColor(qfw::FluentSystemColor::CriticalForeground);
     }
 
-    const bool dark = qfw::isDarkTheme();
-    const QColor base = qfw::themeColor();
-
-    if (dark) {
-        // Dark mode: use ThemeColorLight1 as default
-        const QColor darkLight1 = qfw::themedColor(base, true, QStringLiteral("ThemeColorLight1"));
-        return qfw::validColor(darkFocusedBorderColor_, darkLight1);
-    } else {
-        // Light mode: use ThemeColorPrimary as default
-        return qfw::validColor(lightFocusedBorderColor_, base);
-    }
+    return qfw::autoFallbackThemeColor(lightFocusedBorderColor_, darkFocusedBorderColor_);
 }
 
 void LineEdit::setClearButtonEnabled(bool enable) {
@@ -381,7 +374,10 @@ void LineEdit::setCompleter(QCompleter* completer) { completer_ = completer; }
 QCompleter* LineEdit::completer() const { return completer_; }
 
 void LineEdit::setCompleterMenu(CompleterMenu* menu) {
+    if(completerMenu_==menu) return;
+    delete completerMenu_;
     completerMenu_ = menu;
+    if(!menu) return;
     connect(menu, &CompleterMenu::activated, this, [this](const QString& text) {
         if (completer_) {
             emit completer_->activated(text);
@@ -552,7 +548,67 @@ void LineEdit::paintEvent(QPaintEvent* e) {
 // ============================================================================
 // PlainTextEdit
 // ============================================================================
+EditLayer::EditLayer(QWidget* parent) : QWidget(parent) {
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    setAttribute(Qt::WA_NoSystemBackground);
+    resize(parent->size());
+    parent->installEventFilter(this);
+    connect(&QConfig::instance(), &QConfig::themeChangedFinished, this, [this] { update(); });
+}
+
+bool EditLayer::eventFilter(QObject* watched, QEvent* event) {
+    if (watched == parentWidget()) {
+        if (event->type() == QEvent::Resize) {
+            resize(parentWidget()->size());
+            raise();
+        }
+        if (event->type() == QEvent::FocusIn || event->type() == QEvent::FocusOut ||
+            event->type() == QEvent::EnabledChange)
+            update();
+    }
+    return QWidget::eventFilter(watched, event);
+}
+
+void EditLayer::paintEvent(QPaintEvent*) {
+    if (!parentWidget()->hasFocus() || !parentWidget()->isEnabled()) return;
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPainterPath bottom, cut;
+    bottom.addRoundedRect(QRectF(0, height() - 10, width(), 10), 5, 5);
+    cut.addRect(0, height() - 10, width(), 7.5);
+    painter.fillPath(bottom.subtracted(cut), qfw::themeColor());
+}
+
+TextEdit::TextEdit(QWidget* parent) : QTextEdit(parent) {
+    setProperty("qssClass", "TextEdit");
+    qfw::setStyleSheet(this, qfw::FluentStyleSheet::LineEdit);
+    qfw::updateDynamicStyle(this);
+    qfw::setFont(this);
+    scrollDelegate_ = new SmoothScrollDelegate(this);
+    new EditLayer(this);
+}
+
+namespace {
+class TransientTextEditMenu : public TextEditMenu {
+public:
+    explicit TransientTextEditMenu(QTextEdit* editor) : TextEditMenu(editor) {}
+protected:
+    void hideEvent(QHideEvent* event) override {
+        TextEditMenu::hideEvent(event);
+        deleteLater();
+    }
+};
+}
+
+void TextEdit::contextMenuEvent(QContextMenuEvent* event) {
+    if (!event) return;
+    auto* menu = new TransientTextEditMenu(this);
+    menu->setAttribute(Qt::WA_DeleteOnClose);
+    menu->execAt(event->globalPos(), true, MenuAnimationType::DropDown);
+}
+
 PlainTextEdit::PlainTextEdit(QWidget* parent) : QPlainTextEdit(parent) {
+    new EditLayer(this);
     setProperty("qssClass", "PlainTextEdit");
     qfw::setStyleSheet(this, qfw::FluentStyleSheet::LineEdit);
     qfw::updateDynamicStyle(this);
@@ -575,6 +631,7 @@ void PlainTextEdit::contextMenuEvent(QContextMenuEvent* e) {
 // TextBrowser
 // ============================================================================
 TextBrowser::TextBrowser(QWidget* parent) : QTextBrowser(parent) {
+    new EditLayer(this);
     setProperty("qssClass", "TextBrowser");
     qfw::setStyleSheet(this, qfw::FluentStyleSheet::LineEdit);
     qfw::updateDynamicStyle(this);
@@ -612,34 +669,59 @@ PasswordLineEdit::PasswordLineEdit(QWidget* parent) : LineEdit(parent) {
     setClearButtonEnabled(false);
     setPasswordVisible(false);
 
-    connect(viewButton_, &QToolButton::clicked, this,
-            [this]() { setPasswordVisible(!isPasswordVisible()); });
+    viewButton_->installEventFilter(this);
 }
 
 void PasswordLineEdit::setPasswordVisible(bool visible) {
-    if (passwordVisible_ == visible) {
+    if (isPasswordVisible() == visible) {
         return;
     }
 
-    passwordVisible_ = visible;
-    setEchoMode(passwordVisible_ ? QLineEdit::Normal : QLineEdit::Password);
+    setEchoMode(visible ? QLineEdit::Normal : QLineEdit::Password);
     updateViewButtonIcon();
 }
 
-bool PasswordLineEdit::isPasswordVisible() const { return passwordVisible_; }
+bool PasswordLineEdit::isPasswordVisible() const { return echoMode() == QLineEdit::Normal; }
+
+void PasswordLineEdit::setViewPasswordButtonVisible(bool visible) {
+    if (!viewButton_) return;
+    viewButton_->setVisible(visible);
+    if (!visible) setPasswordVisible(false);
+    setClearButtonEnabled(isClearButtonEnabled());
+}
+void PasswordLineEdit::setClearButtonEnabled(bool enabled) {
+    LineEdit::setClearButtonEnabled(enabled);
+    setTextMargins(0, 0, 28 * int(enabled) + (viewButton_ && !viewButton_->isHidden() ? 30 : 0), 0);
+}
+QVariant PasswordLineEdit::inputMethodQuery(Qt::InputMethodQuery query) const {
+    return query == Qt::ImEnabled ? QVariant(false) : LineEdit::inputMethodQuery(query);
+}
+bool PasswordLineEdit::eventFilter(QObject* object, QEvent* event) {
+    if (object == viewButton_) {
+        if (isEnabled() && event->type() == QEvent::MouseButtonPress)
+            setPasswordVisible(true);
+        else if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::Hide ||
+                 event->type() == QEvent::UngrabMouse || event->type() == QEvent::FocusOut)
+            setPasswordVisible(false);
+    }
+    return LineEdit::eventFilter(object, event);
+}
+void PasswordLineEdit::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::EnabledChange && !isEnabled()) setPasswordVisible(false);
+    LineEdit::changeEvent(event);
+}
+void PasswordLineEdit::hideEvent(QHideEvent* event) {
+    setPasswordVisible(false);
+    LineEdit::hideEvent(event);
+}
 
 void PasswordLineEdit::updateViewButtonIcon() {
     if (!viewButton_) {
         return;
     }
 
-    if (passwordVisible_) {
-        static qfw::FluentIcon hideIcon(qfw::FluentIconEnum::Hide);
-        viewButton_->setIcon(QVariant(hideIcon.qicon()));
-    } else {
-        static qfw::FluentIcon viewIcon(qfw::FluentIconEnum::View);
-        viewButton_->setIcon(QVariant(viewIcon.qicon()));
-    }
+    static qfw::FluentIcon viewIcon(qfw::FluentIconEnum::View);
+    viewButton_->setIcon(QVariant(viewIcon.qicon()));
 }
 
 // ============================================================================

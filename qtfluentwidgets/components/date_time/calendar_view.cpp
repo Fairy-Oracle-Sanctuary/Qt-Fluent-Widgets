@@ -98,16 +98,13 @@ void ScrollItemDelegate::drawBackground(QPainter* painter, const QStyleOptionVie
 
     if (index == currentIndex_) {
         if (index == pressedIndex_) {
-            painter->setBrush(
-                themedColor(themeColor(), isDarkTheme(), QStringLiteral("ThemeColorLight2")));
+            painter->setBrush(themedColor(QConfig::instance().themeColor(), isDarkTheme(),
+                                          QStringLiteral("ThemeColorLight2")));
         } else if (option.state & QStyle::State_MouseOver) {
-            painter->setBrush(
-                themedColor(themeColor(), isDarkTheme(), QStringLiteral("ThemeColorLight1")));
+            painter->setBrush(themedColor(QConfig::instance().themeColor(), isDarkTheme(),
+                                          QStringLiteral("ThemeColorLight1")));
         } else {
-            // Use ThemeColorLight1 in dark theme as default
-            painter->setBrush(
-                isDarkTheme() ? themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"))
-                              : themeColor());
+            painter->setBrush(themeColor());
         }
     } else {
         const int c = isDarkTheme() ? 255 : 0;

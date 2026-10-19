@@ -70,6 +70,8 @@ void TeachingTipView::init(TeachingTipTailPosition tailPosition) {
 
 TeachingTipManager* TeachingTipView::manager() const { return manager_; }
 
+void TeachingTipView::adjustImage() { FlyoutView::adjustImage(); }
+
 void TeachingTipView::paintEvent(QPaintEvent* e) {
     Q_UNUSED(e);
     // TeachingTipView does not paint itself - the bubble handles painting

@@ -116,6 +116,7 @@ SplitDropButton:pressed {
 PrimaryPushButton,
 PrimaryDropDownPushButton,
 PrimaryToolButton,
+PrimaryDropDownToolButton,
 PrimarySplitDropButton,
 ToggleButton:checked,
 ToggleToolButton:checked,
@@ -124,7 +125,7 @@ PillToolButton:checked,
 TransparentTogglePushButton:checked,
 TransparentToggleToolButton:checked {
     color: black;
-    background-color: --ThemeColorLight1;
+    background-color: --ThemeColorPrimary;
     border: 1px solid --ThemeColorLight1;
     border-bottom: 1px solid --ThemeColorLight2;
     border-radius: 5px;
@@ -133,6 +134,7 @@ TransparentToggleToolButton:checked {
 PrimaryPushButton:hover,
 PrimaryDropDownPushButton:hover,
 PrimaryToolButton:hover,
+PrimaryDropDownToolButton:hover,
 PrimarySplitDropButton:hover,
 ToggleButton:checked:hover,
 ToggleToolButton:checked:hover,
@@ -148,6 +150,7 @@ TransparentToggleToolButton:checked:hover {
 PrimaryPushButton:pressed,
 PrimaryDropDownPushButton:pressed,
 PrimaryToolButton:pressed,
+PrimaryDropDownToolButton:pressed,
 PrimarySplitDropButton:pressed,
 ToggleButton:checked:pressed,
 ToggleToolButton:checked:pressed,
@@ -163,6 +166,7 @@ TransparentToggleToolButton:checked:pressed {
 PrimaryPushButton:disabled,
 PrimaryDropDownPushButton:disabled,
 PrimaryToolButton:disabled,
+PrimaryDropDownToolButton:disabled,
 PrimarySplitDropButton:disabled,
 ToggleButton:checked:disabled,
 ToggleToolButton:checked:disabled,
@@ -204,7 +208,7 @@ PrimarySplitDropButton {
 HyperlinkButton {
     /* font: 14px --FontFamilies; */
     padding: 5px 12px 6px 12px;
-    color: --ThemeColorLight1;
+    color: --ThemeColorPrimary;
     border: none;
     border-radius: 6px;
     background-color: transparent;
@@ -219,7 +223,7 @@ HyperlinkButton[hasIcon=true] {
 }
 
 HyperlinkButton:hover {
-    color: --ThemeColorDark2;
+    color: --ThemeColorPrimary;
     background-color: rgba(255, 255, 255, 10);
     border: none;
 }

@@ -88,10 +88,15 @@ void NavigationWidget::setCompacted(bool compacted) {
     if (compacted) {
         setFixedSize(40, 36);
     } else {
-        setFixedSize(EXPAND_WIDTH, 36);
+        setFixedSize(expandedItemWidth_, 36);
     }
 
     update();
+}
+
+void NavigationWidget::setExpandedItemWidth(int width) {
+    expandedItemWidth_ = qMax(16, width);
+    if (!isCompacted_) setFixedWidth(expandedItemWidth_);
 }
 
 void NavigationWidget::setSelected(bool selected) {
@@ -185,22 +190,40 @@ void NavigationPushButton::paintEvent(QPaintEvent* e) {
 
     const QRect globalRect(mapToGlobal(QPoint()), size());
 
+    if (filledSelection_ && canDrawIndicator()) {
+        QColor accent = themeColor();
+        if (isEnter_) accent = accent.lighter(isDarkTheme() ? 105 : 108);
+        painter.setBrush(accent);
+        painter.drawRoundedRect(QRectF(rect()), 4, 4);
+        const QColor foreground = isDarkTheme() ? Qt::black : Qt::white;
+        QPixmap iconImage(16 * devicePixelRatioF(), 16 * devicePixelRatioF());
+        iconImage.setDevicePixelRatio(devicePixelRatioF());
+        iconImage.fill(Qt::transparent);
+        { QPainter ip(&iconImage);
+          drawIconVariant(icon_, &ip, QRectF(0, 0, 16, 16));
+          ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
+          ip.fillRect(QRectF(0, 0, 16, 16), foreground); }
+        painter.drawPixmap(QPointF(11.5 + pl, 10), iconImage);
+        if (!isCompacted_) {
+            const bool hasIcon = icon_.isValid() &&
+                (!icon_.canConvert<QIcon>() || !icon_.value<QIcon>().isNull());
+            const int left = hasIcon ? 44 + pl : pl + 16;
+            const int textWidth = qMax(0, width() - left - pr - 13);
+            painter.setFont(font());
+            painter.setPen(foreground);
+            painter.drawText(QRectF(left, 0, textWidth, height()), Qt::AlignVCenter,
+                             fontMetrics().elidedText(text_, Qt::ElideRight, textWidth));
+        }
+        return;
+    }
+
     if ((isSelected_ || isAboutSelected_) && isEnabled()) {
         painter.setBrush(QColor(c, c, c, isEnter_ ? 6 : 10));
         painter.drawRoundedRect(rect(), 5, 5);
 
         if (isSelected_ && canDrawIndicator()) {
-            // Use ThemeColorDark1 in dark mode for better visibility
-            QColor indicatorColor;
-            if (isDarkTheme()) {
-                indicatorColor =
-                    darkIndicatorColor_.isValid()
-                        ? darkIndicatorColor_
-                        : themedColor(themeColor(), true, QStringLiteral("ThemeColorDark1"));
-            } else {
-                indicatorColor =
-                    lightIndicatorColor_.isValid() ? lightIndicatorColor_ : themeColor();
-            }
+            const QColor indicatorColor =
+                autoFallbackThemeColor(lightIndicatorColor_, darkIndicatorColor_);
             painter.setBrush(indicatorColor);
             painter.drawRoundedRect(indicatorRect(), 1.5, 1.5);
         }
@@ -921,7 +944,10 @@ void NavigationTreeItem::drawDropDownArrow() {
     painter.translate(width() - 20, 18);
     painter.rotate(arrowAngle_);
 
-    FluentIcon(FluentIconEnum::ArrowDown).render(&painter, QRect(-5, -5, 10, 10));
+    FluentIcon(FluentIconEnum::ArrowDown).render(&painter, QRect(-5, -5, 10, 10), Theme::Auto,
+        filledSelection_ && canDrawIndicator()
+            ? QVariantMap{{QStringLiteral("fill"), isDarkTheme() ? "#000000" : "#ffffff"}}
+            : QVariantMap{});
 }
 
 // ==========================================================================
@@ -1242,15 +1268,7 @@ void NavigationIndicator::paintEvent(QPaintEvent* e) {
     painter.setRenderHints(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    // Use ThemeColorDark1 in dark mode for better visibility
-    QColor color;
-    if (isDarkTheme()) {
-        color = darkColor_.isValid()
-                    ? darkColor_
-                    : themedColor(themeColor(), true, QStringLiteral("ThemeColorDark1"));
-    } else {
-        color = lightColor_.isValid() ? lightColor_ : themeColor();
-    }
+    const QColor color = autoFallbackThemeColor(lightColor_, darkColor_);
     painter.setBrush(color);
     painter.drawRoundedRect(rect(), 1.5, 1.5);
 }

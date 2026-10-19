@@ -84,3 +84,20 @@ QTableCornerButton::section {
 QTableCornerButton::section:pressed {
     background-color: rgba(0, 0, 0, 12);
 }
+
+QTableView[isLineTable=true] QHeaderView::section:horizontal {
+    background-color: rgba(0, 0, 0, 7);
+    border: none;
+    border-right: 1px solid rgba(0, 0, 0, 10);
+    color: black;
+    font: 14px --FontFamilies;
+    font-weight: bold;
+    height: 52px;
+}
+QTableView[isLineTable=true] QHeaderView::section:horizontal:first {
+    border-top-left-radius: 8px;
+}
+QTableView[isLineTable=true] QHeaderView::section:horizontal:last {
+    border-right: none;
+    border-top-right-radius: 8px;
+}

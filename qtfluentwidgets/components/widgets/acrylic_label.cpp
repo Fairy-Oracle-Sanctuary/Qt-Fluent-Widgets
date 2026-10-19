@@ -6,12 +6,66 @@
 #include <QGraphicsScene>
 #include <QPainter>
 #include <QScreen>
+#include <cmath>
+#include <vector>
 
 #include "common/screen.h"
 
 namespace qfw {
 
 namespace {
+
+// Match scipy.ndimage.gaussian_filter: a normalized kernel truncated at 4
+// sigma, reflected edges, RGB channels only and uint8 output after each axis.
+QPixmap gaussianPixmap(const QPixmap& source, int sigma, const QSize& maxSize) {
+    if (source.isNull() || sigma <= 0) return source;
+    QImage input = source.toImage().convertToFormat(QImage::Format_RGBA8888);
+    if (maxSize.isValid() && (input.width() > maxSize.width() || input.height() > maxSize.height()))
+        input = input.scaled(maxSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    input.setDevicePixelRatio(1);
+    const int radius = 4 * sigma;
+    std::vector<double> weights(2 * radius + 1);
+    double sum = 0;
+    for (int i = -radius; i <= radius; ++i) {
+        const double weight = std::exp(-double(i) * i / (2.0 * sigma * sigma));
+        weights[i + radius] = weight; sum += weight;
+    }
+    for (double& weight : weights) weight /= sum;
+    const auto reflect = [](int index, int length) {
+        const int period = 2 * length;
+        index = (index % period + period) % period;
+        return index < length ? index : period - 1 - index;
+    };
+    QImage intermediate = input.copy(), result = input.copy();
+    const int width = input.width(), height = input.height();
+    const int kernelSize = int(weights.size());
+    std::vector<int> columns(width * kernelSize), rows(height * kernelSize);
+    for (int x=0; x<width; ++x) for (int i=0; i<kernelSize; ++i)
+        columns[x * kernelSize + i] = 4 * reflect(x + i - radius, width);
+    for (int y=0; y<height; ++y) for (int i=0; i<kernelSize; ++i)
+        rows[y * kernelSize + i] = reflect(y + i - radius, height);
+    for (int y = 0; y < height; ++y) for (int x = 0; x < width; ++x) {
+        double channels[3] = {};
+        for (int offset = -radius; offset <= radius; ++offset) {
+            const uchar* pixel = input.constScanLine(rows[y * kernelSize + offset + radius]) + 4 * x;
+            const double weight = weights[offset + radius];
+            for (int channel = 0; channel < 3; ++channel) channels[channel] += weight * pixel[channel];
+        }
+        uchar* pixel = intermediate.scanLine(y) + 4 * x;
+        for (int channel = 0; channel < 3; ++channel) pixel[channel] = uchar(qBound(0.0, channels[channel], 255.0));
+    }
+    for (int y = 0; y < height; ++y) for (int x = 0; x < width; ++x) {
+        double channels[3] = {};
+        for (int offset = -radius; offset <= radius; ++offset) {
+            const uchar* pixel = intermediate.constScanLine(y) + columns[x * kernelSize + offset + radius];
+            const double weight = weights[offset + radius];
+            for (int channel = 0; channel < 3; ++channel) channels[channel] += weight * pixel[channel];
+        }
+        uchar* pixel = result.scanLine(y) + 4 * x;
+        for (int channel = 0; channel < 3; ++channel) pixel[channel] = uchar(qBound(0.0, channels[channel], 255.0));
+    }
+    return QPixmap::fromImage(result);
+}
 
 QPixmap blurPixmap(const QPixmap& src, int radius, const QSize& maxSize = QSize()) {
     if (src.isNull() || radius <= 0) {
@@ -207,7 +261,7 @@ void AcrylicBrush::grabImage(const QRect& rect) {
 
 void AcrylicBrush::setImage(const QPixmap& image) {
     originalImage_ = image;
-    image_ = image.isNull() ? QPixmap() : blurPixmap(image, blurRadius_);
+    image_ = image.isNull() ? QPixmap() : gaussianPixmap(image, blurRadius_, blurPicSize_);
     scaledImage_ = QPixmap();
     scaledImageSize_ = QSize();
 
@@ -225,6 +279,12 @@ void AcrylicBrush::setClipPath(const QPainterPath& path) {
     if (device_) {
         device_->update();
     }
+}
+
+void AcrylicBrush::setBlurPicSize(const QSize& size) {
+    if (blurPicSize_==size) return;
+    blurPicSize_=size;
+    setImage(originalImage_);
 }
 
 void AcrylicBrush::rebuildTexture() {

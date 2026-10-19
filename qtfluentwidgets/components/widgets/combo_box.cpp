@@ -222,15 +222,13 @@ void ComboBoxBase::showComboMenu(QWidget* widget) {
     ownerWidget_ = widget;
 
     ComboBoxMenu* menu = createComboMenu();
-    for (const auto& item : items) {
+    for (int index=0;index<items.size();++index) {
+        const auto& item=items[index];
         QAction* action = new QAction(item.icon(), item.text, menu);
         action->setEnabled(item.isEnabled);
         menu->addAction(action);
+        QObject::connect(action,&QAction::triggered,widget,[this,index] { onItemClicked(index); });
     }
-
-    QObject::connect(menu->view(), &QListWidget::itemClicked, [this, menu](QListWidgetItem* item) {
-        onItemClicked(findText(item->text().trimmed()));
-    });
 
     if (menu->view()->width() < widget->width()) {
         menu->view()->setMinimumWidth(widget->width());
@@ -239,12 +237,17 @@ void ComboBoxBase::showComboMenu(QWidget* widget) {
 
     menu->setMaxVisibleItems(maxVisibleItems());
     menu->setAttribute(Qt::WA_DeleteOnClose);
-    QObject::connect(menu, &RoundMenu::closedSignal, [this]() { onDropMenuClosed(); });
-    QObject::connect(menu, &QObject::destroyed, [this]() { dropMenu.clear(); });
+    QObject::connect(menu, &RoundMenu::closedSignal, widget, [this, menu]() {
+        if (dropMenu == menu) onDropMenuClosed();
+    });
+    QObject::connect(menu, &QObject::destroyed, widget, [this, menu]() {
+        // A previously closed menu must not clear a newly opened one.
+        if (dropMenu == menu) dropMenu.clear();
+    });
     dropMenu = menu;
 
-    if (currentIndex_ >= 0 && currentIndex_ < menu->view()->count()) {
-        if (auto* it = menu->view()->item(currentIndex_)) {
+    if (currentIndex_ >= 0 && currentIndex_ < menu->menuActions().size()) {
+        if (auto* it = reinterpret_cast<QListWidgetItem*>(menu->menuActions()[currentIndex_]->property("item").value<quintptr>())) {
             menu->view()->setCurrentItem(it);
             it->setSelected(true);
         }
@@ -264,8 +267,8 @@ void ComboBoxBase::showComboMenu(QWidget* widget) {
     }
 
     // Ensure selection is visible and processed by delegate after menu is shown
-    if (currentIndex_ >= 0 && menu->view()) {
-        if (auto* it = menu->view()->item(currentIndex_)) {
+    if (currentIndex_ >= 0 && currentIndex_ < menu->menuActions().size()) {
+        if (auto* it = reinterpret_cast<QListWidgetItem*>(menu->menuActions()[currentIndex_]->property("item").value<quintptr>())) {
             it->setSelected(true);
             menu->view()->setCurrentItem(it);
             menu->view()->scrollToItem(it);
@@ -416,7 +419,7 @@ void ComboBox::paintEvent(QPaintEvent* e) {
         QRect contentRect = style()->subElementRect(QStyle::SE_PushButtonContents, &opt, this);
 
         painter.setPen(textColor);
-        painter.drawText(contentRect, Qt::AlignVCenter | Qt::AlignLeft, opt.text);
+        painter.drawText(contentRect, Qt::AlignVCenter | (isRightToLeft()?Qt::AlignRight:Qt::AlignLeft), opt.text);
     }
 
     // draw arrow icon
@@ -428,7 +431,7 @@ void ComboBox::paintEvent(QPaintEvent* e) {
         painter.setOpacity(1.0);
     }
 
-    const QRect rect(width() - 22, height() / 2 - 5, 10, 10);
+    const QRect rect=QStyle::visualRect(layoutDirection(),this->rect(),QRect(width()-22,height()/2-5,10,10));
     const FluentIcon arrowDown(FluentIconEnum::ArrowDown);
 
     if (isDarkTheme()) {
@@ -475,7 +478,7 @@ EditableComboBox::EditableComboBox(QWidget* parent) : LineEdit(parent) {
     static qfw::FluentIcon arrowDownIcon(qfw::FluentIconEnum::ArrowDown);
     dropButton_ = new LineEditButton(QVariant(arrowDownIcon.qicon()), this);
 
-    setTextMargins(0, 0, 29, 0);
+    adjustTextMargins();
     dropButton_->setFixedSize(30, 25);
     if (auto* layout = buttonLayout()) {
         layout->addWidget(dropButton_, 0, Qt::AlignRight);
@@ -497,6 +500,9 @@ EditableComboBox::EditableComboBox(QWidget* parent) : LineEdit(parent) {
 bool EditableComboBox::eventFilter(QObject* obj, QEvent* e) {
     if (obj == this) {
         switch (e->type()) {
+            case QEvent::LayoutDirectionChange:
+                adjustTextMargins();
+                break;
             case QEvent::MouseButtonPress:
                 isPressed = true;
                 break;
@@ -587,6 +593,13 @@ void EditableComboBox::onDropMenuClosed() { dropMenu = nullptr; }
 void EditableComboBox::onClearButtonClicked() {
     LineEdit::clear();
     currentIndex_ = -1;
+}
+
+void EditableComboBox::adjustTextMargins() {
+    LineEdit::adjustTextMargins();
+    const auto margins=textMargins();
+    const int leading=margins.left(),trailing=margins.right()+29;
+    setTextMargins(isRightToLeft()?trailing:leading,margins.top(),isRightToLeft()?leading:trailing,margins.bottom());
 }
 
 void EditableComboBox::onItemClicked(int index) {

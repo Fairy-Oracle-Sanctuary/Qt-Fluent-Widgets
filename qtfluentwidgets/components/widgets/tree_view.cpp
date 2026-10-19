@@ -23,15 +23,9 @@ namespace qfw {
 // ============================================================================
 
 TreeItemDelegate::TreeItemDelegate(QTreeView* parent) : QStyledItemDelegate(parent) {
-    // Initialize with default theme color
-    QColor themeColor = QConfig::instance().themeColor();
-    lightCheckedColor_ = themeColor;
-    darkCheckedColor_ = themeColor;
-
-    // Connect theme color changed signal
+    // Invalid colors follow the current theme; explicit custom colors remain unchanged.
     connect(&QConfig::instance(), &QConfig::themeColorChanged, this, [this](const QColor& color) {
-        lightCheckedColor_ = color;
-        darkCheckedColor_ = color;
+        Q_UNUSED(color);
         if (auto* view = qobject_cast<QAbstractItemView*>(this->parent())) {
             if (view->viewport()) {
                 view->viewport()->update();
@@ -144,12 +138,7 @@ void TreeItemDelegate::drawIndicator(QPainter* painter, const QStyleOptionViewIt
 
     if ((option.state & QStyle::State_Selected) && view->horizontalScrollBar() &&
         view->horizontalScrollBar()->value() == 0) {
-        QColor color;
-        if (isDarkTheme()) {
-            color = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-        } else {
-            color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
-        }
+        const QColor color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
         painter->setBrush(color);
         painter->drawRoundedRect(QRectF(4, 9 + option.rect.y(), 3, h - 13), 1.5, 1.5);
     }
@@ -174,12 +163,7 @@ void TreeItemDelegate::drawCheckBox(QPainter* painter, const QStyleOptionViewIte
         painter->setPen(dark ? QColor(255, 255, 255, 142) : QColor(0, 0, 0, 122));
         painter->drawRoundedRect(rect, r, r);
     } else {
-        QColor color;
-        if (dark) {
-            color = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-        } else {
-            color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
-        }
+        const QColor color = autoFallbackThemeColor(lightCheckedColor_, darkCheckedColor_);
         painter->setPen(color);
         painter->setBrush(color);
         painter->drawRoundedRect(rect, r, r);

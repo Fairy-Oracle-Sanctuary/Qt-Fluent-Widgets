@@ -23,6 +23,7 @@ public:
 
 protected:
     void initFrameless(QWidget* window);
+    void updateFrameless(QWidget* window);
 
     bool handleNativeEvent(QWidget* window, void* message, nativeEvent_qintptr* result);
 
@@ -35,6 +36,7 @@ class WindowsFramelessWindow : public QWidget, public WindowsFramelessWindowBase
 
 public:
     explicit WindowsFramelessWindow(QWidget* parent = nullptr);
+    void updateFrameless() { WindowsFramelessWindowBase::updateFrameless(this); }
 
 protected:
     bool nativeEvent(const QByteArray& eventType, void* message,
@@ -51,6 +53,7 @@ class WindowsFramelessMainWindow : public QMainWindow, public WindowsFramelessWi
 
 public:
     explicit WindowsFramelessMainWindow(QWidget* parent = nullptr);
+    void updateFrameless() { WindowsFramelessWindowBase::updateFrameless(this); }
 
 protected:
     bool nativeEvent(const QByteArray& eventType, void* message,
@@ -66,6 +69,7 @@ class WindowsFramelessDialog : public QDialog, public WindowsFramelessWindowBase
 
 public:
     explicit WindowsFramelessDialog(QWidget* parent = nullptr);
+    void updateFrameless() { WindowsFramelessWindowBase::updateFrameless(this); }
 
 protected:
     bool nativeEvent(const QByteArray& eventType, void* message,

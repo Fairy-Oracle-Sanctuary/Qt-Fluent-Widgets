@@ -184,6 +184,15 @@ void WindowsWindowEffect::addShadowEffect(HWND hWnd) {
     }
 }
 
+void WindowsWindowEffect::addMenuShadowEffect(HWND hWnd) {
+    BOOL composition = FALSE;
+    if (!hWnd || FAILED(DwmIsCompositionEnabled(&composition)) || !composition) return;
+    const DWMNCRENDERINGPOLICY policy = DWMNCRP_ENABLED;
+    DwmSetWindowAttribute(hWnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof(policy));
+    const MARGINS margins{-1, -1, -1, -1};
+    DwmExtendFrameIntoClientArea(hWnd, &margins);
+}
+
 void WindowsWindowEffect::enableBlurBehindWindow(HWND hWnd) {
     if (!hWnd) {
         return;

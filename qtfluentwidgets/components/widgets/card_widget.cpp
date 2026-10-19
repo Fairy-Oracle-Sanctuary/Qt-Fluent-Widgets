@@ -1,4 +1,5 @@
 #include "components/widgets/card_widget.h"
+#include <QResizeEvent>
 
 #include <QEnterEvent>
 #include <QDynamicPropertyChangeEvent>
@@ -503,6 +504,46 @@ void CardGroupWidget::setContent(const QString& text) {
 
 QIcon CardGroupWidget::icon() const { return iconWidget_ ? iconWidget_->icon() : QIcon(); }
 
+bool CardGroupWidget::isContentWordWrap() const { return contentLabel_ && contentLabel_->wordWrap(); }
+void CardGroupWidget::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    if (isContentWordWrap() && event->oldSize().width()!=event->size().width()) updateGeometry();
+}
+void CardGroupWidget::setContentWordWrap(bool enable) {
+    if (!contentLabel_) return;
+    contentLabel_->setWordWrap(enable);
+    if (enable && hBoxLayout_) {
+        auto policy=contentLabel_->sizePolicy();
+        policy.setHorizontalPolicy(QSizePolicy::Expanding);
+        policy.setVerticalPolicy(QSizePolicy::Minimum);
+        contentLabel_->setSizePolicy(policy);
+        for (int i=hBoxLayout_->count()-1;i>=0;--i) {
+            auto* item=hBoxLayout_->itemAt(i);
+            if (item->spacerItem()) delete hBoxLayout_->takeAt(i);
+            else if (item->widget() && item->widget()!=iconWidget_) {
+                auto p=item->widget()->sizePolicy(); p.setHorizontalPolicy(QSizePolicy::Maximum);
+                item->widget()->setSizePolicy(p);
+            }
+        }
+        hBoxLayout_->setStretchFactor(textLayout_,1);
+    }
+    if (vBoxLayout_) vBoxLayout_->invalidate();
+    updateGeometry();
+}
+QSize CardGroupWidget::sizeHint() const {
+    QSize hint=QWidget::sizeHint();
+    if (isContentWordWrap() && vBoxLayout_ && width()>0) {
+        const int height=vBoxLayout_->heightForWidth(width());
+        if (height>=0) hint.setHeight(height);
+    }
+    return hint;
+}
+QSize CardGroupWidget::minimumSizeHint() const {
+    QSize hint=QWidget::minimumSizeHint();
+    if (isContentWordWrap()) hint.setHeight(sizeHint().height());
+    return hint;
+}
+
 void CardGroupWidget::setIcon(const QIcon& icon) {
     if (iconWidget_) {
         iconWidget_->setIcon(icon);
@@ -522,6 +563,10 @@ void CardGroupWidget::setIconSize(const QSize& size) {
 void CardGroupWidget::setSeparatorVisible(bool visible) {
     if (separator_) {
         separator_->setVisible(visible);
+        // The group may not be shown yet when addGroup() reveals this separator.
+        // Refresh its cached hint synchronously before the card measures it.
+        if (vBoxLayout_) vBoxLayout_->invalidate();
+        updateGeometry();
     }
 }
 
@@ -562,9 +607,10 @@ void GroupHeaderCardWidget::postInit() {
 
 CardGroupWidget* GroupHeaderCardWidget::addGroup(const QIcon& icon, const QString& title,
                                                  const QString& content, QWidget* widget,
-                                                 int stretch) {
+                                                 int stretch, bool wordWrap) {
     auto* group = new CardGroupWidget(icon, title, content, this);
     group->addWidget(widget, stretch);
+    group->setContentWordWrap(wordWrap);
 
     if (!groupWidgets_.isEmpty()) {
         if (groupWidgets_.last()) {
@@ -583,38 +629,39 @@ CardGroupWidget* GroupHeaderCardWidget::addGroup(const QIcon& icon, const QStrin
 
 CardGroupWidget* GroupHeaderCardWidget::addGroup(const FluentIconBase& icon, const QString& title,
                                                  const QString& content, QWidget* widget,
-                                                 int stretch) {
-    return addGroup(icon.qicon(), title, content, widget, stretch);
+                                                 int stretch, bool wordWrap) {
+    return addGroup(icon.qicon(), title, content, widget, stretch, wordWrap);
 }
 
 CardGroupWidget* GroupHeaderCardWidget::addGroup(const QString& iconPath, const QString& title,
                                                  const QString& content, QWidget* widget,
-                                                 int stretch) {
-    return addGroup(QIcon(iconPath), title, content, widget, stretch);
+                                                 int stretch, bool wordWrap) {
+    return addGroup(QIcon(iconPath), title, content, widget, stretch, wordWrap);
 }
 
 int GroupHeaderCardWidget::groupCount() const { return groupWidgets_.size(); }
-
-QSize GroupHeaderCardWidget::sizeHint() const {
-    // Calculate size based on header + groups
-    QSize baseHint = HeaderCardWidget::sizeHint();
-
-    if (groupLayout_) {
-        int contentHeight = groupLayout_->sizeHint().height();
-        if (contentHeight > 0) {
-            baseHint.setHeight(baseHint.height() + contentHeight);
-        }
+void GroupHeaderCardWidget::resizeEvent(QResizeEvent* event) {
+    HeaderCardWidget::resizeEvent(event);
+    if (vBoxLayout_ && event->oldSize().width()!=event->size().width()) {
+        const int height=vBoxLayout_->totalHeightForWidth(event->size().width());
+        if (height>=0 && minimumHeight()!=height) setMinimumHeight(height);
     }
-
-    return baseHint;
 }
 
 void GroupHeaderCardWidget::updateMinimumHeight() {
-    // Auto-update minimum height based on content
+    // The inherited layout hint already includes the header, separator and
+    // nested group rows. Adding groupLayout_'s height again stretches every row.
+    // Retain a natural minimum for ExpandLayout, which places existing heights.
+    // Invalidate the enclosing widget layouts too: adding to a nested layout
+    // otherwise only posts LayoutRequest, leaving the outer hint stale here.
+    if (viewLayout_) viewLayout_->invalidate();
+    if (view_) view_->updateGeometry();
+    if (vBoxLayout_) vBoxLayout_->invalidate();
     QSize hint = sizeHint();
     if (hint.height() > 0) {
         setMinimumHeight(hint.height());
     }
+    updateGeometry();
 }
 
 }  // namespace qfw

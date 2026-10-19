@@ -7,6 +7,7 @@
 #include <QCache>
 #include <QColor>
 #include <QCryptographicHash>
+#include <QDateTime>
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
@@ -921,6 +922,8 @@ QString FluentIcon::enumToString(FluentIconEnum icon) {
             return QStringLiteral("DeveloperTools");
         case FluentIconEnum::BackgroundColor:
             return QStringLiteral("BackgroundColor");
+        case FluentIconEnum::Eyedropper:
+            return QStringLiteral("Eyedropper");
         case FluentIconEnum::MixVolumes:
             return QStringLiteral("MixVolumes");
         case FluentIconEnum::RemoveFrom:

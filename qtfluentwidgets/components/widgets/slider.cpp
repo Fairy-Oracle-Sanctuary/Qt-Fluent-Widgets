@@ -77,14 +77,9 @@ void SliderHandle::paintEvent(QPaintEvent* e) {
     painter.setBrush(isDark ? QColor(69, 69, 69) : Qt::white);
     painter.drawEllipse(rect().adjusted(1, 1, -1, -1));
 
-    // draw inner circle - use ThemeColorDark1 in dark mode
+    // Custom colors take precedence in both themes, matching Python.
     painter.setPen(Qt::NoPen);
-    QColor handleColor;
-    if (isDark) {
-        handleColor = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        handleColor = autoFallbackThemeColor(lightHandleColor, darkHandleColor);
-    }
+    const QColor handleColor = autoFallbackThemeColor(lightHandleColor, darkHandleColor);
     painter.setBrush(handleColor);
     painter.drawEllipse(QPoint(11, 11), _radius, _radius);
 }
@@ -115,8 +110,7 @@ void Slider::postInit() {
 
 void Slider::sliderChange(SliderChange change) {
     QSlider::sliderChange(change);
-    if (change == SliderValueChange || change == SliderRangeChange)
-        adjustHandlePos();
+    if (change == SliderValueChange || change == SliderRangeChange) adjustHandlePos();
 }
 
 void Slider::setThemeColor(const QColor& light, const QColor& dark) {
@@ -190,13 +184,8 @@ void Slider::drawHorizonGroove(QPainter* painter) {
 
     if (maximum() - minimum() == 0) return;
 
-    // Use ThemeColorDark1 in dark mode
-    QColor grooveColor;
-    if (isDarkTheme()) {
-        grooveColor = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        grooveColor = autoFallbackThemeColor(lightGrooveColor, darkGrooveColor);
-    }
+    // Use the theme-adjusted primary unless a custom groove color is supplied.
+    const QColor grooveColor = autoFallbackThemeColor(lightGrooveColor, darkGrooveColor);
     painter->setBrush(grooveColor);
     double aw = static_cast<double>(value() - minimum()) / (maximum() - minimum()) * (w - r * 2);
     painter->drawRoundedRect(QRectF(r, cy - 3, aw, 5), 2, 2);
@@ -210,13 +199,8 @@ void Slider::drawVerticalGroove(QPainter* painter) {
 
     if (maximum() - minimum() == 0) return;
 
-    // Use ThemeColorDark1 in dark mode
-    QColor grooveColor;
-    if (isDarkTheme()) {
-        grooveColor = themedColor(themeColor(), true, QStringLiteral("ThemeColorLight1"));
-    } else {
-        grooveColor = autoFallbackThemeColor(lightGrooveColor, darkGrooveColor);
-    }
+    // Use the theme-adjusted primary unless a custom groove color is supplied.
+    const QColor grooveColor = autoFallbackThemeColor(lightGrooveColor, darkGrooveColor);
     painter->setBrush(grooveColor);
     double ah = static_cast<double>(value() - minimum()) / (maximum() - minimum()) * (h - r * 2);
     painter->drawRoundedRect(QRectF(cx - 3, r, 6, ah), 3, 3);

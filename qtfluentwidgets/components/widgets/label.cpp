@@ -433,7 +433,10 @@ void ImageLabel::paintEvent(QPaintEvent* e) {
 // ==========================================================================
 // AvatarWidget
 // ==========================================================================
-AvatarWidget::AvatarWidget(QWidget* parent) : ImageLabel(parent) {}
+AvatarWidget::AvatarWidget(QWidget* parent) : ImageLabel(parent) {
+    // A base constructor cannot dispatch postInit() to this derived class.
+    postInit();
+}
 
 AvatarWidget::AvatarWidget(const QString& imagePath, QWidget* parent) : AvatarWidget(parent) {
     setImage(imagePath);

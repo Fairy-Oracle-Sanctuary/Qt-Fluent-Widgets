@@ -16,6 +16,8 @@
 #include <QVBoxLayout>
 #include <QWeakPointer>
 #include <QWidget>
+#include <QPointer>
+#include <functional>
 
 #include "common/icon.h"
 
@@ -76,6 +78,7 @@ class InfoBar : public QFrame {
     Q_OBJECT
 
 public:
+    static QWidget* desktopView();
     explicit InfoBar(InfoBarIconEnum icon, const QString& title, const QString& content,
                      Qt::Orientation orient = Qt::Horizontal, bool isClosable = true,
                      int duration = 1000, InfoBarPosition position = InfoBarPosition::TopRight,
@@ -132,7 +135,11 @@ private:
     void initLayout();
     void setQss();
     void fadeOut();
-    void adjustText();
+
+protected:
+    virtual void adjustText();
+    void replaceIconWidget(QWidget* widget);
+    void setText(const QString& title, const QString& content);
 
     QString title_;
     QString content_;
@@ -145,12 +152,13 @@ private:
     QLabel* titleLabel_ = nullptr;
     QLabel* contentLabel_ = nullptr;
     QToolButton* closeButton_ = nullptr;
-    InfoIconWidget* iconWidget_ = nullptr;
+    QWidget* iconWidget_ = nullptr;
 
     QHBoxLayout* hBoxLayout_ = nullptr;
     QBoxLayout* textLayout_ = nullptr;
     QBoxLayout* widgetLayout_ = nullptr;
 
+private:
     QGraphicsOpacityEffect* opacityEffect_ = nullptr;
     QPropertyAnimation* opacityAni_ = nullptr;
 
@@ -167,9 +175,13 @@ class InfoBarManager : public QObject {
 
 public:
     static InfoBarManager* make(InfoBarPosition position);
+    using Factory = std::function<InfoBarManager*()>;
+    static void registerFactory(InfoBarPosition position, Factory factory);
 
     void add(InfoBar* infoBar);
     void remove(InfoBar* infoBar);
+    // Immediately realign a registered stack after its content changes.
+    void refresh(InfoBar* infoBar);
 
 protected:
     explicit InfoBarManager(QObject* parent = nullptr);
@@ -192,7 +204,10 @@ protected:
     QList<QPropertyAnimation*> dropAnis_;
 
 private:
-    static QMap<InfoBarPosition, InfoBarManager*>& managers();
+    void detach(QWidget* parent, InfoBar* infoBar);
+    QMap<InfoBar*, QPropertyAnimation*> slides_;
+    QMap<InfoBar*, QPropertyAnimation*> drops_;
+    static QMap<InfoBarPosition, QPointer<InfoBarManager>>& managers();
 };
 
 // ============================================================================

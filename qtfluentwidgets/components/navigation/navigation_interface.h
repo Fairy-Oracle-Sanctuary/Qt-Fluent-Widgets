@@ -93,6 +93,7 @@ public:
     NavigationWidget* widget(const QString& routeKey) const;
 
     Router* history() const;
+    NavigationPanel* panel() const { return panel_; }
 
 signals:
     void displayModeChanged(qfw::NavigationDisplayMode mode);

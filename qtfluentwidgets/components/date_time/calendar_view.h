@@ -303,19 +303,20 @@ signals:
     void resetted();
     void dateChanged(const QDate& date);
 
-private slots:
-    void onResetted();
+protected slots:
+    virtual void onResetted();
     void onDayViewTitleClicked();
     void onMonthTitleClicked();
     void onMonthItemClicked(const QDate& date);
     void onYearItemClicked(const QDate& date);
-    void onDayItemClicked(const QDate& date);
+    virtual void onDayItemClicked(const QDate& date);
 
 private:
     void initWidget();
     void setShadowEffect(int blurRadius = 30, const QPoint& offset = QPoint(0, 8),
                          const QColor& color = QColor(0, 0, 0, 30));
 
+protected:
     QStackedWidget* stackedWidget_ = nullptr;
     YearCalendarView* yearView_ = nullptr;
     MonthCalendarView* monthView_ = nullptr;

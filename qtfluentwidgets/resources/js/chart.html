@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body, #container { width: 100%; height: 100%; overflow: hidden; }
+        html, body { background: transparent; }
+        /* Explicit edges also support the Chromium shipped with Qt 5.15.2. */
+        #frame-marker { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 2147483647; display: none; }
+    </style>
+    <script src="echarts.min.js"></script>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="frame-marker"></div>
+    <script>
+        var chart = null;
+        var currentOption = null;
+        var currentTheme;
+        var pendingTheme = null;
+        var currentBgColor = '#f3f3f3';
+        var animationEnabled = true;
+        var pendingReplay = false;
+        var chartVisible = false;
+        var renderPending = false;
+        var renderFrame = 0;
+        var replayPrepared = false;
+
+        function prepareChartFrame(markerColor, background) {
+            hideChart();
+            document.getElementById('container').style.visibility = 'hidden';
+            document.body.style.backgroundColor = background;
+            var marker = document.getElementById('frame-marker');
+            marker.style.backgroundColor = markerColor;
+            marker.style.display = 'block';
+        }
+
+        function releaseChartFrame() {
+            document.getElementById('frame-marker').style.display = 'none';
+        }
+
+        function updateChart(source, theme, background, animation, replay) {
+            document.getElementById('container').style.visibility = 'visible';
+            if (source !== null) {
+                // Evaluate JS data generators only when new options arrive.
+                currentOption = new Function('var option;\n' + source + '\nreturn option;')();
+            }
+            pendingTheme = theme;
+            currentBgColor = background;
+            animationEnabled = animation;
+            pendingReplay = pendingReplay || replay;
+            chartVisible = true;
+            renderPending = true;
+            document.body.style.backgroundColor = background;
+            if (replay) {
+                // The native frame gate has confirmed a fresh background frame.
+                cancelAnimationFrame(renderFrame);
+                renderChart();
+            } else {
+                scheduleResize();
+            }
+        }
+
+        function renderChart() {
+            renderFrame = 0;
+            if (!chartVisible || !currentOption) return;
+            var container = document.getElementById('container');
+            if (!container.clientWidth || !container.clientHeight) return;
+
+            if (chart && (chart.getWidth() !== container.clientWidth ||
+                          chart.getHeight() !== container.clientHeight)) {
+                chart.resize({ animation: { duration: 0 } });
+            }
+            if (!renderPending) return;
+
+            // ECharts 5 requires a new instance for a different theme only.
+            if (chart && currentTheme !== pendingTheme) {
+                chart.dispose();
+                chart = null;
+            }
+            if (!chart) {
+                chart = echarts.init(container, pendingTheme);
+                currentTheme = pendingTheme;
+            } else {
+                if (pendingReplay && !replayPrepared) chart.clear();
+            }
+            var option = Object.assign({}, currentOption);
+            if (option.backgroundColor == null) option.backgroundColor = currentBgColor;
+            option.animation = animationEnabled && option.animation !== false;
+            chart.setOption(option, { notMerge: true });
+            if (pendingReplay) chart.getZr().refreshImmediately();
+            replayPrepared = false;
+            pendingReplay = false;
+            renderPending = false;
+        }
+
+        function hideChart() {
+            chartVisible = false;
+            cancelAnimationFrame(renderFrame);
+            renderFrame = 0;
+            // Prepare replay on departure, not after this view becomes visible
+            // again. Keep currentOption (including generated data/callbacks).
+            if (chart && !replayPrepared) {
+                chart.clear();
+                chart.getZr().refreshImmediately();
+                replayPrepared = true;
+            }
+        }
+
+        function clearChart() {
+            currentOption = null;
+            pendingReplay = false;
+            renderPending = false;
+            cancelAnimationFrame(renderFrame);
+            renderFrame = 0;
+            if (chart) chart.clear();
+            replayPrepared = false;
+        }
+
+        function scheduleResize() {
+            if (!chartVisible || renderFrame) return;
+            renderFrame = requestAnimationFrame(renderChart);
+        }
+
+        new ResizeObserver(scheduleResize).observe(document.getElementById('container'));
+    </script>
+</body>
+</html>

@@ -15,19 +15,19 @@ class CalendarPicker : public QPushButton {
 public:
     explicit CalendarPicker(QWidget* parent = nullptr);
 
-    QDate date() const;
-    void setDate(const QDate& date);
+    virtual QDate date() const;
+    virtual void setDate(const QDate& date);
 
     Qt::DateFormat dateFormat() const;
-    void setDateFormat(Qt::DateFormat format);
-    void setDateFormat(const QString& format);
+    virtual void setDateFormat(Qt::DateFormat format);
+    virtual void setDateFormat(const QString& format);
 
     bool isResetEnabled() const;
     void setResetEnabled(bool enabled);
 
     void setYearRange(int minYear, int maxYear);
 
-    void reset();
+    virtual void reset();
 
 signals:
     void dateChanged(const QDate& date);

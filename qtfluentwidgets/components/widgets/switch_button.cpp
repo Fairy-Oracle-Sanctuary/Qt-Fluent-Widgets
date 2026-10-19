@@ -89,17 +89,12 @@ QColor Indicator::backgroundColor() const {
         if (!isEnabled()) {
             return isDark ? QColor(255, 255, 255, 41) : QColor(0, 0, 0, 56);
         }
-        // In dark mode, checked state should always use hover color (ThemeColorDark1)
-        if (isDark) {
-            return validColor(color,
-                              themedColor(themeColor(), isDark, QStringLiteral("ThemeColorLight1")));
-        }
         if (isPressed) {
-            return validColor(
-                color, themedColor(themeColor(), isDark, QStringLiteral("ThemeColorLight2")));
+            return validColor(color, themedColor(QConfig::instance().themeColor(), isDark,
+                                                 QStringLiteral("ThemeColorLight2")));
         } else if (isHover) {
-            return validColor(
-                color, themedColor(themeColor(), isDark, QStringLiteral("ThemeColorLight1")));
+            return validColor(color, themedColor(QConfig::instance().themeColor(), isDark,
+                                                 QStringLiteral("ThemeColorLight1")));
         }
         return fallbackThemeColor(color);
     } else {
@@ -228,9 +223,9 @@ void SwitchButton::setTextColor(const QColor& light, const QColor& dark) {
     lightTextColor_ = light;
     darkTextColor_ = dark;
 
-    setCustomStyleSheet(
-        label_, QString("QLabel{color:%1}").arg(lightTextColor_.name(QColor::HexArgb)),
-        QString("QLabel{color:%1}").arg(darkTextColor_.name(QColor::HexArgb)));
+    setCustomStyleSheet(label_,
+                        QString("QLabel{color:%1}").arg(lightTextColor_.name(QColor::HexArgb)),
+                        QString("QLabel{color:%1}").arg(darkTextColor_.name(QColor::HexArgb)));
 }
 
 void SwitchButton::setCheckedIndicatorColor(const QColor& light, const QColor& dark) {

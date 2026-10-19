@@ -77,6 +77,7 @@ TabItem::TabItem(FluentIconEnum icon, const QString& text, QWidget* parent)
 }
 
 void TabItem::init() {
+    if (hasIcon_) FluentPushButton::setIcon(FluentIcon(iconEnum_));
     borderRadius_ = 5;
     isSelected_ = false;
     isShadowEnabled_ = true;
@@ -164,6 +165,7 @@ void TabItem::setSelectedBackgroundColor(const QColor& light, const QColor& dark
 void TabItem::setIconEnum(FluentIconEnum icon) {
     iconEnum_ = icon;
     hasIcon_ = true;
+    FluentPushButton::setIcon(FluentIcon(icon));
     update();
 }
 
@@ -220,10 +222,10 @@ void TabItem::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void TabItem::forwardMouseEvent(QMouseEvent* event) {
+    if (!parentWidget()) return;
     QPoint pos = mapToParent(event->pos());
-    QMouseEvent* newEvent =
-        new QMouseEvent(event->type(), pos, event->button(), event->buttons(), event->modifiers());
-    QApplication::sendEvent(parent(), newEvent);
+    QMouseEvent forwarded(event->type(), pos, event->button(), event->buttons(), event->modifiers());
+    QApplication::sendEvent(parent(), &forwarded);
 }
 
 void TabItem::paintEvent(QPaintEvent* event) {
@@ -440,6 +442,10 @@ TabItem* TabBar::addTab(const QString& routeKey, const QString& text, FluentIcon
     return insertTab(-1, routeKey, text, icon);
 }
 
+TabItem* TabBar::createTabItem(const QString& text, FluentIconEnum icon) {
+    return new TabItem(icon, text, view_);
+}
+
 TabItem* TabBar::insertTab(int index, const QString& routeKey, const QString& text,
                            FluentIconEnum icon) {
     if (itemMap_.contains(routeKey)) {
@@ -447,7 +453,7 @@ TabItem* TabBar::insertTab(int index, const QString& routeKey, const QString& te
         return nullptr;
     }
 
-    if (index == -1) {
+    if (index < 0 || index > items_.size()) {
         index = items_.size();
     }
 
@@ -456,7 +462,7 @@ TabItem* TabBar::insertTab(int index, const QString& routeKey, const QString& te
         currentIndex_++;
     }
 
-    TabItem* item = new TabItem(icon, text, view_);
+    TabItem* item = createTabItem(text, icon);
     item->setRouteKey(routeKey);
 
     // set the size of tab
@@ -513,7 +519,8 @@ void TabBar::removeTab(int index) {
     // remove tab
     TabItem* item = items_.takeAt(index);
     itemMap_.remove(item->routeKey());
-    hBoxLayout_->removeWidget(item);
+    itemLayout_->removeWidget(item);
+    item->hide();
     item->deleteLater();
 
     // remove shadow
@@ -697,12 +704,14 @@ QString TabBar::tabToolTip(int index) const {
 }
 
 void TabBar::setTabSelectedBackgroundColor(const QColor& light, const QColor& dark) {
+    const bool changed = light != lightSelectedBackgroundColor_ || dark != darkSelectedBackgroundColor_;
     lightSelectedBackgroundColor_ = light;
     darkSelectedBackgroundColor_ = dark;
 
     for (TabItem* item : items_) {
         item->setSelectedBackgroundColor(light, dark);
     }
+    if (changed) emit tabSelectedBackgroundColorChanged(light, dark);
 }
 
 void TabBar::setTabShadowEnabled(bool enabled) {
@@ -893,8 +902,10 @@ void TabBar::mouseReleaseEvent(QMouseEvent* event) {
 
     int x = tabRect(currentIndex_).x();
     int duration = qAbs(item->x() - x) * 250 / item->width();
+    // A zero-duration slide can finish synchronously in start().
+    connect(item->slideAni(), &QPropertyAnimation::finished, this, &TabBar::adjustLayout,
+            Qt::UniqueConnection);
     item->slideTo(x, duration);
-    connect(item->slideAni(), &QPropertyAnimation::finished, this, &TabBar::adjustLayout);
 }
 
 void TabBar::swapItem(int index) {
@@ -916,10 +927,12 @@ void TabBar::swapItem(int index) {
 // ============================================================================
 
 TabWidget::TabWidget(QWidget* parent) : QWidget(parent) { init(); }
+TabWidget::TabWidget(TabBar* tabBar, QStackedWidget* stack, QWidget* parent)
+    : QWidget(parent), tabBar_(tabBar), stackedWidget_(stack) { init(); }
 
 void TabWidget::init() {
-    tabBar_ = new TabBar(this);
-    stackedWidget_ = new QStackedWidget(this);
+    if (!tabBar_) tabBar_ = new TabBar(this);
+    if (!stackedWidget_) stackedWidget_ = new QStackedWidget(this);
     vBoxLayout_ = new QVBoxLayout(this);
 
     vBoxLayout_->addWidget(tabBar_, 0, Qt::AlignTop);

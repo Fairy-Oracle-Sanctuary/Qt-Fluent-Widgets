@@ -332,6 +332,8 @@ void ColorDialog::onHexColorChanged(const QString& color) {
     setColor(color_);
 }
 
+QColor ColorDialog::color() const { return color_; }
+
 void ColorDialog::onYesButtonClicked() {
     accept();
     if (color_ != oldColor_) {

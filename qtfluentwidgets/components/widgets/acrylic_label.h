@@ -69,6 +69,8 @@ public:
     void setBlurRadius(int radius);
     void setTintColor(const QColor& color);
     void setLuminosityColor(const QColor& color);
+    void setBlurPicSize(const QSize& size);
+    QSize blurPicSize() const { return blurPicSize_; }
 
     void grabImage(const QRect& rect);
     void setImage(const QPixmap& image);
@@ -86,6 +88,7 @@ private:
     QWidget* device_ = nullptr;
     int blurRadius_;
     QColor tintColor_;
+    QSize blurPicSize_;
     QColor luminosityColor_;
     qreal noiseOpacity_;
 

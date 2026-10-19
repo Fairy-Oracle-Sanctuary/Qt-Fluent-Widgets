@@ -242,9 +242,6 @@ void SegmentedWidget::paintEvent(QPaintEvent* e) {
     // draw indicator
     painter.setPen(Qt::NoPen);
     QColor indicatorColor = autoFallbackThemeColor(lightIndicatorColor_, darkIndicatorColor_);
-    if (isDarkTheme() && !darkIndicatorColor_.isValid()) {
-        indicatorColor = themedColor(indicatorColor, true, QStringLiteral("ThemeColorLight1"));
-    }
     painter.setBrush(indicatorColor);
 
     const int x = int(item->width() / 2.0 - 8 + slideValue_);
@@ -302,9 +299,6 @@ void SegmentedToggleToolWidget::paintEvent(QPaintEvent* e) {
 
     painter.setPen(Qt::NoPen);
     QColor indicatorColor = autoFallbackThemeColor(lightIndicatorColor_, darkIndicatorColor_);
-    if (isDarkTheme() && !darkIndicatorColor_.isValid()) {
-        indicatorColor = themedColor(indicatorColor, true, QStringLiteral("ThemeColorLight1"));
-    }
     painter.setBrush(indicatorColor);
 
     auto* item = currentItem();

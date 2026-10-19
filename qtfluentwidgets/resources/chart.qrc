@@ -1,0 +1,6 @@
+<RCC>
+ <qresource prefix="/qfluentwidgets/js">
+  <file alias="chart.html">js/chart.html</file>
+  <file alias="echarts.min.js">../../third_party/echarts/echarts.min.js</file>
+ </qresource>
+</RCC>

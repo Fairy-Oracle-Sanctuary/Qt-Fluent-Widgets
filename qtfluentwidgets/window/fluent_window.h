@@ -162,7 +162,7 @@ public:
     NavigationWidget* addSubInterface(QWidget* subInterface, const FluentIconBase& icon,
                                       const QString& text, NavigationItemPosition position);
 
-    NavigationWidget* addSubInterface(QWidget* subInterface, const QVariant& icon,
+    virtual NavigationWidget* addSubInterface(QWidget* subInterface, const QVariant& icon,
                                       const QString& text, NavigationItemPosition position,
                                       QWidget* parent, bool isTransparent);
 

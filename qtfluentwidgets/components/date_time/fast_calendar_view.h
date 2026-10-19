@@ -189,17 +189,18 @@ signals:
     void resetted();
     void dateChanged(const QDate& date);
 
-private slots:
-    void onResetted();
+protected slots:
+    virtual void onResetted();
     void onDayViewTitleClicked();
     void onMonthTitleClicked();
     void onMonthItemClicked(const QDate& date);
     void onYearItemClicked(const QDate& date);
-    void onDayItemClicked(const QDate& date);
+    virtual void onDayItemClicked(const QDate& date);
 
 private:
     void initWidget();
 
+protected:
     QHBoxLayout* hBoxLayout_ = nullptr;
     QStackedWidget* stackedWidget_ = nullptr;
 

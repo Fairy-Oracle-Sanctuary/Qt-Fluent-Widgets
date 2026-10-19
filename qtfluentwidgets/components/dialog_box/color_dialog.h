@@ -118,6 +118,7 @@ public:
                          bool enableAlpha = false);
 
     void setColor(const QColor& color, bool movePicker = true);
+    QColor color() const;
 
     PrimaryPushButton* yesButton;
     QPushButton* cancelButton;

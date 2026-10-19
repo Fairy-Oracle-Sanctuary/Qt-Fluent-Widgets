@@ -19,10 +19,20 @@ void ScrollArea::setSmoothMode(SmoothMode mode, Qt::Orientation orientation) {
 }
 
 void ScrollArea::enableTransparentBackground() {
-    setStyleSheet(QStringLiteral("QScrollArea{border: none; background: transparent}"));
+    transparentBackground_ = true;
+    viewport()->setProperty("qfwScrollTransparent", true);
+    viewport()->setAutoFillBackground(false);
     if (widget()) {
-        widget()->setStyleSheet(QStringLiteral("QWidget{background: transparent}"));
+        widget()->setProperty("qfwScrollTransparent", true);
+        widget()->setAutoFillBackground(false);
     }
+    setStyleSheet(QStringLiteral("QScrollArea{border: none; background: transparent}"
+                                "QWidget[qfwScrollTransparent=true]{background: transparent}"));
+}
+
+void ScrollArea::setWidget(QWidget* widget) {
+    QScrollArea::setWidget(widget);
+    if (transparentBackground_) enableTransparentBackground();
 }
 
 void ScrollArea::setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy policy) {

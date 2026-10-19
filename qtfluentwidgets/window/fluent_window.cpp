@@ -126,7 +126,15 @@ void FluentWidget::setMicaEffectEnabled(bool enabled) {
     if (enabled && isMicaSupported()) {
         isMicaEnabled_ = true;
         if (isVisible()) {
-            applyMica();
+            const HWND hWnd = reinterpret_cast<HWND>(winId());
+            if (::GetPropW(hWnd, L"qfw_mica_enabled")) {
+                // Restore backdrop after WebEngine/show without FRAMECHANGED:
+                // redundant native style changes disrupt Chromium mouse tracking.
+                WindowsWindowEffect eff;
+                eff.refreshMicaEffect(hWnd, isDarkTheme(), false);
+            } else {
+                applyMica();
+            }
         }
         setBackgroundColor(normalBackgroundColor());
     } else {
@@ -563,7 +571,8 @@ MSFluentWindow::MSFluentWindow(QWidget* parent) : FluentWindowBase(parent) {
 
     navigationBar_ = new qfw::NavigationBar(this);
     // Match the bright dark-mode accent used by the MS navigation bar.
-    navigationBar_->setSelectedColor(QColor(), themedColor(themeColor(), true, QString()));
+    navigationBar_->setSelectedColor(
+        QColor(), themedColor(QConfig::instance().themeColor(), true, QString()));
     connect(&QConfig::instance(), &QConfig::themeColorChanged, navigationBar_,
             [this](const QColor& color) {
                 navigationBar_->setSelectedColor(QColor(), themedColor(color, true, QString()));
@@ -635,8 +644,7 @@ NavigationWidget* MSFluentWindow::addSubInterface(QWidget* subInterface, const Q
     if (!isTransparent) {
         subInterface->setAutoFillBackground(false);
         if (auto* area = qobject_cast<QScrollArea*>(subInterface)) {
-            if (auto* content = area->widget())
-                content->setAutoFillBackground(false);
+            if (auto* content = area->widget()) content->setAutoFillBackground(false);
         }
     }
     stackedWidget_->addWidget(subInterface);

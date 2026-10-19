@@ -408,11 +408,7 @@ void TopNavigationPanel::paintEvent(QPaintEvent* e) {
     painter.setRenderHints(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    // Use ThemeColorLight1 in dark mode for better visibility
     QColor indicatorColor = autoFallbackThemeColor(lightIndicatorColor_, darkIndicatorColor_);
-    if (isDarkTheme() && !darkIndicatorColor_.isValid()) {
-        indicatorColor = themedColor(indicatorColor, true, QStringLiteral("ThemeColorLight1"));
-    }
     painter.setBrush(indicatorColor);
     painter.drawRoundedRect(slideAni_->getGeometry(), 1.5, 1.5);
 }

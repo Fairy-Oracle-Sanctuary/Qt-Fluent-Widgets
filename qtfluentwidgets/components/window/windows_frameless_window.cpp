@@ -127,6 +127,16 @@ void WindowsFramelessWindowBase::initFrameless(QWidget* window) {
     window->setWindowFlags(Qt::Window | window->windowFlags() | stayOnTop);
 }
 
+void WindowsFramelessWindowBase::updateFrameless(QWidget* window) {
+    if (!window || !windowEffect_) return;
+    // Refresh the existing HWND after a WebEngine/OpenGL surface is created.
+    // Changing Qt window flags here would recreate a visible native surface.
+    const HWND hWnd = reinterpret_cast<HWND>(window->winId());
+    ensureResizableStyle(hWnd);
+    windowEffect_->addWindowAnimation(hWnd);
+    windowEffect_->addShadowEffect(hWnd);
+}
+
 bool WindowsFramelessWindowBase::handleNativeEvent(QWidget* window, void* message,
                                                    nativeEvent_qintptr* result) {
     if (!window || !message) {
