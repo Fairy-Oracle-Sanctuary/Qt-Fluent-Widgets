@@ -25,8 +25,11 @@ jobs:
         include:
           - qt_version: 5.15.2
             qt_arch: win64_msvc2019_64
+            qt_modules: qtwebengine
           - qt_version: 6.7.3
             qt_arch: win64_msvc2019_64
+            # Qt 6 distributes these WebEngine dependencies as separate add-ons.
+            qt_modules: qtwebengine qtwebchannel qtpositioning
 
     steps:
       - name: Check out repository
@@ -37,6 +40,7 @@ jobs:
         with:
           version: ${{ matrix.qt_version }}
           arch: ${{ matrix.qt_arch }}
+          modules: ${{ matrix.qt_modules }}
           cache: true
 
       - name: Configure Release build
