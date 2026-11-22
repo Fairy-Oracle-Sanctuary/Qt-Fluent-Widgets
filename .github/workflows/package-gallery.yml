@@ -58,13 +58,19 @@ jobs:
           $packageName = "Qt-Fluent-Widgets-Gallery-Windows-x64-Qt${{ matrix.qt_version }}"
           $packageDir = Join-Path $env:RUNNER_TEMP $packageName
           $zipPath = Join-Path $env:RUNNER_TEMP "$packageName.zip"
-          $sourceExe = Join-Path $env:GITHUB_WORKSPACE "build\app\Release\qtfluentwidgets_app.exe"
           $targetExe = Join-Path $packageDir "qtfluentwidgets_app.exe"
           $deployTool = Join-Path $env:QT_ROOT_DIR "bin\windeployqt.exe"
 
-          if (-not (Test-Path -LiteralPath $sourceExe)) {
-              throw "Gallery executable was not generated: $sourceExe"
+          # Qt 6's qt_add_executable and Qt 5's add_executable use different output directories.
+          $exeCandidates = @(
+              (Join-Path $env:GITHUB_WORKSPACE "build\Release\qtfluentwidgets_app.exe")
+              (Join-Path $env:GITHUB_WORKSPACE "build\app\Release\qtfluentwidgets_app.exe")
+          )
+          $sourceExe = $exeCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+          if (-not $sourceExe) {
+              throw "Gallery executable was not found. Checked: $($exeCandidates -join ', ')"
           }
+          Write-Host "Packaging Gallery executable: $sourceExe"
           if (-not (Test-Path -LiteralPath $deployTool)) {
               throw "windeployqt was not found: $deployTool"
           }
